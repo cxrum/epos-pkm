@@ -1,12 +1,11 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted, ref, Teleport } from 'vue';
-import ChevronRight from '../../assets/icons/Chevron.vue'
-import BaseIcon from './BaseIcon.vue';
-import PopUpMenu from './popUpMenu/PopUpMenu.vue';
-import Document from '../../assets/icons/Document.vue';
-import type { MenuGroup } from './popUpMenu/type';
-import DotsMenu from '../../assets/icons/DotsMenu.vue';
-import { flip, offset, shift, useFloating } from '@floating-ui/vue';
+import { ref } from 'vue';
+import ChevronRight from '@/assets/icons/Chevron.vue'
+import BaseIcon from '@/shared/components/BaseIcon.vue';
+import PopUpMenu from '@/shared/components/popUpMenu/PopUpMenu.vue';
+import type { MenuGroup } from '@/shared/components/popUpMenu/type';
+import DotsMenu from '@/assets/icons/DotsMenu.vue';
+import { flip, offset, useFloating } from '@floating-ui/vue';
 import { onClickOutside } from '@vueuse/core'
 
 const props = defineProps({

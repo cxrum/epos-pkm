@@ -1,10 +1,10 @@
 <script setup lang="ts">
+import { computed, ref } from 'vue'
 import Tab from '@/core/components/Tab.vue';
 import Document from '@/assets/icons/Document.vue';
-import { usePagesStore } from '@/core/store/pagesStore';
-import { computed, ref } from 'vue'
 import TypeIcon from '@/assets/icons/TypeIcon.vue';
 import Table from '@/assets/icons/Table.vue';
+import { usePagesStore } from '@/core/store/pagesStore';
 import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
 
 const workSpaceStore = useWorkSpaceStore();

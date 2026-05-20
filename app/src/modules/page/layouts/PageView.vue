@@ -1,10 +1,9 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { usePagesStore } from '../../../core/store/pagesStore';
-import { useWorkSpaceStore } from '../../../core/store/workSpaceStore';
-import type { PageData } from '../../../core/types';
-import CommandLine from '../../commandline/layouts/CommandLine.vue';
-
+import { computed } from 'vue';
+import { usePagesStore } from '@/core/store/pagesStore';
+import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
+import type { PageData } from '@/core/types';
+import CommandLine from '../components/CommandLine.vue';
 
 const props = defineProps()
 const pagesStore = usePagesStore();

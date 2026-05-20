@@ -1,14 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Search from '@/assets/icons/Search.vue';
-import BaseIcon from '@/core/components/BaseIcon.vue';
+import BaseIcon from '@/shared/components/BaseIcon.vue';
 import Regex from '@/assets/icons/Regex.vue';
-import BaseCheckbox from '@/core/components/BaseCheckbox.vue';
+import BaseCheckbox from '@/shared/components/BaseCheckbox.vue';
 import SortAllt from '@/assets/icons/SortAllt.vue';
 import BarsFilter from '@/assets/icons/BarsFilter.vue';
 import { offset, useFloating } from '@floating-ui/vue';
-import PopUpMenu from '@/core/components/popUpMenu/PopUpMenu.vue';
-import type { MenuGroup } from '@/core/components/popUpMenu/type';
+import PopUpMenu from '@/shared/components/popUpMenu/PopUpMenu.vue';
+import type { MenuGroup } from '@/shared/components/popUpMenu/type';
 import Document from '@/assets/icons/Document.vue';
 
 const selectedMenu = ref('all')

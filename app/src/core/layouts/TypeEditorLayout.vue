@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref } from 'vue';
-import Accordion from '@/core/components/Accordion.vue';
-import BaseInput from '@/core/components/BaseInput.vue';
-import BaseSelect from '@/core/components/BaseSelect.vue';
+import Accordion from '@/shared/components/Accordion.vue';
+import BaseInput from '@/shared/components/BaseInput.vue';
+import BaseSelect from '@/shared/components/BaseSelect.vue';
 
 const selectedBasicType = ref(null)
 const selectBasicTypeOptions = [

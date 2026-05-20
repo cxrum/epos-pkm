@@ -4,17 +4,17 @@ import BrowserTabsView from '@/core/layouts/BrowserTabsView.vue'
 import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
 import Breadcrumbs from '@/core/components/Breadcrumbs.vue';
 import { computed, ref } from 'vue';
-import BaseIcon from '@/core/components/BaseIcon.vue';
+import BaseIcon from '@/shared/components/BaseIcon.vue';
 import DotsMenu from '@/assets/icons/DotsMenu.vue';
 import TypeIcon from '@/assets/icons/TypeIcon.vue';
-import TypeEditor from '@/modules/typeEditor/layouts/TypeEditor.vue';
 import { onClickOutside, transition } from '@vueuse/core';
 import SidebarState from '@/assets/icons/SidebarState.vue';
-import type { MenuGroup } from '@/core/components/popUpMenu/type';
+import type { MenuGroup } from '@/shared/components/popUpMenu/type';
 import { offset, useFloating } from '@floating-ui/vue';
-import PopUpMenu from '@/core/components/popUpMenu/PopUpMenu.vue';
+import PopUpMenu from '@/shared/components/popUpMenu/PopUpMenu.vue';
 import Document from '@/assets/icons/Document.vue';
-import OmniSearchView from '@/modules/omniSearch/layouts/OmniSearchView.vue';
+import TypeEditor from '@/core/layouts/TypeEditorLayout.vue';
+import OmniSearchView from '@/core/layouts/OmniSearchView.vue';
 import User from '@/assets/icons/User.vue';
 import Settings from '@/assets/icons/Settings.vue';
 

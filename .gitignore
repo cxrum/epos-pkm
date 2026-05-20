@@ -35,3 +35,6 @@ jspm_packages/
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+package-lock.json
+app/package-lock.json

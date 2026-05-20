@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import Cross from '../../assets/icons/Cross.vue'
-import BaseIcon from './BaseIcon.vue'
+import Cross from '@/assets/icons/Cross.vue'
+import BaseIcon from '@/shared/components/BaseIcon.vue';
 
 interface TabProps {
     active?: boolean;
