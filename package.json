@@ -1,0 +1,71 @@
+{
+  "name": "electron-vue",
+  "version": "1.0.0",
+  "main": "./dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "watch": "nodemon --exec npm run serve:electron",
+    "start": "concurrently -k \"npm run serve:front\" \"npm run watch\"",
+    "front:setup": "cd app && npm install",
+    "electron:setup": "npm install",
+    "setup": "npm run front:setup && npm run electron:setup",
+    "serve:front": "cd app && npm run dev",
+    "serve:electron": "set APP_IS_NIGHTLY=yes && set APP_IS_DEV=yes && npm run build && wait-on tcp:3000 && electron .",
+    "build:front": "cd app && npm run build",
+    "electron:build": "npm run build",
+    "electron:builder": "electron-builder",
+    "app:build": "npm run prod:rename && npm run build:front && npm run electron:build && npm run electron:builder",
+    "electron-rebuild": "./node_modules/.bin/electron-rebuild",
+    "postinstall": "electron-builder install-app-deps",
+    "up:win": "up_using_window.cmd"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/cxrum/epistemic-oop.git"
+  },
+  "author": "Denis Kostiuk",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/cxrum/epistemic-oop/issues"
+  },
+  "homepage": "https://github.com/cxrum/epistemic-oop#readme",
+  "description": "",
+  "build": {
+    "directories": {
+      "buildResources": "electron/icons"
+    },
+    "extraResources": [
+      {
+        "from": "electron/icons/icon.png",
+        "to": "icon.png"
+      }
+    ],
+    "win": {
+      "icon": "windows/icon.ico"
+    },
+    "mac": {
+      "icon": "macos/icon.icns"
+    },
+    "linux": {
+      "icon": "linux/icons"
+    }
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.5.0",
+    "concurrently": "^9.2.1",
+    "electron": "^41.2.0",
+    "electron-builder": "^26.8.1",
+    "electron-devtools-installer": "^4.0.0",
+    "json": "^11.0.0",
+    "nodemon": "^3.1.14",
+    "postcss": "^8.5.14",
+    "tailwindcss": "^4.3.0",
+    "typescript": "^6.0.2",
+    "wait-on": "^9.0.5"
+  },
+  "dependencies": {
+    "electron-log": "^5.4.3",
+    "electron-store": "^11.0.2",
+    "electron-updater": "^6.8.3"
+  }
+}
