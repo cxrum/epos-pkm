@@ -1,11 +1,11 @@
 <script setup lang="ts">
-import Tab from '../components/Tab.vue';
-import Document from '../../assets/icons/Document.vue';
-import { usePagesStore } from '../store/pagesStore';
+import Tab from '@/core/components/Tab.vue';
+import Document from '@/assets/icons/Document.vue';
+import { usePagesStore } from '@/core/store/pagesStore';
 import { computed, ref } from 'vue'
-import TypeIcon from '../../assets/icons/TypeIcon.vue';
-import Table from '../../assets/icons/Table.vue';
-import { useWorkSpaceStore } from '../store/workSpaceStore';
+import TypeIcon from '@/assets/icons/TypeIcon.vue';
+import Table from '@/assets/icons/Table.vue';
+import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
 
 const workSpaceStore = useWorkSpaceStore();
 const pagesStore = usePagesStore();
@@ -27,7 +27,11 @@ const handleHorizontalScroll = (event: WheelEvent) => {
   }
 }
 
-const computeIcon = (type: string) => {
+const computeIcon = (type: string | undefined) => {
+  if (type===undefined){
+    return Document
+  }
+
   if(type === 'document'){
     return Document
   }else if(type === 'object'){

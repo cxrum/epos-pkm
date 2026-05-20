@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import BaseButton from '../components/BaseButton.vue';
-import Search from '../../assets/icons/Search.vue';
-import TypeDicitionary from '../../assets/icons/TypeDicitionary.vue';
-import Graph from '../../assets/icons/Graph.vue';
-import Accordion from '../components/Accordion.vue'
-import type { MenuGroup } from '../components/popUpMenu/type';
-import Document from '../../assets/icons/Document.vue';
-import AddDocument from '../../assets/icons/AddDocument.vue';
+import BaseButton from '@/core/components/BaseButton.vue';
+import Search from '@/assets/icons/Search.vue';
+import TypeDicitionary from '@/assets/icons/TypeDicitionary.vue';
+import Graph from '@/assets/icons/Graph.vue';
+import Accordion from '@/core/components/Accordion.vue'
+import type { MenuGroup } from '@/core/components/popUpMenu/type';
+import Document from '@/assets/icons/Document.vue';
+import AddDocument from '@/assets/icons/AddDocument.vue';
 import { useWorkSpaceStore } from '../store/workSpaceStore';
 import { computed } from 'vue';
 

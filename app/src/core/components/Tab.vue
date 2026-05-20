@@ -16,8 +16,8 @@ const props = withDefaults(defineProps<TabProps>(), {
 })
 
 const emit = defineEmits<{
-  (e: 'tab-click', tabId: Number): void
-  (e: 'close', tabId: Number): void
+  (e: 'tab-click', tabId: number): void
+  (e: 'close', tabId: number): void
 }>()
 
 const computedClasses = computed(() => {

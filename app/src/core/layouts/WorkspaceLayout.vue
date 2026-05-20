@@ -1,32 +1,31 @@
 <script setup lang="ts">
-import SidebarNavigationView from './SidebarNavigationView.vue';
-import BrowserTabsView from './BrowserTabsView.vue'
-import { useWorkSpaceStore } from '../store/workSpaceStore';
-import Breadcrumbs from '../components/Breadcrumbs.vue';
+import SidebarNavigationView from '@/core/layouts/SidebarNavigationView.vue';
+import BrowserTabsView from '@/core/layouts/BrowserTabsView.vue'
+import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
+import Breadcrumbs from '@/core/components/Breadcrumbs.vue';
 import { computed, ref } from 'vue';
-import BaseIcon from '../components/BaseIcon.vue';
-import DotsMenu from '../../assets/icons/DotsMenu.vue';
-import TypeIcon from '../../assets/icons/TypeIcon.vue';
-import TypeEditor from '../components/TypeEditor.vue';
+import BaseIcon from '@/core/components/BaseIcon.vue';
+import DotsMenu from '@/assets/icons/DotsMenu.vue';
+import TypeIcon from '@/assets/icons/TypeIcon.vue';
+import TypeEditor from '@/modules/typeEditor/layouts/TypeEditor.vue';
 import { onClickOutside, transition } from '@vueuse/core';
-import SidebarState from '../../assets/icons/SidebarState.vue';
-import type { MenuGroup } from '../components/popUpMenu/type';
-import { flip, offset, useFloating } from '@floating-ui/vue';
-import PopUpMenu from '../components/popUpMenu/PopUpMenu.vue';
-import Document from '../../assets/icons/Document.vue';
-import OmniSearchView from './OmniSearchView.vue';
-import User from '../../assets/icons/User.vue';
-import Settings from '../../assets/icons/Settings.vue';
+import SidebarState from '@/assets/icons/SidebarState.vue';
+import type { MenuGroup } from '@/core/components/popUpMenu/type';
+import { offset, useFloating } from '@floating-ui/vue';
+import PopUpMenu from '@/core/components/popUpMenu/PopUpMenu.vue';
+import Document from '@/assets/icons/Document.vue';
+import OmniSearchView from '@/modules/omniSearch/layouts/OmniSearchView.vue';
+import User from '@/assets/icons/User.vue';
+import Settings from '@/assets/icons/Settings.vue';
 
 const workSpaceStore = useWorkSpaceStore();
 
-const currPath = computed(() => workSpaceStore.currentPath)
 const isTypeEditorOpen = computed(() => workSpaceStore.isTypeEditorOpen)
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen)
 const isOmniSearchOpen = computed(() => workSpaceStore.isOmniSearchOpen)
 const isPopUpMenuOpen = ref<boolean>(false)
 
-const handleStateButonClick = (event: Event) => {
+const handleStateButonClick = () => {
     workSpaceStore.toggleSidebar();
 }
 
@@ -92,7 +91,7 @@ const computedPath = computed<string[]>(() => {
     
     <aside 
       :class="isSidebarOpen ? 'w-64' : 'w-14'"
-      class="flex flex-col h-full border-r border-(--border) bg-(--bg-sidebar) transition-all duration-200 ease-in-out"
+      class="flex flex-col h-full border-r border-(--border) bg-(--bg-sidebar) transition-all duration-150 ease-in-out"
       >
       <BaseIcon 
         size="32px" 
@@ -212,7 +211,7 @@ const computedPath = computed<string[]>(() => {
 
 .slide-enter-active,
 .slide-leave-active {
-  transition: 0.2s ease-in-out;
+  transition: 0.15s ease-in-out;
 }
 
 .slide-enter-from,

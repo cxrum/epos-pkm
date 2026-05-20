@@ -1,16 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
-import Search from '../../assets/icons/Search.vue';
-import BaseIcon from '../components/BaseIcon.vue';
-import Regex from '../../assets/icons/Regex.vue';
-import BaseCheckbox from '../components/BaseCheckbox.vue';
-import SortAllt from '../../assets/icons/SortAllt.vue';
-import BarsFilter from '../../assets/icons/BarsFilter.vue';
+import Search from '@/assets/icons/Search.vue';
+import BaseIcon from '@/core/components/BaseIcon.vue';
+import Regex from '@/assets/icons/Regex.vue';
+import BaseCheckbox from '@/core/components/BaseCheckbox.vue';
+import SortAllt from '@/assets/icons/SortAllt.vue';
+import BarsFilter from '@/assets/icons/BarsFilter.vue';
 import { offset, useFloating } from '@floating-ui/vue';
-import PopUpMenu from '../components/popUpMenu/PopUpMenu.vue';
-import type { MenuGroup } from '../components/popUpMenu/type';
-import TypeIcon from '../../assets/icons/TypeIcon.vue';
-import Document from '../../assets/icons/Document.vue';
+import PopUpMenu from '@/core/components/popUpMenu/PopUpMenu.vue';
+import type { MenuGroup } from '@/core/components/popUpMenu/type';
+import Document from '@/assets/icons/Document.vue';
 
 const selectedMenu = ref('all')
 const isRegexChecked = ref(false)

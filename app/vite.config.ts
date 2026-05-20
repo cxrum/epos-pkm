@@ -1,6 +1,7 @@
 import { defineConfig } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import tailwindcss from '@tailwindcss/vite';
+import { fileURLToPath, URL } from 'node:url'
 
 export default defineConfig(({ mode }) => ({
     build: {
@@ -15,4 +16,9 @@ export default defineConfig(({ mode }) => ({
     server: {
         port: 3000,
     },
+    resolve:{
+        alias:{
+            '@': fileURLToPath(new URL('./src', import.meta.url))
+        }
+    }
 }));

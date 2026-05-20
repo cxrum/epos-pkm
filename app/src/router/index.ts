@@ -1,5 +1,4 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import WorkspaceLayout from '../core/layouts/WorkspaceLayout.vue'
 
 const routes = [
   {
@@ -8,21 +7,20 @@ const routes = [
   },
   {
     path: '/workspace',
-    component: WorkspaceLayout,
+    component: () => import('@/core/layouts/WorkspaceLayout.vue'),
     children: [
-        {
-            path: '',
-            component: () => import('../modules/page/layouts/PageView.vue')
-        },
-        {
-          path: 'settings',
-          components: {
-            default: () => import('../modules/page/layouts/PageView.vue'),
-            modal: () => import('../core/layouts/SettingsLayout.vue')
-          }
+      {
+          path: '',
+          component: () => import('@/modules/page/layouts/PageView.vue')
+      },
+      {
+        path: 'settings',
+        components: {
+          default: () => import('@/modules/page/layouts/PageView.vue'),
+          modal: () => import('@/modules/settings/layouts/SettingsLayout.vue')
         }
+      }
     ]
-
   }
 ]
 

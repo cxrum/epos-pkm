@@ -1,11 +1,11 @@
 <script setup lang="ts">
 import { useRouter } from 'vue-router'
-import BaseIcon from '../components/BaseIcon.vue';
-import Cross from '../../assets/icons/Cross.vue';
-import SidebarState from '../../assets/icons/SidebarState.vue';
+import BaseIcon from '@/core/components/BaseIcon.vue';
+import Cross from '@/assets/icons/Cross.vue';
+import SidebarState from '@/assets/icons/SidebarState.vue';
 
 import { onMounted, onUnmounted, ref } from 'vue';
-import ArrowLeft from '../../assets/icons/ArrowLeft.vue';
+import ArrowLeft from '@/assets/icons/ArrowLeft.vue';
 
 const router = useRouter()
 

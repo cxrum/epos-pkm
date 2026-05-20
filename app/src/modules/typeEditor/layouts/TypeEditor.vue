@@ -1,11 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue';
-import { useWorkSpaceStore } from '../store/workSpaceStore';
-import Accordion from './Accordion.vue';
-import Input from './Input.vue';
-import Select from './Select.vue';
-
-const store = useWorkSpaceStore();
+import { ref } from 'vue';
+import Accordion from '@/core/components/Accordion.vue';
+import BaseInput from '@/core/components/BaseInput.vue';
+import BaseSelect from '@/core/components/BaseSelect.vue';
 
 const selectedBasicType = ref(null)
 const selectBasicTypeOptions = [
@@ -26,7 +23,7 @@ const selectBasicTypeOptions = [
             Editing type
         </span>
         
-        <Input 
+        <BaseInput 
             class="w-full"
             :label="'Title'"
             placeholder="Title"
@@ -36,12 +33,12 @@ const selectBasicTypeOptions = [
                 Basic Type
             </span>
 
-            <Select 
+            <BaseSelect 
                 v-model="selectedBasicType" 
                 :options="selectBasicTypeOptions"
                 class="w-1/2"
             >
-            </Select>
+            </BaseSelect>
         </div>
 
         <Accordion :label="'Properties'">
@@ -56,7 +53,6 @@ const selectBasicTypeOptions = [
             Editing type
         </span>
         
-
         <Accordion :label="'Type 1'">
             <p class="text-(--text-h)" >Sample data</p>
             <p class="text-(--text-h)" >Sample data</p>

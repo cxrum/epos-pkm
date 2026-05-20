@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
-import Chevron from '../../assets/icons/Chevron.vue'
+import Chevron from '@/assets/icons/Chevron.vue'
 
 interface Option {
   label: string
@@ -97,7 +97,7 @@ const handleKeydown = (event: KeyboardEvent) => {
         aria-haspopup="listbox"
         @click="isOpen = !isOpen"
         @keydown="handleKeydown"
-        class="flex items-center justify-between gap-4 appearance-none border border-solid border-(--border) min-w-[8em] max-w-[16em] min-h-[2em] px-[0.5rem] py-[0.2rem] text-(--text-color) transition-colors duration-200"
+        class="flex items-center justify-between gap-4 appearance-none border border-solid border-(--border) min-w-[8em] max-w-[16em] min-h-[2em] px-2 py-[0.2rem] text-(--text-color) transition-colors duration-200"
         :class="[
             isOpen ? 'rounded-t-md' : 'rounded-md'
         ]"
