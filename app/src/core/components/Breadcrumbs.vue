@@ -49,6 +49,6 @@ const handleHorizontalScroll = (event: WheelEvent) => {
         transition: color 0.1s ease;
     }
     li:hover{
-        color: color-mix(in oklch, var(--hover) 20%, var(--text-color));        
+        color: color-mix(in oklch, var(--hover) 20%, var(--text-default-color));        
     }
 </style>

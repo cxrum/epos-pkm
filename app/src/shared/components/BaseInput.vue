@@ -46,7 +46,7 @@ const handleWrapperClick = () => {
             
             <slot></slot>
         </div>
-        <label v-if="errMsg" class="text-(--error-text-color)">
+        <label v-if="errMsg" class="text-(--text-error-color)">
             {{ errMsg }}
         </label>
     </div>

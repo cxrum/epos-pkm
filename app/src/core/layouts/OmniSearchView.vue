@@ -143,7 +143,7 @@ const sorterOptionsData: MenuGroup[] = [
                 <Search/>
             </BaseIcon>
             <input 
-                class="flex-1 px-2 bg-transparent outline-none text-(--text-color) transition-colors"
+                class="flex-1 px-2 bg-transparent outline-none text-(--text-default-color) transition-colors"
                 placeholder="Search everything..."
                 >
             </input>

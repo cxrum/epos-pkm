@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { PropType } from 'vue'
+import type { PropType, Teleport } from 'vue'
 import type { MenuGroup } from './type'
 
 const props = defineProps({
@@ -12,7 +12,7 @@ const props = defineProps({
 
 <template>
   <div 
-    class="fixed z-50 flex flex-col w-fit max-w-72 p-2 gap-1 bg-(--contex-menu-bg) rounded-md border border-(--border)"
+    class="fixed z-50 flex flex-col w-fit max-w-72 p-2 gap-1 bg-(--bg-context-menu) rounded-md border border-(--border)"
     >
     
     <div 
@@ -38,7 +38,7 @@ const props = defineProps({
           v-else-if="item.type === 'button'"
           @click="item.action && item.action()"
           :disabled="item.disabled"
-          class="inline-flex justify-start items-center h-fit w-full min-w-[4em] min-h-[2em] px-2 py-[0.2rem] gap-2 rounded-md transition-colors text-(--text-color)"
+          class="inline-flex justify-start items-center h-fit w-full min-w-[4em] min-h-[2em] px-2 py-[0.2rem] gap-2 rounded-md transition-colors text-(--text-default-color)"
           type="button"
         >
           <component 
@@ -52,6 +52,5 @@ const props = defineProps({
 
       </template>
     </div>
-
   </div>
 </template>

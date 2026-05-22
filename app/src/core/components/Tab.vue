@@ -24,8 +24,8 @@ const computedClasses = computed(() => {
   const baseClasses = 'flex w-[10em] h-[2em] shrink-0 px-2 gap-2 items-center rounded-md transition-colors'
   
   const activeClasses = props.active 
-    ? 'bg-(--tab-active-bg) text-(--text-color)' 
-    : 'text-(--text-secondary-color) cursor-pointer'
+    ? 'bg-(--bg-active-tab)' 
+    : 'cursor-pointer'
 
   return `${baseClasses} ${activeClasses}`
 })
@@ -45,7 +45,7 @@ const computedClasses = computed(() => {
         class="w-5 h-5 shrink-0 text-(--icon-color)"
     />
     
-    <span class="truncate flex-1 text-left">
+    <span :class="active ? ' text-(--text-default-color)' : '' " class="truncate flex-1 text-left">
         <slot></slot>
     </span>
 

@@ -11,13 +11,14 @@ const pageStore = usePageStore();
 const workSpaceStore = useWorkSpaceStore();
 const globalTabStore = useGlobalTabStore();
 
-const pageJsonData = ref<any>({});
+const pageJsonData = ref<Record<string, any>>({});
 
 watch(
     () => globalTabStore.activeTab,
     (activeTab) => {
         if (activeTab != null && activeTab.id !== -1) {
             pageStore.getFromDatabase(activeTab.id);
+            workSpaceStore.setLoadingStatus(true)
         }
     },
     { deep: true }
@@ -29,6 +30,7 @@ watch(
         if (newData) {
             workSpaceStore.setCurrentPath(newData.path);
             pageJsonData.value=newData.content
+            workSpaceStore.setLoadingStatus(false)
         }
     }
 )
@@ -45,13 +47,10 @@ watch(
 </script>
 
 <template>
-<div v-if="pageStore.pageData && !pageStore.isLoading" class="flex flex-col gap-2 w-full h-full page">
+<div v-if="pageStore.pageData" class="flex flex-col gap-2 w-full h-full page">
     <h1>{{pageStore.pageData.title}}</h1>
     <BaseEditor v-if="globalTabStore.activeTab" v-model="pageJsonData"></BaseEditor>
     <div class="h-80 shrink-0"></div>
-</div>
-<div v-else-if="pageStore.isLoading" class="flex flex-col justify-center items-center">
-    <LoadingSpinner/>
 </div>
 <div v-else class="flex flex-col justify-center items-center gap-2 w-full h-full page">
     <p>Create a new note (shortcut placeholder)</p>

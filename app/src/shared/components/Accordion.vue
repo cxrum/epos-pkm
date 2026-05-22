@@ -46,7 +46,7 @@ const toglePopUpMenu = () => {
     isPopUpMenuOpen.value = !isPopUpMenuOpen.value 
 }
 
-onClickOutside(menuRef, (event: Event) => {
+onClickOutside(menuRef, () => {
     isPopUpMenuOpen.value = false
 }, {ignore: [menuButtonRef]})
 

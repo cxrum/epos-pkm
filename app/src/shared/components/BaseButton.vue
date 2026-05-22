@@ -29,7 +29,7 @@ const props = defineProps({
 const baseClasses = 'inline-flex justify-start items-center h-fit w-fit min-h-[2em] px-[0.5rem] py-[0.2rem] gap-[0.5rem] rounded-md transition-colors'
 
 const variantClasses = {
-  default: 'text-(--text-color)',
+  default: 'text-(--text-default-color)',
   accent: 'text-(--text-on-accent-color) accent'
 }
 

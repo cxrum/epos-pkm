@@ -13,8 +13,8 @@ const Mapper = {
     return {
       id: dto.id,
       title: dto.title,
-      type: dto.type,
       path: [],
+      type: dto.type,
       content: dto.content,
     };
   },
@@ -34,6 +34,7 @@ const pagesDb: Record<number, PageDTO> = {
         id:1,
         title: 'A1',
         content: {},
+        
         type: 'page',
     },
     2: {

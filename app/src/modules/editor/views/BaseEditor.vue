@@ -20,7 +20,7 @@ import NodeRange from '@tiptap/extension-node-range'
 import StarterKit from '@tiptap/starter-kit'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import { Placeholder } from '@tiptap/extensions'
-import { BlockColor } from '../extension/blockColor'
+import { BlockStyle } from '../extension/blockStyle'
 
 const NESTED_CONFIG_LTR = { edgeDetection: { threshold: -16, edges: ['left' as const] } }
 const NESTED_CONFIG_RTL = { edgeDetection: { threshold: -16, edges: ['right'as const] } }
@@ -55,7 +55,7 @@ const editor = useEditor({
     NodeRange.configure({
       key: null,
     }),
-    BlockColor
+    BlockStyle
   ],
   onUpdate: ({ editor: currentEditor }) => {
     editable.value = currentEditor.isEditable
@@ -102,10 +102,6 @@ watch(() => model.value, (newValue) => {
 
 <style lang="scss">
 
-::selection {
-  background-color: var(--hover);
-}
-
 .ProseMirror {
   .ProseMirror-widget * {
     margin-top: auto;
@@ -117,36 +113,6 @@ watch(() => model.value, (newValue) => {
   }
 }
 
-p, h1, h2, h3, h4, h5, h6, blockquote, pre, div[data-type="callout"] {
-    margin-top: 0.5rem;
-    margin-bottom: 0.5rem;
-    line-height: 1.6;
-  }
-
-  > *:first-child {
-    margin-top: 0;
-  }
-  
-  > *:last-child {
-    margin-bottom: 0;
-  }
-  
-  li {
-    p {
-      margin-top: 0.25rem;
-      margin-bottom: 0.25rem;
-    }
-  }
-
-.ProseMirror-noderangeselection {
-  *::selection {
-    background: transparent;
-  }
-
-  * {
-    caret-color: transparent;
-  }
-}
 
 .ProseMirror-selectednode,
 .ProseMirror-selectednoderange {

@@ -129,11 +129,11 @@ const computedPath = computed<string[]>(() => {
         <BrowserTabsView />
       </header>
       
-      <div class="w-full flex-1 min-h-0 flex flex-row bg-(--bg-canva)">
+      <div class="w-full flex-1 min-h-0 flex flex-row bg-(--bg-canvas)">
         
         <section ref="pageRef" class="flex-1 flex flex-col min-w-0">
           
-          <nav class="flex flex-col shrink-0 bg-(--bg-canva) p-1">
+          <nav class="flex flex-col shrink-0 bg-(--bg-canvas) p-1">
             <div class="flex shrink-0 items-center" >
             <Breadcrumbs :path="computedPath"/>
             
@@ -168,15 +168,16 @@ const computedPath = computed<string[]>(() => {
 
           </nav>
 
-          <transition name="fade">
-            <OmniSearchView
-              ref="omniSearchRef"
-              v-if="isOmniSearchOpen"
-              :style="omniSearchStyle"
-              ></OmniSearchView>
-          </transition>
-
-
+          <Teleport to="body">
+            <transition name="fade">
+              <OmniSearchView
+                ref="omniSearchRef"
+                v-if="isOmniSearchOpen"
+                :style="omniSearchStyle"
+                ></OmniSearchView>
+            </transition>
+          </Teleport>
+          
           <div class="flex-1 overflow-y-auto auto-hide-scroll">
             <router-view v-slot="{ Component }">
               <transition name="fade" mode="out-in">

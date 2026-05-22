@@ -7,7 +7,7 @@ export interface PageData{
     type?: string,
     path: Array<Path>,
     title: string,
-    content: Object
+    content: Record<string, any>
 }
 
 export interface PageStorageRepository {

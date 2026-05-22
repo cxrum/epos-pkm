@@ -97,7 +97,7 @@ const handleKeydown = (event: KeyboardEvent) => {
         aria-haspopup="listbox"
         @click="isOpen = !isOpen"
         @keydown="handleKeydown"
-        class="flex items-center justify-between gap-4 appearance-none border border-solid border-(--border) min-w-[8em] max-w-[16em] min-h-[2em] px-2 py-[0.2rem] text-(--text-color) transition-colors duration-200"
+        class="flex items-center justify-between gap-4 appearance-none border border-solid border-(--border) min-w-[8em] max-w-[16em] min-h-[2em] px-2 py-[0.2rem] text-(--text-default-color) transition-colors duration-200"
         :class="[
             isOpen ? 'rounded-t-md' : 'rounded-md'
         ]"
@@ -123,7 +123,7 @@ const handleKeydown = (event: KeyboardEvent) => {
       <ul
         v-show="isOpen"
         :id="listboxId"
-        class="absolute z-50 w-full border border-t-0 border-solid border-(--border) rounded-b-md bg-(--bg-bottom) overflow-hidden m-0 list-none"
+        class="absolute z-50 w-full border border-t-0 border-solid border-(--border) rounded-b-md bg-(--bg-bottom-layer) overflow-hidden m-0 list-none"
         :aria-labelledby="buttonId"
         tabindex="-1"
         >
@@ -132,7 +132,7 @@ const handleKeydown = (event: KeyboardEvent) => {
           :key="option.value"
           @click="selectOption(option.value)"
           @mouseenter="highlightedIndex = index"
-          class="px-2 py-[0.2rem] cursor-pointer rounded-md text-(--text-color) transition-colors hover:bg-(--option-hover) truncate"
+          class="px-2 py-[0.2rem] cursor-pointer rounded-md text-(--text-default-color) transition-colors hover:bg-(--option-hover) truncate"
           :class="[
             modelValue === option.value ? 'bg-(--accent) text-(--text-on-accent-color)' : '',
             highlightedIndex === index && modelValue !== option.value ? 'border border-solid border-(--border) bg-(--option-hover)' : ''

@@ -54,11 +54,11 @@ const selectBasicTypeOptions = [
         </span>
         
         <Accordion :label="'Type 1'">
-            <p class="text-(--text-h)" >Sample data</p>
-            <p class="text-(--text-h)" >Sample data</p>
-            <p class="text-(--text-h)" >Sample data</p>
-            <p class="text-(--text-h)" >Sample data</p>
-            <p class="text-(--text-h)" >Sample data</p>
+            <p class="text-(--text-header-color)" >Sample data</p>
+            <p class="text-(--text-header-color)" >Sample data</p>
+            <p class="text-(--text-header-color)" >Sample data</p>
+            <p class="text-(--text-header-color)" >Sample data</p>
+            <p class="text-(--text-header-color)" >Sample data</p>
         </Accordion>
     
     </div>
