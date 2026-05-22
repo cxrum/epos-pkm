@@ -17,6 +17,7 @@ import TypeEditor from '@/core/layouts/TypeEditorLayout.vue';
 import OmniSearchView from '@/core/layouts/OmniSearchView.vue';
 import User from '@/assets/icons/User.vue';
 import Settings from '@/assets/icons/Settings.vue';
+import LoadingBar from '@/shared/components/LoadingBar.vue';
 
 const workSpaceStore = useWorkSpaceStore();
 
@@ -80,7 +81,8 @@ const pageMenuData: MenuGroup[] = [
 ]
 
 const computedPath = computed<string[]>(() => {
-  return workSpaceStore.currentPath.map((value) => value.title)
+  // return workSpaceStore.currentPath.map((value) => value.title)
+  return ['a','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c']
 })
 
 
@@ -131,39 +133,41 @@ const computedPath = computed<string[]>(() => {
         
         <section ref="pageRef" class="flex-1 flex flex-col min-w-0">
           
-          <nav class="flex shrink-0 bg-(--bg-canva) p-1 items-center">
+          <nav class="flex flex-col shrink-0 bg-(--bg-canva) p-1">
+            <div class="flex shrink-0 items-center" >
             <Breadcrumbs :path="computedPath"/>
             
-            <BaseIcon 
-              size="28px" 
-              interactive @click="workSpaceStore.toggleTypeEditor()" 
-              class="text-(--icon-color) shrink-0"
-              :class="isTypeEditorOpen ? 'bg-(--hover)' : ''"
-              >
-              <TypeIcon/>
-            </BaseIcon>
-
-            <BaseIcon 
-                size="28px"
-                interactive @click="toglePopUpMenu"
-                ref="pageMenuButtonRef"
+              <BaseIcon 
+                size="28px" 
+                interactive @click="workSpaceStore.toggleTypeEditor()" 
                 class="text-(--icon-color) shrink-0"
-              >
-              <DotsMenu/>
-            </BaseIcon>
-            
-            <transition name="fade">
-                <PopUpMenu
-                    ref="pageMenuRef"
-                    :groups="pageMenuData"
-                    :style="pageMenuStyles"
-                    v-if="isPopUpMenuOpen"
-                />
-            </transition>
+                :class="isTypeEditorOpen ? 'bg-(--hover)' : ''"
+                >
+                <TypeIcon/>
+              </BaseIcon>
+
+              <BaseIcon 
+                  size="28px"
+                  interactive @click="toglePopUpMenu"
+                  ref="pageMenuButtonRef"
+                  class="text-(--icon-color) shrink-0"
+                >
+                <DotsMenu/>
+              </BaseIcon>
+              
+              <transition name="fade">
+                  <PopUpMenu
+                      ref="pageMenuRef"
+                      :groups="pageMenuData"
+                      :style="pageMenuStyles"
+                      v-if="isPopUpMenuOpen"
+                  />
+              </transition>
+            </div>
+
 
           </nav>
-          
-          
+
           <transition name="fade">
             <OmniSearchView
               ref="omniSearchRef"
@@ -191,9 +195,10 @@ const computedPath = computed<string[]>(() => {
           >
             <TypeEditor/>
         </div>
-
       </div>
-      
+          <div v-if="workSpaceStore.isLoading">
+            <LoadingBar />
+          </div>
     </main>
   </div>
 </template>

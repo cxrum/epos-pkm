@@ -11,12 +11,12 @@ const routes = [
     children: [
       {
           path: '',
-          component: () => import('@/modules/page/layouts/PageView.vue')
+          component: () => import('@/modules/page/layouts/PageLayout.vue')
       },
       {
         path: 'settings',
         components: {
-          default: () => import('@/modules/page/layouts/PageView.vue'),
+          default: () => import('@/modules/page/layouts/PageLayout.vue'),
           modal: () => import('@/modules/settings/layouts/SettingsLayout.vue')
         }
       }

@@ -4,14 +4,12 @@ import Tab from '@/core/components/Tab.vue';
 import Document from '@/assets/icons/Document.vue';
 import TypeIcon from '@/assets/icons/TypeIcon.vue';
 import Table from '@/assets/icons/Table.vue';
-import { usePagesStore } from '@/core/store/pagesStore';
-import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
+import { useGlobalTabStore } from '@/core/store/browserTabsStore';
 
-const workSpaceStore = useWorkSpaceStore();
-const pagesStore = usePagesStore();
+const globalTabStore = useGlobalTabStore();
 
 const activePageId = computed(()=>{
-  return workSpaceStore.activePage
+  return globalTabStore.activeTab?.id
 })
 
 const props = defineProps()
@@ -44,11 +42,11 @@ const computeIcon = (type: string | undefined) => {
 } 
 
 const onClosePageClick = (pageId: number) => {
-  pagesStore.closePage(pageId)
+  globalTabStore.closeTab(pageId)
 }
 
 const onTabClick = (pageId: number) => {
-  workSpaceStore.setActivePage(pageId)
+  globalTabStore.openTab(pageId)
 }
 
 </script>
@@ -60,7 +58,7 @@ const onTabClick = (pageId: number) => {
     class="flex w-full h-full items-center mx-auto overflow-x-auto no-scrollbar"
     >
     <Tab 
-      v-for="page in pagesStore.loadedPages"
+      v-for="page in globalTabStore.openedTabs"
       :id="page.id"
       :icon="computeIcon(page.type)"
       :active="activePageId===page.id"

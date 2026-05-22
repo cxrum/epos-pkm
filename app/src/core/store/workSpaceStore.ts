@@ -1,19 +1,15 @@
+import type { Path } from '@/modules/contracts/pageRepositoryContract'
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Path } from '../types'
 
 export const useWorkSpaceStore = defineStore('workspace', () => {
     const isSidebarOpen = ref<boolean>(true)
     const isTypeEditorOpen = ref<boolean>(false)
     const isOmniSearchOpen = ref<boolean>(false)
+    const isLoading = ref<boolean>(false)
 
-    const activePage = ref<number>(-1)
-    const currentPath = ref<Path[]>([])
+    const currentPath = ref<Path[]>([]) // TODO: fix the dependency direction
     
-    function setActivePage(pageId: number) {
-        activePage.value = pageId
-    }
-
     function toggleSidebar() {
         isSidebarOpen.value = !isSidebarOpen.value
     }
@@ -26,7 +22,11 @@ export const useWorkSpaceStore = defineStore('workspace', () => {
         currentPath.value.push(el)
     }
 
-    function setCurrentPath(els: Path[]){
+    function setCurrentPath(els?: Path[]){
+        if(els == null){
+            currentPath.value = []
+            return
+        }
         currentPath.value = els
     }
         
@@ -38,14 +38,18 @@ export const useWorkSpaceStore = defineStore('workspace', () => {
         isOmniSearchOpen.value = false 
     }
 
+    const setLoadingStatus = (value: boolean) =>{
+        isLoading.value = value
+    }
+
     return {
             isSidebarOpen, 
             currentPath, 
             isTypeEditorOpen, 
-            activePage, 
             isOmniSearchOpen,
+            isLoading,
             
-            setActivePage,
+            setLoadingStatus,
             putCurrentPath, 
             setCurrentPath, 
             toggleSidebar, 

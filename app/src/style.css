@@ -23,6 +23,7 @@
   --bg-header: var(--bg);
   --bg-canva: var(--bg-bottom);
   --bg-omnisearh: var(--bg);
+  --bg-block-default:color-mix(in oklch, var(--hover) 50%, var(--bg-canva));;
 
   --tab-active-bg: rgba(172, 213, 219, 0.35);
 
