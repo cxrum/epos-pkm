@@ -4,20 +4,57 @@ import type { LoadedPage } from '../types'
 
 export const useGlobalTabStore = defineStore('pages-data', () => {
     const openedTabs = ref<Record<number, LoadedPage>>({
-        1:{id: 1, title: "A1", type: 'page'},
-        2:{id: 2, title: "A2", type: 'page'},
-        3:{id: 3, title: "A3", type: 'type'},
-        4:{id: 4, title: "A4", type: 'table'},
+        1:{
+            id: 1, 
+            title: "A1", 
+            type: {
+                id: 'page',
+                name: 'Default Page Type',
+                icon: {
+                  id: 'icon-default-document',
+                  type: 'default',
+                  name: 'document'  
+                }
+            }
+        },
+        2:{
+            id: 2, 
+            title: "A2", 
+            type: {
+                id: 'page',
+                name: 'Default Page Type',
+                icon: {
+                  id: 'icon-default-document',
+                  type: 'default',
+                  name: 'document'  
+                }
+                
+            }
+        },
+        3:{
+            id: 3, 
+            title: "A3", 
+            type: {
+                id: 'page',
+                name: 'Default Page Type',
+                icon: {
+                  id: 'icon-default-document',
+                  type: 'default',
+                  name: 'document'  
+                }
+            }
+        },
     })
 
-    const activeTab = ref<LoadedPage>({id:-1, title: 'default', type: 'page'})
+    const activeTab = ref<LoadedPage>()
 
     const closeTab = (id: number) => {
         delete openedTabs.value[id]
     }
 
-    const openTab = (id: number) => {
+    const openTab = (id: number): boolean => {
         activeTab.value = openedTabs.value[id]
+        return openedTabs.value[id] !== undefined     
     }
 
     const createTab = (tab: LoadedPage) => {

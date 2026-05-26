@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue';
 import ChevronRight from '@/assets/icons/Chevron.vue'
-import BaseIcon from '@/shared/components/BaseIcon.vue';
+import BaseIcon from '@/shared/components/icon/BaseIcon.vue';
 import PopUpMenu from '@/shared/components/popUpMenu/PopUpMenu.vue';
 import type { MenuGroup } from '@/shared/components/popUpMenu/type';
 import DotsMenu from '@/assets/icons/DotsMenu.vue';
@@ -56,7 +56,7 @@ onClickOutside(menuRef, () => {
     <div :class=" isOpen ? 'border-b border-(--border)' : ''" class="mt-2">
         <div class="flex flex-row gap-0.5">
             <base-icon 
-                size="22px" 
+                size="24px" 
                 interactive @click="onShevronClick"
                 class="text-(--icon-color)"
                 >

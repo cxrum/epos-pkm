@@ -59,8 +59,8 @@ const handleClick = (event: Event) => {
         :type="interactive ? 'button' : undefined"
         :href="computedType==='a' ? href: ''"
         :style="computedStyles" 
-        class="icon-wrapper inline-flex items-center justify-center rounded-md transition-colors text-(--text-secondary-color)"
-        :class="{ 'cursor-pointer hover:bg-(--hover)': interactive }"
+        class="icon-wrapper base-icon"
+        :class="{ 'clickable': interactive }"
         @click="handleClick"
     >
         <slot></slot>

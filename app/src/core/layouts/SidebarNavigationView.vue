@@ -8,12 +8,110 @@ import type { MenuGroup } from '@/shared/components/popUpMenu/type';
 import Document from '@/assets/icons/Document.vue';
 import AddDocument from '@/assets/icons/AddDocument.vue';
 import { useWorkSpaceStore } from '../store/workSpaceStore';
-import { computed } from 'vue';
+import { computed, ref, watch } from 'vue';
+import Tree from '@/shared/components/tree/Tree.vue';
+import type { TreeNode } from '@/shared/components/tree/contract';
+import { useTreeController } from '@/shared/components/tree/baseTreeController';
+import { onClickOutside } from '@vueuse/core';
+import { useGlobalTabStore } from '../store/browserTabsStore';
 
+const fileSystem = ref<TreeNode[]>([
+  {
+    id: 1,
+    title: 'src',
+    type: {
+        id: 'page',
+        name: 'A1',
+        icon: {
+            id: 'icon-default-document',
+            type: 'emoji',
+            emoji: '🧁'
+        }
+    },
+    children: [
+      { id: 4, title: '1-3', children: [] },
+      { id: 2, title: '1-1', children: [] },
+      { id: 3, title: '1-2', children: [] },
+      { 
+        id: 5, 
+        title: '1-4', 
+        children: [
+            { id: 6, title: '1-4-1',children: []},
+            { 
+                id: 7, 
+                title: '1-4-2',
+                type: {
+                    id: 'page',
+                    name: 'A1',
+                    icon: {
+                        id: 'icon-default-document',
+                        type: 'default',
+                        name: 'object'
+                    },
+                }, 
+                children: [
+                    {
+                        id: 1123,
+                        title: '1-4-2-1',
+                        type: {
+                            id: 'page',
+                            name: 'A1',
+                            icon: {
+                                id: 'icon-default-document',
+                                type: 'emoji',
+                                emoji: 'IДІ'
+                            }
+                        }, children: []
+                    }
+                ] 
+            },
+            { id: 8, title: '1-4-3', children: [] },
+        ]
+      },
+      { 
+        id: 9, 
+        title: '1-5', 
+        children: [
+            { id: 10, title: '1-5-1', children: [] },
+            { id: 11, title: '1-5-2', children: [] },
+            { id: 12, title: '1-5-3', children: [] },
+            { id: 13, title: '1-5-4', children: [] },
+            { id: 14, title: '1-5-5', children: [] },
+        ]
+      },
+    ]
+  }
+])
+const treeRef = ref()
 
-const store = useWorkSpaceStore();
+const treeController = useTreeController(fileSystem)
+const workSpaceStore = useWorkSpaceStore();
+const tabStore = useGlobalTabStore();
+const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen)
 
-const isSidebarOpen = computed(() => store.isSidebarOpen)
+onClickOutside(treeRef, (event: Event) => {
+    if(treeController.selectedId.value !== tabStore.activeTab?.id){
+        treeController.clearSelection()
+    }
+})
+
+watch(
+    () => tabStore.activeTab, 
+    ()=>{
+        if(tabStore.activeTab?.id){
+            treeController.selectNode(tabStore.activeTab.id)
+        }   
+    }
+)
+
+watch(
+    () => treeController.selectedId.value, 
+    (pageId)=>{
+        if(pageId){
+            const res = tabStore.openTab(pageId)
+        }   
+    }
+)
 
 const complexMenuData: MenuGroup[] = [
   {
@@ -36,7 +134,7 @@ const complexMenuData: MenuGroup[] = [
     <BaseButton 
         class="w-full" 
         :is-content-visible="isSidebarOpen" 
-        @click="store.toggleOmniSearch" 
+        @click="workSpaceStore.toggleOmniSearch" 
         :icon="Search"
         data-search-trigger
         >
@@ -108,9 +206,7 @@ const complexMenuData: MenuGroup[] = [
         </Accordion>
         
         <Accordion label="Tree" :menu-data="complexMenuData">
-            <span>
-            ...
-            </span>
+            <Tree ref="treeRef" :controller="treeController" />
         </Accordion>
         
     </div>

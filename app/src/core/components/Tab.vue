@@ -1,24 +1,20 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, type Component } from 'vue'
 import Cross from '@/assets/icons/Cross.vue'
-import BaseIcon from '@/shared/components/BaseIcon.vue';
+import BaseIcon from '@/shared/components/icon/BaseIcon.vue';
 
-interface TabProps {
-    active?: boolean;
-    icon?: object | Function | null;
-    id?: number;
-}
-
-const props = withDefaults(defineProps<TabProps>(), {
-    active: false,
-    icon: null,
-    id: -1
-})
+const props = defineProps<{
+  id: number
+  active: boolean
+  icon?: Component
+}>()
 
 const emit = defineEmits<{
   (e: 'tab-click', tabId: number): void
   (e: 'close', tabId: number): void
 }>()
+
+console.log(props.icon)
 
 const computedClasses = computed(() => {
   const baseClasses = 'flex w-[10em] h-[2em] shrink-0 px-2 gap-2 items-center rounded-md transition-colors'
@@ -39,11 +35,13 @@ const computedClasses = computed(() => {
     type="button"
     >
     
-    <component 
+    <slot name="icon">
+      <component 
         :is="icon" 
         v-if="icon" 
         class="w-5 h-5 shrink-0 text-(--icon-color)"
-    />
+      />
+    </slot>
     
     <span :class="active ? ' text-(--text-default-color)' : '' " class="truncate flex-1 text-left">
         <slot></slot>

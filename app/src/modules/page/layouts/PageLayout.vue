@@ -2,9 +2,8 @@
 import { ref, watch } from 'vue';
 import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
 import { usePageStore } from '../store/pageStore';
-import BaseEditor from '@/modules/editor/views/BaseEditor.vue';
+import BaseEditor from '../components/editor/views/BaseEditor.vue'
 import { useGlobalTabStore } from '@/core/store/browserTabsStore';
-import LoadingSpinner from '@/shared/components/LoadingSpinner.vue';
 
 const props = defineProps();
 const pageStore = usePageStore();

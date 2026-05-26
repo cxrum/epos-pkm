@@ -4,7 +4,7 @@ import BrowserTabsView from '@/core/layouts/BrowserTabsView.vue'
 import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
 import Breadcrumbs from '@/core/components/Breadcrumbs.vue';
 import { computed, ref } from 'vue';
-import BaseIcon from '@/shared/components/BaseIcon.vue';
+import BaseIcon from '@/shared/components/icon/BaseIcon.vue';
 import DotsMenu from '@/assets/icons/DotsMenu.vue';
 import TypeIcon from '@/assets/icons/TypeIcon.vue';
 import { onClickOutside, transition } from '@vueuse/core';
@@ -224,4 +224,6 @@ const computedPath = computed<string[]>(() => {
 .slide-leave-to {
   transform: translateX(256px);
 }
+
+
 </style>

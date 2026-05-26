@@ -1,7 +1,7 @@
-import { PageRepository } from '@/core/infra/pages/stubPageRepostory'
-import type { PageData } from '@/modules/contracts/pageRepositoryContract'
+import { PageRepository } from '@/modules/page/infra/stubPageRepostory'
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
+import type { PageData } from '../domain/type'
 
 export const usePageStore = defineStore('page', () => {
   const pageData = ref<PageData>()

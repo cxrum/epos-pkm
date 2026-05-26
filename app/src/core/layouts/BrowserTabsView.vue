@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import Tab from '@/core/components/Tab.vue';
-import Document from '@/assets/icons/Document.vue';
-import TypeIcon from '@/assets/icons/TypeIcon.vue';
-import Table from '@/assets/icons/Table.vue';
 import { useGlobalTabStore } from '@/core/store/browserTabsStore';
+import DynamicIcon from '@/shared/components/icon/DynamicIcon.vue';
 
 const globalTabStore = useGlobalTabStore();
 
@@ -25,22 +23,6 @@ const handleHorizontalScroll = (event: WheelEvent) => {
   }
 }
 
-const computeIcon = (type: string | undefined) => {
-  if (type===undefined){
-    return Document
-  }
-
-  if(type === 'document'){
-    return Document
-  }else if(type === 'object'){
-    return TypeIcon
-  }else if(type === 'table'){
-    return Table
-  }else{
-    return Document
-  }
-} 
-
 const onClosePageClick = (pageId: number) => {
   globalTabStore.closeTab(pageId)
 }
@@ -60,11 +42,15 @@ const onTabClick = (pageId: number) => {
     <Tab 
       v-for="page in globalTabStore.openedTabs"
       :id="page.id"
-      :icon="computeIcon(page.type)"
       :active="activePageId===page.id"
       @close="onClosePageClick"
       @tab-click="onTabClick"
-      >{{ page.title }}
+      >
+      <template #icon>
+        <DynamicIcon :icon="page.type?.icon" class="w-5 h-5 shrink-0 text-(--icon-color)" />
+      </template>
+      
+      {{ page.title }}
     </Tab>
 
 </div>

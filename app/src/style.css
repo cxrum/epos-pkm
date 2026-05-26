@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "/src/shared/components/tree/style.css";
 
 :root{
   
@@ -27,17 +28,18 @@
   --bg-settings: var(--bg-mid-layer);
   
   --bg-header: var(--bg-mid-layer);
-  --bg-active-tab: color-mix(in oklch, var(--hover) 100%, var(--bg-header));;
+  --bg-active-tab: color-mix(in oklch, var(--hover) 100%, var(--bg-header));
+  --bg-selected-tree-item: color-mix(in oklch, var(--hover) 50%, var(--bg-sidebar));
 
   --bg-omnisearh: var(--bg-mid-layer);
   
   --bg-canvas: var(--bg-bottom-layer);
-  /* --bg-block-default: color-mix(var(--bg-mid-layer) 35%, var(--bg-canvas) 100%); */
   --bg-block-default: var(--bg-mid-layer);
 
   --border: rgba(237, 239, 239, 0.15);
 
   --hover: rgba(172, 213, 219, 0.2);
+
   --accent-hover:color-mix(in oklch, rgba(91, 100, 102, 0.7) 70%, var(--accent));
   --option-hover: color-mix(in oklch, var(--hover) 100%, var(--bg-bottom-layer));
 
@@ -187,6 +189,17 @@
       0px 3px 8px rgba(51, 51, 51, 0.07),
       0px 4px 10px rgba(51, 51, 51, 0.08);
   }
+
+  .base-icon { 
+    display: inline-flex;
+    justify-items: center;
+    border-radius: 0.5rem;
+    color: var(--icon-color);
+    flex-shrink: 0;
+    width: 22px;
+    height: 22px;
+  }
+
 }
 
 @layer utilities {

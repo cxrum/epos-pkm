@@ -1,12 +1,7 @@
-import type { PageData, PageStorageRepository } from "@/modules/contracts/pageRepositoryContract";
+import type { PageData } from "../domain/type";
+import type { PageDTO } from "./types";
+import type { PageStorageRepositoryContract } from "../domain/pageRepositoryContract";
 
-interface PageDTO {
-  id: number;
-  title: string;
-  content: Record<string, any>;
-  type?: string;
-  updatedAt?: number;
-}
 
 const Mapper = {
   toDomain(dto: PageDTO): PageData {
@@ -34,20 +29,43 @@ const pagesDb: Record<number, PageDTO> = {
         id:1,
         title: 'A1',
         content: {},
-        
-        type: 'page',
+        type: {
+          id: 'page',
+          name: 'Default Page Type',
+          icon: {
+            id: 'icon-default-document',
+            type: 'default',
+            name: 'document'  
+          }
+      },
     },
     2: {
         id:2,
         title: 'A2',
         content: {},
-        type: 'page',
+        type: {
+          id: 'page',
+          name: 'Default Page Type',
+          icon: {
+            id: 'icon-default-document',
+            type: 'default',
+            name: 'document'  
+          }
+      },
     },
     3: {
         id:3,
         title: 'A3',
         content: {},
-        type: 'page',
+        type: {
+          id: 'page',
+          name: 'Default Page Type',
+          icon: {
+            id: 'icon-default-document',
+            type: 'default',
+            name: 'document'  
+          }
+      },
     }
 };
 
@@ -72,7 +90,7 @@ const getPage = async (pageId: number): Promise<PageData | null> => {
     return null;
   }
   
-  await new Promise((resolve) => setTimeout(resolve, 100));
+  await new Promise((resolve) => setTimeout(resolve, 500));
 
   return Mapper.toDomain(pageDTO); 
 };
@@ -83,7 +101,7 @@ const getAllPages = async (): Promise<PageData[]> => {
   return allDTOs.map(dto => Mapper.toDomain(dto));
 };
 
-export const PageRepository : PageStorageRepository = {
+export const PageRepository : PageStorageRepositoryContract = {
   save: savePage,
   get: getPage,
   getAll: getAllPages

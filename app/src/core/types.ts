@@ -1,10 +1,26 @@
+import type { Icon } from "@/shared/components/icon/type";
+
+export interface EpObjectType {
+  id: string;
+  name: string;
+  icon?: Icon;
+}
+
+export interface EpObject {
+  id: number
+  type: EpObjectType
+  content: Record<string, any>
+}
+
 export interface LoadedPage{
     id: number,
-    type?: string,
+    type?: EpObjectType,
     title: string,
 }
 
+
 export type SettingType = 'text' | 'boolean' | 'select' | 'number';
+
 
 export interface SettingOption {
   label: string;

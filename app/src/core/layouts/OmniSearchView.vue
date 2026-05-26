@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import Search from '@/assets/icons/Search.vue';
-import BaseIcon from '@/shared/components/BaseIcon.vue';
+import BaseIcon from '@/shared/components/icon/BaseIcon.vue';
 import Regex from '@/assets/icons/Regex.vue';
 import BaseCheckbox from '@/shared/components/BaseCheckbox.vue';
 import SortAllt from '@/assets/icons/SortAllt.vue';

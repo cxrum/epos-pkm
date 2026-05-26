@@ -1,4 +1,4 @@
-import type { Path } from '@/modules/contracts/pageRepositoryContract'
+import type { Path } from '@/modules/page/domain/pageRepositoryContract'
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { ref } from 'vue'
 

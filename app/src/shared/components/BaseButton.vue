@@ -43,7 +43,7 @@ const computedClasses = computed(() => {
     <component 
       :is="icon" 
       v-if="icon && iconPosition === 'left'" 
-      class="w-5.5 h-5.5 shrink-0 text-(--icon-color)" 
+      class="base-icon" 
     />
     
     <span v-show="isContentVisible" class="truncate whitespace-nowrap">
@@ -53,7 +53,7 @@ const computedClasses = computed(() => {
     <component 
       :is="icon" 
       v-if="icon && iconPosition === 'right'" 
-      class="w-5.5 h-5.5 shrink-0 text-(--icon-color)" 
+      class="base-icon" 
     />
   </button>
 </template>
