@@ -12,10 +12,10 @@ export interface EpObject {
   content: Record<string, any>
 }
 
-export interface LoadedPage{
+export interface PageMetha{
     id: number,
-    type?: EpObjectType,
     title: string,
+    type?: EpObjectType,
 }
 
 

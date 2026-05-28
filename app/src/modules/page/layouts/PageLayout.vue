@@ -1,23 +1,25 @@
 <script setup lang="ts">
 import { ref, watch } from 'vue';
 import { useWorkSpaceStore } from '@/core/store/workSpaceStore';
-import { usePageStore } from '../store/pageStore';
+import { useGlobalPageStore } from '../../../core/store/globalPageStore.ts';
 import BaseEditor from '../components/editor/views/BaseEditor.vue'
-import { useGlobalTabStore } from '@/core/store/browserTabsStore';
+import { useGlobalNavigation } from '@/core/store/navigationStore.ts';
 
 const props = defineProps();
-const pageStore = usePageStore();
+const pageStore = useGlobalPageStore();
 const workSpaceStore = useWorkSpaceStore();
-const globalTabStore = useGlobalTabStore();
+const globalNavigationStore = useGlobalNavigation();
 
 const pageJsonData = ref<Record<string, any>>({});
 
 watch(
-    () => globalTabStore.activeTab,
-    (activeTab) => {
-        if (activeTab != null && activeTab.id !== -1) {
-            pageStore.getFromDatabase(activeTab.id);
+    () => globalNavigationStore.activePage,
+    (activePage) => {
+        if (activePage != null && activePage.id !== -1) {
+            pageStore.getFromDatabase(activePage.id);
             workSpaceStore.setLoadingStatus(true)
+        }else{
+            pageStore.clearActivePage()
         }
     },
     { deep: true }
@@ -27,9 +29,11 @@ watch(
     () => pageStore.pageData,
     (newData) => {
         if (newData) {
-            workSpaceStore.setCurrentPath(newData.path);
+            globalNavigationStore.setCurrentPath(pageStore.paths[newData.id])
             pageJsonData.value=newData.content
             workSpaceStore.setLoadingStatus(false)
+        }else{
+            globalNavigationStore.clearCurrentPath()
         }
     }
 )
@@ -43,12 +47,14 @@ watch(
     },
     { deep: true }
 );
+
+
 </script>
 
 <template>
 <div v-if="pageStore.pageData" class="flex flex-col gap-2 w-full h-full page">
     <h1>{{pageStore.pageData.title}}</h1>
-    <BaseEditor v-if="globalTabStore.activeTab" v-model="pageJsonData"></BaseEditor>
+    <BaseEditor v-if="globalNavigationStore.activePage" v-model="pageJsonData"></BaseEditor>
     <div class="h-80 shrink-0"></div>
 </div>
 <div v-else class="flex flex-col justify-center items-center gap-2 w-full h-full page">

@@ -3,11 +3,12 @@ import { ref } from 'vue'
 
 const props = defineProps({
     path: {
-        type: Array<String>,
+        type: Array<import('../domain/type').Path>,
         default: []
     }
 })
 
+const emit = defineEmits(['chainClick'])
 
 const scrollContainer = ref<HTMLElement | null>(null)
 
@@ -30,13 +31,14 @@ const handleHorizontalScroll = (event: WheelEvent) => {
     >
         <ul class="flex flex-nowrap whitespace-nowrap w-max text-(--text-secondary-color)">
             <li 
-                v-for="(value, i) in path" 
-                :key="i"
-                class="py-1 pl-1 after:content-['>'] after:mx-2 last:after:content-none clickable shrink-0 prevent-select"
+                v-for="value in path" 
+                :key="value.id"
+                @click="emit('chainClick', value)"
+                class="py-1 after:content-['>'] after:mx-2 last:after:content-none clickable shrink-0 prevent-select"
             >
-                <a>
-                    {{ value }}
-                </a>
+            <span class="p-1">
+                {{ value.title }}
+            </span>
             </li>
             
         </ul>

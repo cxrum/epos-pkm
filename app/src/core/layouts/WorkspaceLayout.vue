@@ -18,6 +18,7 @@ import OmniSearchView from '@/core/layouts/OmniSearchView.vue';
 import User from '@/assets/icons/User.vue';
 import Settings from '@/assets/icons/Settings.vue';
 import LoadingBar from '@/shared/components/LoadingBar.vue';
+import { useGlobalNavigation } from '../store/navigationStore';
 
 const workSpaceStore = useWorkSpaceStore();
 
@@ -25,7 +26,8 @@ const isTypeEditorOpen = computed(() => workSpaceStore.isTypeEditorOpen)
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen)
 const isOmniSearchOpen = computed(() => workSpaceStore.isOmniSearchOpen)
 const isPopUpMenuOpen = ref<boolean>(false)
-
+const globalNavigationStore = useGlobalNavigation();
+  
 const handleStateButonClick = () => {
     workSpaceStore.toggleSidebar();
 }
@@ -80,10 +82,13 @@ const pageMenuData: MenuGroup[] = [
   },
 ]
 
-const computedPath = computed<string[]>(() => {
-  // return workSpaceStore.currentPath.map((value) => value.title)
-  return ['a','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c','b','c']
+const computedPath = computed(() => {
+  return globalNavigationStore.currentPath
 })
+
+const handleOnChainClick = (value: import('../domain/type').Path) => {
+  globalNavigationStore.openPage(value.id)
+}
 
 
 </script>
@@ -135,7 +140,7 @@ const computedPath = computed<string[]>(() => {
           
           <nav class="flex flex-col shrink-0 bg-(--bg-canvas) p-1">
             <div class="flex shrink-0 items-center" >
-            <Breadcrumbs :path="computedPath"/>
+            <Breadcrumbs :path="computedPath" @chain-click="handleOnChainClick"/>
             
               <BaseIcon 
                 size="28px" 

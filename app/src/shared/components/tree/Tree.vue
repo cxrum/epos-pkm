@@ -13,9 +13,8 @@ const props = defineProps<{
   
   <ul class="tree-root">
     <BaseTreeItem 
-      v-for="node in controller.nodes.value" 
-      :key="node.id"
-      :node="node"
+      :key="controller.rootNode.value.id"
+      :node="controller.rootNode.value"
       :controller="controller" 
       :layer="0"
     />

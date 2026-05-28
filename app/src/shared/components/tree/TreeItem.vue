@@ -102,32 +102,51 @@ const onDrop = (event: DragEvent, targetId: string | undefined) => {
 </script>
 
 <template>
-  <li>
-    <div 
-      draggable="true"
-      @dragstart="onDragStart($event, node.id.toString())"
-      @dragover="onDragOver($event)"
-      @dragleave="onDragLeave"
-      @drop="onDrop($event, node.id.toString())"
-      @click="controller.selectNode(node.id)"
-      @dblclick="controller.toggleExpand(node.id)"
-      class="tree-row"
-      :class="[
-        `drop-${dropState}`,
-        { 'is-selected': controller.isSelected(node.id) }
-      ]"
-    >
-      <BaseIcon 
-          :class="controller.isExpanded(node.id) ? 'rotate-90': ''"
-          interactive @click="controller.toggleExpand(node.id)"
-          v-if="node.children?.length"
-          >
-          <ChevronRight/>   
-      </BaseIcon>
-      <DynamicIcon :icon="node.type?.icon" class="base-icon" />
-      {{ node.title }}
-    </div>
+  <template v-if="node.id === -1">
+    <TreeItem
+      v-for="child in node.children" 
+      :key="child.id"
+      :node="child"
+      :controller="controller"
+      :layer="props.layer"
+      :ancestors="props.ancestors"
+      @moveNode="emit('moveNode', $event)"
+    />
+  </template>
 
+  <li v-else>
+    <span 
+      class="tree-row"
+      :class="
+          { 'is-selected': controller.isSelected(node.id) }
+      "
+      >
+      <BaseIcon 
+        :class="controller.isExpanded(node.id) ? 'rotate-90': ''"
+        interactive @click="controller.toggleExpand(node.id)"
+        v-if="node.children?.length"
+        >
+        <ChevronRight/>   
+      </BaseIcon>
+      <div 
+        draggable="true"
+        @dragstart="onDragStart($event, node.id.toString())"
+        @dragover="onDragOver($event)"
+        @dragleave="onDragLeave"
+        @drop="onDrop($event, node.id.toString())"
+        @click="controller.selectNode(node.id)"
+        @dblclick="controller.toggleExpand(node.id)"
+        :class="[
+          `drop-${dropState} w-full`,
+        ]"
+      >
+        
+        <DynamicIcon :icon="node.type?.icon" class="base-icon" />
+        {{ node.title }}
+      </div>
+
+    </span>
+    
     <ul
       class="childs"
       v-if="controller.isExpanded(node.id) && node.children"

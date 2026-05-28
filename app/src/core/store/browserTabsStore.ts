@@ -1,70 +1,47 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { LoadedPage } from '../types'
+import type { PageMetha } from '../types'
 
 export const useGlobalTabStore = defineStore('pages-data', () => {
-    const openedTabs = ref<Record<number, LoadedPage>>({
-        1:{
-            id: 1, 
-            title: "A1", 
-            type: {
-                id: 'page',
-                name: 'Default Page Type',
-                icon: {
-                  id: 'icon-default-document',
-                  type: 'default',
-                  name: 'document'  
-                }
-            }
-        },
-        2:{
-            id: 2, 
-            title: "A2", 
-            type: {
-                id: 'page',
-                name: 'Default Page Type',
-                icon: {
-                  id: 'icon-default-document',
-                  type: 'default',
-                  name: 'document'  
-                }
-                
-            }
-        },
-        3:{
-            id: 3, 
-            title: "A3", 
-            type: {
-                id: 'page',
-                name: 'Default Page Type',
-                icon: {
-                  id: 'icon-default-document',
-                  type: 'default',
-                  name: 'document'  
-                }
-            }
-        },
-    })
+    const openedTabs = ref<PageMetha[]>([])
 
-    const activeTab = ref<LoadedPage>()
+    const activeTab = ref<PageMetha>()
+
+    const clearSelection = () => {
+        activeTab.value = undefined 
+    }
 
     const closeTab = (id: number) => {
-        delete openedTabs.value[id]
+        const index = openedTabs.value.findIndex(tab => tab.id === id)
+        if (index !== -1) {
+            openedTabs.value.splice(index, 1)
+        }
+
+        if (id === activeTab.value?.id){
+            clearSelection()
+        }
     }
 
     const openTab = (id: number): boolean => {
-        activeTab.value = openedTabs.value[id]
-        return openedTabs.value[id] !== undefined     
+        const foundTab = openedTabs.value.find(tab => tab.id === id)
+        if (foundTab) {
+            activeTab.value = foundTab
+            return true
+        }
+        return false
     }
 
-    const createTab = (tab: LoadedPage) => {
-        openedTabs.value[tab.id] = tab 
+    const createTab = (tab: PageMetha) => {
+        const exists = openedTabs.value.some(existingTab => existingTab.id === tab.id)
+        if (!exists) {
+            openedTabs.value.push(tab)
+        }
     }
 
     return { 
         openedTabs, 
         activeTab,
-
+        clearSelection,
         createTab,
         openTab, 
         closeTab, 

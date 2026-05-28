@@ -10,84 +10,22 @@ import AddDocument from '@/assets/icons/AddDocument.vue';
 import { useWorkSpaceStore } from '../store/workSpaceStore';
 import { computed, ref, watch } from 'vue';
 import Tree from '@/shared/components/tree/Tree.vue';
-import type { TreeNode } from '@/shared/components/tree/contract';
 import { useTreeController } from '@/shared/components/tree/baseTreeController';
 import { onClickOutside } from '@vueuse/core';
 import { useGlobalTabStore } from '../store/browserTabsStore';
+import { useGlobalPageStore } from '../store/globalPageStore';
+import LoadingSpinner from '@/shared/components/LoadingSpinner.vue';
+import { useGlobalNavigation } from '../store/navigationStore';
 
-const fileSystem = ref<TreeNode[]>([
-  {
-    id: 1,
-    title: 'src',
-    type: {
-        id: 'page',
-        name: 'A1',
-        icon: {
-            id: 'icon-default-document',
-            type: 'emoji',
-            emoji: '🧁'
-        }
-    },
-    children: [
-      { id: 4, title: '1-3', children: [] },
-      { id: 2, title: '1-1', children: [] },
-      { id: 3, title: '1-2', children: [] },
-      { 
-        id: 5, 
-        title: '1-4', 
-        children: [
-            { id: 6, title: '1-4-1',children: []},
-            { 
-                id: 7, 
-                title: '1-4-2',
-                type: {
-                    id: 'page',
-                    name: 'A1',
-                    icon: {
-                        id: 'icon-default-document',
-                        type: 'default',
-                        name: 'object'
-                    },
-                }, 
-                children: [
-                    {
-                        id: 1123,
-                        title: '1-4-2-1',
-                        type: {
-                            id: 'page',
-                            name: 'A1',
-                            icon: {
-                                id: 'icon-default-document',
-                                type: 'emoji',
-                                emoji: 'IДІ'
-                            }
-                        }, children: []
-                    }
-                ] 
-            },
-            { id: 8, title: '1-4-3', children: [] },
-        ]
-      },
-      { 
-        id: 9, 
-        title: '1-5', 
-        children: [
-            { id: 10, title: '1-5-1', children: [] },
-            { id: 11, title: '1-5-2', children: [] },
-            { id: 12, title: '1-5-3', children: [] },
-            { id: 13, title: '1-5-4', children: [] },
-            { id: 14, title: '1-5-5', children: [] },
-        ]
-      },
-    ]
-  }
-])
+const globalPageStore = useGlobalPageStore()
 const treeRef = ref()
-
-const treeController = useTreeController(fileSystem)
+const treeController = useTreeController(globalPageStore.treeStructure)
+const globalNavigationStore = useGlobalNavigation();
 const workSpaceStore = useWorkSpaceStore();
 const tabStore = useGlobalTabStore();
-const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen)
+const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
+
+globalPageStore.refreshTreeStructure()
 
 onClickOutside(treeRef, (event: Event) => {
     if(treeController.selectedId.value !== tabStore.activeTab?.id){
@@ -96,20 +34,50 @@ onClickOutside(treeRef, (event: Event) => {
 })
 
 watch(
-    () => tabStore.activeTab, 
-    ()=>{
-        if(tabStore.activeTab?.id){
-            treeController.selectNode(tabStore.activeTab.id)
-        }   
+    () => globalPageStore.treeStructure, 
+    (root)=>{
+        if(root){
+            treeController.setRootNode(root)
+        }
     }
 )
 
 watch(
-    () => treeController.selectedId.value, 
-    (pageId)=>{
+    () => treeController.selectedId.value,
+    (pageId) => {
         if(pageId){
-            const res = tabStore.openTab(pageId)
-        }   
+            globalNavigationStore.openPage(pageId)
+        }
+    }
+)
+
+watch(
+    () => tabStore.activeTab,
+    (tab) => {
+        console.log(tab)
+        if(tab){
+            globalNavigationStore.openPage(tab.id)
+        }else{
+            globalNavigationStore.clearPageSelection()
+        }
+    }
+)
+
+watch(
+    () => globalNavigationStore.activePage, 
+    (pageMetha)=>{
+        console.log(pageMetha)
+        if(pageMetha){
+            treeController.selectNode(pageMetha.id);
+            const res = tabStore.openTab(pageMetha.id);
+            if(!res){
+                tabStore.createTab(pageMetha)
+                tabStore.openTab(pageMetha.id)
+            }
+        }else{
+            treeController.clearSelection()
+            tabStore.clearSelection()
+        }
     }
 )
 
@@ -206,7 +174,8 @@ const complexMenuData: MenuGroup[] = [
         </Accordion>
         
         <Accordion label="Tree" :menu-data="complexMenuData">
-            <Tree ref="treeRef" :controller="treeController" />
+            <Tree v-if="!globalPageStore.isTreeStructureLoading" ref="treeRef" :controller="treeController" />
+            <LoadingSpinner v-else class="w-full h-5.5 algin-self-center"/>
         </Accordion>
         
     </div>

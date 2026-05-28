@@ -9,12 +9,13 @@ export interface TreeNode{
 }
 
 export interface TreeControllerContract {
-  nodes: Ref<TreeNode[]>
+  rootNode: Ref<TreeNode>
   selectedId: Ref<number | null>
   
   isSelected(id: number): boolean
   isExpanded(id: number): boolean
   selectNode(id: number): void
+  setRootNode(root: TreeNode): void
   clearSelection(): void
   toggleExpand(id: number): void
 

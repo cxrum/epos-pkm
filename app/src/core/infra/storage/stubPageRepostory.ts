@@ -1,7 +1,6 @@
-import type { PageData } from "../domain/type";
+import type { PageData } from "@/core/domain/type";
 import type { PageDTO } from "./types";
-import type { PageStorageRepositoryContract } from "../domain/pageRepositoryContract";
-
+import type { PageStorageRepositoryContract } from "@/core/domain/pageRepositoryContract";
 
 const Mapper = {
   toDomain(dto: PageDTO): PageData {
@@ -97,7 +96,6 @@ const getPage = async (pageId: number): Promise<PageData | null> => {
 
 const getAllPages = async (): Promise<PageData[]> => {
   const allDTOs = Object.values(pagesDb);
-  
   return allDTOs.map(dto => Mapper.toDomain(dto));
 };
 

@@ -1,6 +1,7 @@
 import type { EpObjectType } from "@/core/types";
 
 export interface Path{
+    id: number,
     title: string,
 }
 

@@ -54,7 +54,7 @@ onClickOutside(menuRef, () => {
 
 <template>
     <div :class=" isOpen ? 'border-b border-(--border)' : ''" class="mt-2">
-        <div class="flex flex-row gap-0.5">
+        <div class="flex flex-row gap-0.5 items-center">
             <base-icon 
                 size="24px" 
                 interactive @click="onShevronClick"
@@ -69,7 +69,7 @@ onClickOutside(menuRef, () => {
                 {{ label }}
             </span>
             <base-icon 
-                size="22px"
+                size="24px"
                 ref="menuButtonRef"
                 interactive @click="toglePopUpMenu"
                 class="text-(--icon-color)"

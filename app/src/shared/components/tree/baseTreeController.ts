@@ -1,8 +1,8 @@
 import { ref, isRef, type Ref } from 'vue'
 import type { TreeControllerContract, TreeNode } from './contract'
 
-export function useTreeController(initialNodes: Ref<TreeNode[]> | TreeNode[]): TreeControllerContract {
-  const stateNodes = isRef(initialNodes) ? initialNodes : ref(initialNodes)
+export function useTreeController(initialNodes: Ref<TreeNode> | TreeNode): TreeControllerContract {
+  const rootNode = isRef(initialNodes) ? initialNodes : ref(initialNodes)
   const indexedNodes = ref<Record<number, number[]>>({})
 
   const selectedId = ref<number | null>(null)
@@ -28,6 +28,10 @@ export function useTreeController(initialNodes: Ref<TreeNode[]> | TreeNode[]): T
     }
   }
 
+  const setRootNode = (root: TreeNode) => {
+    rootNode.value = root
+  }
+
   const deep_travelsal = (root: TreeNode, discovered: number[], paths: Record<number, number[]>): Record<number, number[]>  => {
     if (!paths[root.id]) {
       paths[root.id] = [];
@@ -51,13 +55,7 @@ export function useTreeController(initialNodes: Ref<TreeNode[]> | TreeNode[]): T
   }
 
   const index = () => {
-    const d = {
-        id: -1,
-        title: 'root',
-        children: stateNodes.value
-    }
-
-    indexedNodes.value = deep_travelsal(d, [], {})
+    indexedNodes.value = deep_travelsal(rootNode.value, [], {})
   }
 
   index()
@@ -85,7 +83,7 @@ export function useTreeController(initialNodes: Ref<TreeNode[]> | TreeNode[]): T
   }
 
   const getNodeContext = (id: number, path: number[]) => {
-    let parentArray: TreeNode[] = stateNodes.value
+    let parentArray: TreeNode[] = rootNode.value.children
     let node: TreeNode | undefined = undefined;
 
     for (let i = 0; i < path.length; i++) {
@@ -155,11 +153,11 @@ export function useTreeController(initialNodes: Ref<TreeNode[]> | TreeNode[]): T
     selectedId.value = -1
   }
 
-  
   return {
-    nodes: stateNodes,
+    rootNode,
     selectedId,
 
+    setRootNode,
     isSelected,
     isExpanded,
     selectNode,
