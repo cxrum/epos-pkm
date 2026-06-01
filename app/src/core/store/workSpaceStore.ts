@@ -1,6 +1,5 @@
 import { acceptHMRUpdate, defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { Path } from '../domain/type'
 
 export const useWorkSpaceStore = defineStore('workspace', () => {
     const isSidebarOpen = ref<boolean>(true)

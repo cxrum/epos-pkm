@@ -17,4 +17,3 @@ export interface EmojiIcon extends BaseIcon {
   emoji: string;
 }
 
-export type Icon = DefaultIcon | LinkIcon | EmojiIcon;

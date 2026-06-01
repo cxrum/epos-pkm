@@ -1,4 +1,6 @@
-import type { Icon } from "@/shared/components/icon/type";
+import type { DefaultIcon, EmojiIcon, LinkIcon } from "@/shared/components/icon/type";
+
+export type Icon = DefaultIcon | LinkIcon | EmojiIcon;
 
 export interface EpObjectType {
   id: string;

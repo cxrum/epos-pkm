@@ -1,15 +1,21 @@
-import type { Icon } from "@/shared/components/icon/type";
-
-export interface EpObjectTypeDTO {
-    id: string;
-    name: string;
-    icon?: Icon;
+import type { Icon } from "@/core/types";
+export interface EpTypeDTO {
+  id: number
+  icon?: Icon
 }
 
-export interface PageDTO {
-  id: number;
-  title: string;
-  content: Record<string, any>;
-  type: EpObjectTypeDTO;
-  updatedAt?: number;
+export interface EpObjectDTO {
+  id: number
+  type: EpTypeDTO
+}
+
+export interface PathDTO{
+  id: number,
+  title: string,
+}
+
+export interface PageDataDTO{
+  object: EpObjectDTO,
+  title: string,
+  content: Record<string, any>
 }

@@ -1,4 +1,4 @@
-import type { PageData } from "./type";
+import type { PageData } from "../type";
 
 export interface PageStorageRepositoryContract {
     save(data: PageData): Promise<PageData>;

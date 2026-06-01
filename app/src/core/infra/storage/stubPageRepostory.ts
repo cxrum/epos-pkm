@@ -1,6 +1,6 @@
 import type { PageData } from "@/core/domain/type";
 import type { PageDTO } from "./types";
-import type { PageStorageRepositoryContract } from "@/core/domain/pageRepositoryContract";
+import type { PageStorageRepositoryContract } from "@/core/domain/repositories/pageRepositoryContract";
 
 const Mapper = {
   toDomain(dto: PageDTO): PageData {

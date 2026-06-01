@@ -21,6 +21,7 @@ import StarterKit from '@tiptap/starter-kit'
 import { useEditor, EditorContent } from '@tiptap/vue-3'
 import { Placeholder } from '@tiptap/extensions'
 import { BlockStyle } from '../extension/blockStyle'
+import { PageBlock } from '../nodes/blocks/pageBlock'
 
 const NESTED_CONFIG_LTR = { edgeDetection: { threshold: -16, edges: ['left' as const] } }
 const NESTED_CONFIG_RTL = { edgeDetection: { threshold: -16, edges: ['right'as const] } }
@@ -55,6 +56,7 @@ const editor = useEditor({
     NodeRange.configure({
       key: null,
     }),
+    PageBlock,
     BlockStyle
   ],
   onUpdate: ({ editor: currentEditor }) => {
@@ -98,6 +100,10 @@ watch(() => model.value, (newValue) => {
     editor.value.commands.setTextSelection({ from, to })
   }
 }, { deep: true })
+
+const addPageLink = (pageData: import('@/core/domain/type').PageData) => {
+  editor.value?.chain().focus().insertPageBlock(pageData).run()
+}
 </script>
 
 <style lang="scss">
