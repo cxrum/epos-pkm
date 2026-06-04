@@ -1,6 +1,6 @@
 import type { TreeNode } from "@/shared/components/tree/contract";
 import type { TreeStructureRepositoryContract } from "../domain/repositories/treeStructureRepositoryContract";
-import { PageRepository } from "./storage/stubPageRepostory";
+import { PageRepository } from "./storage/stubPageRepository";
 
 const get = async (): Promise<TreeNode> => {
     const pages = await PageRepository.getAll()

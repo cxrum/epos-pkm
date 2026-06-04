@@ -1,26 +1,31 @@
-import type { Icon } from "../types";
+import type { Icon, EpObjectId, EpTypeId, ObjectPath, SystemTypeId } from "../types";
 
-export type TypeId = number
-export type ObjectId = number
-
-export interface EpType {
-    id: TypeId
-    icon?: Icon
+interface TypeHierarchyNode {
+    
+    children: TypeHierarchyNode[]
 }
 
-export interface EpObject {
-    id: ObjectId
-    type: EpType
+interface BaseTypeEntity {
+    icon?: Icon;
+    title: string;
 }
 
-export interface Path{
-    id: number,
-    title: string,
+export interface SystemTypeEntity extends BaseTypeEntity {
+    id: SystemTypeId; 
+    kind: 'system';
 }
 
-export interface PageData{
-    object: EpObject,
-    path: Array<Path>,
-    title: string,
+export interface UserTypeEntity extends BaseTypeEntity {
+    id: EpTypeId; 
+    kind: 'user';
+}
+
+export type EpTypeEntity = SystemTypeEntity | UserTypeEntity;
+
+
+export interface EpObjectEntity {
+    id: EpObjectId
+    type: EpTypeEntity
+    path: ObjectPath
     content: Record<string, any>
 }

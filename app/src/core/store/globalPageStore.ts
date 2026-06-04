@@ -1,19 +1,17 @@
 import { defineStore } from 'pinia'
 import { ref } from 'vue'
-import type { PageData, Path } from '../domain/type'
-import { PageRepository } from '../infra/storage/stubPageRepostory'
+import type { PageEntity, Path } from '../domain/type'
 import type { TreeNode } from '@/shared/components/tree/contract'
-import { TreeStructureRepository } from '../infra/treeStructureRepository'
 
 export const useGlobalPageStore = defineStore('page', () => {
-  const pageData = ref<PageData>()
+  const pageData = ref<PageEntity>()
   const treeStructure = ref<TreeNode>({id: -1, title: 'root', children: []})
   const paths = ref<Record<number, Path[]>>({})
   const isPageSaving = ref(false)
   const isPageLoading = ref(false)
   const isTreeStructureLoading = ref(false)
   
-  const deep_travelsal = (root: TreeNode, discovered: number[], paths: Record<number, Path[]>): Record<number, Path[]>  => {
+  const deep_traversal = (root: TreeNode, discovered: number[], paths: Record<number, Path[]>): Record<number, Path[]>  => {
     if (!paths[root.id]) {
       paths[root.id] = [];
     }
@@ -29,14 +27,14 @@ export const useGlobalPageStore = defineStore('page', () => {
           paths[root.id] = []
         }
         
-        deep_travelsal(el, discovered, paths)
+        deep_traversal(el, discovered, paths)
       }
     }
     return paths
   }
 
   const index = () => {
-    paths.value = deep_travelsal(treeStructure.value, [], {})
+    paths.value = deep_traversal(treeStructure.value, [], {})
   }
 
   index()

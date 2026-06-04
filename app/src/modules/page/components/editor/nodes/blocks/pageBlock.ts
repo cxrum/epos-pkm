@@ -1,12 +1,12 @@
 import { Node, mergeAttributes } from '@tiptap/core'
 import { VueNodeViewRenderer } from '@tiptap/vue-3'
-import type { PageData } from '@/core/domain/type'
+import type { PageEntity } from '@/core/domain/type'
 import PageBlockComponent from './PageBlockComponent.vue'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     pageBlock: {
-      insertPageBlock: (page: PageData) => ReturnType
+      insertPageBlock: (page: PageEntity) => ReturnType
     }
   }
 }
@@ -38,7 +38,7 @@ export const PageBlock = Node.create({
 
   addCommands() {
     return {
-      insertPageBlock: (page: PageData) => ({ commands }) => {
+      insertPageBlock: (page: PageEntity) => ({ commands }) => {
         return commands.insertContent({
           type: this.name,
           attrs: {

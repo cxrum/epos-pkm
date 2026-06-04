@@ -37,7 +37,8 @@ async function createWindow() {
     const mainWindow = new BrowserWindow(BrowserWindowOptions);
 
     if (!isDev) AppUpdater();
-    await mainWindow.loadURL(isDev ? "http://localhost:3000" : `file://${path.join(__dirname, "./index.html")}`);
+    // await mainWindow.loadURL(isDev ? "http://localhost:3000" : `file://${path.join(__dirname, "./index.html")}`);
+    await mainWindow.loadURL("http://localhost:3000");
 
     if (appBounds !== undefined && appBounds !== null && appBounds.width > width && appBounds.height > height) mainWindow.maximize();
     else mainWindow.show();

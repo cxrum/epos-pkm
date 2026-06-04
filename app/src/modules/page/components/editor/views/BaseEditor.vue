@@ -101,7 +101,7 @@ watch(() => model.value, (newValue) => {
   }
 }, { deep: true })
 
-const addPageLink = (pageData: import('@/core/domain/type').PageData) => {
+const addPageLink = (pageData: import('@/core/domain/type').PageEntity) => {
   editor.value?.chain().focus().insertPageBlock(pageData).run()
 }
 </script>

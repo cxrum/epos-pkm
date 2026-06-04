@@ -1,7 +1,7 @@
 import { defineStore } from "pinia";
 import type { PageMetha } from "../types";
 import { ref } from "vue";
-import { PageRepository } from "../infra/storage/stubPageRepostory";
+import { PageRepository } from "../infra/storage/stubPageRepository";
 import type { Path } from "../domain/type";
 
 export const useGlobalNavigation = defineStore('navigation', () => {

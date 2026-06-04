@@ -2,26 +2,19 @@ import type { DefaultIcon, EmojiIcon, LinkIcon } from "@/shared/components/icon/
 
 export type Icon = DefaultIcon | LinkIcon | EmojiIcon;
 
-export interface EpObjectType {
-  id: string;
-  name: string;
-  icon?: Icon;
-}
-
-export interface EpObject {
-  id: number
-  type: EpObjectType
-  content: Record<string, any>
-}
-
-export interface PageMetha{
-    id: number,
-    title: string,
-    type?: EpObjectType,
-}
-
+export type SystemTypeId = 'sys:root' | 'sys:folder' | 'sys:page' | 'sys:document';
+export type EpTypeId = SystemTypeId | (string & {});
+export type UserTypeId = string & { readonly __isUser: unique symbol };
+export type EpObjectId = number
 
 export type SettingType = 'text' | 'boolean' | 'select' | 'number';
+
+export interface Path{
+    id: EpObjectId,
+    title: string,
+}
+
+export type ObjectPath = Path[]
 
 
 export interface SettingOption {
