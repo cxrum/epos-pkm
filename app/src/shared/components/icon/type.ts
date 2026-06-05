@@ -1,6 +1,4 @@
-export interface BaseIcon {
-  id: string;
-}
+export interface BaseIcon {}
 
 export interface DefaultIcon extends BaseIcon {
   type: "default";
@@ -16,4 +14,3 @@ export interface EmojiIcon extends BaseIcon {
   type: "emoji";
   emoji: string;
 }
-

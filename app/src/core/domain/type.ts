@@ -1,31 +1,67 @@
-import type { Icon, EpObjectId, EpTypeId, ObjectPath, SystemTypeId } from "../types";
+import type {
+  Icon,
+  EpObjectId,
+  EpTypeId,
+  ObjectPath,
+  SystemTypeId,
+  DefaultTypeId,
+} from "../types";
 
-interface TypeHierarchyNode {
-    
-    children: TypeHierarchyNode[]
+export interface TypeHierarchyNode {
+  id: EpTypeId;
+  type: EpTypeEntity;
+  children: TypeHierarchyNode[];
 }
 
 interface BaseTypeEntity {
-    icon?: Icon;
-    title: string;
+  icon?: Icon;
+  title: string;
+}
+
+export interface DefaultTypeEntity extends BaseTypeEntity {
+  id: DefaultTypeId;
+  kind: "default";
 }
 
 export interface SystemTypeEntity extends BaseTypeEntity {
-    id: SystemTypeId; 
-    kind: 'system';
+  id: SystemTypeId;
+  kind: "system";
 }
 
 export interface UserTypeEntity extends BaseTypeEntity {
-    id: EpTypeId; 
-    kind: 'user';
+  id: EpTypeId;
+  kind: "user";
 }
 
-export type EpTypeEntity = SystemTypeEntity | UserTypeEntity;
+export type EpTypeEntity =
+  | SystemTypeEntity
+  | DefaultTypeEntity
+  | UserTypeEntity;
 
+export const createCompanionEpTypeEntity = () => {
+  const isInheritable = (
+    parent: EpTypeEntity,
+    children: EpTypeEntity,
+  ): boolean => {
+    if (
+      children.kind === "system" ||
+      children.kind === "default" ||
+      parent.id === children.id
+    ) {
+      return false;
+    }
+
+    return true;
+  };
+
+  return {
+    isInheritable,
+  };
+};
 
 export interface EpObjectEntity {
-    id: EpObjectId
-    type: EpTypeEntity
-    path: ObjectPath
-    content: Record<string, any>
+  id: EpObjectId;
+  typeId: EpTypeId;
+  path: ObjectPath;
+  content: Record<string, any>;
 }

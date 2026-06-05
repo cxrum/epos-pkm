@@ -1,45 +1,45 @@
-import type { ObjectStorageRepositoryContract } from "../domain/repositories/objectRepositoryContract"
-import type { TreeStructureRepositoryContract } from "../domain/repositories/treeStructureRepositoryContract"
-import type { TypingRepositoryContract } from "../domain/repositories/typesRepositoryContract"
-import type { ObjetServiceContract } from "../store/services/objectsContract"
-import type { EpObjectId } from "../types"
-import type { EpObject } from "./types"
+import type { ObjectStorageRepositoryContract } from "../domain/repositories/objectRepositoryContract";
+import type { TypingRepositoryContract } from "../domain/repositories/typesRepositoryContract";
+import type { ObjetServiceContract } from "../store/services/objectsContract";
+import type { EpObjectId, ObjectFilterOptions, ObjectPath } from "../types";
+import type { EpObject, EpType, ObjectHierarchyNode } from "./types";
 
+export class ObjectsService implements ObjetServiceContract {
+  private readonly typingRepository: TypingRepositoryContract;
+  private readonly objectsStorageRepository: ObjectStorageRepositoryContract;
 
-export const createObjectsService = (
-   objectRepo: ObjectStorageRepositoryContract,
-   treeRepo: TreeStructureRepositoryContract,
-   typingRepo: TypingRepositoryContract
-): ObjetServiceContract   => {
-
-
-const get = (id: EpObjectId): EpObject => {
-
+  constructor(
+    typingRepository: TypingRepositoryContract,
+    objectsStorageRepository: ObjectStorageRepositoryContract,
+  ) {
+    this.typingRepository = typingRepository;
+    this.objectsStorageRepository = objectsStorageRepository;
+  }
+  move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean> {
+    throw new Error("Method not implemented.");
+  }
+  get(id: EpObjectId): Promise<EpObject> {
+    throw new Error("Method not implemented.");
+  }
+  getAll(filterOptions: ObjectFilterOptions | undefined): Promise<EpObject[]> {
+    throw new Error("Method not implemented.");
+  }
+  create(object: EpObject): Promise<EpObject> {
+    throw new Error("Method not implemented.");
+  }
+  update(id: EpObjectId, newData: EpObject): Promise<EpObject> {
+    throw new Error("Method not implemented.");
+  }
+  delete(id: EpObjectId): Promise<boolean> {
+    throw new Error("Method not implemented.");
+  }
+  getTree(): Promise<ObjectHierarchyNode> {
+    throw new Error("Method not implemented.");
+  }
+  getObjectPath(id: EpObjectId): Promise<ObjectPath> {
+    throw new Error("Method not implemented.");
+  }
+  getPaths(): Promise<Record<EpObjectId, ObjectPath>> {
+    throw new Error("Method not implemented.");
+  }
 }
-
-const getAll = (): EpObject[] => {
-
-}
-
-const getTree = (): TreeNode => {
-
-}
-
-const getPaths = (): Record<PageId, ObjectPath> => {
-
-}
-
-const getObjectPath = (id: PageId): ObjectPath => {
-        
-}
-
-
-return {
-        get,
-        getAll,
-        getTree,
-        getPaths,
-        getObjectPath
-   }
-}
-        
