@@ -1,50 +1,54 @@
 <template>
   <div class="editor-wrapper">
-    <drag-handle 
-      v-if="editor" 
-      :editor="editor" 
-      :nested="nestedOptions" 
+    <drag-handle
+      v-if="editor"
+      :editor="editor"
+      :nested="nestedOptions"
       :compute-position-config="computePositionConfig"
     >
       <div class="custom-drag-handle"></div>
     </drag-handle>
-    
+
     <editor-content :editor="editor" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted } from 'vue'
-import { DragHandle } from '@tiptap/extension-drag-handle-vue-3'
-import NodeRange from '@tiptap/extension-node-range'
-import StarterKit from '@tiptap/starter-kit'
-import { useEditor, EditorContent } from '@tiptap/vue-3'
-import { Placeholder } from '@tiptap/extensions'
-import { BlockStyle } from '../extension/blockStyle'
-import { PageBlock } from '../nodes/blocks/pageBlock'
+import { ref, computed, watch, onMounted } from "vue";
+import { DragHandle } from "@tiptap/extension-drag-handle-vue-3";
+import NodeRange from "@tiptap/extension-node-range";
+import StarterKit from "@tiptap/starter-kit";
+import { useEditor, EditorContent } from "@tiptap/vue-3";
+import { Placeholder } from "@tiptap/extensions";
+import { BlockStyle } from "../extension/blockStyle";
+import { PageBlock } from "../nodes/blocks/pageBlock";
 
-const NESTED_CONFIG_LTR = { edgeDetection: { threshold: -16, edges: ['left' as const] } }
-const NESTED_CONFIG_RTL = { edgeDetection: { threshold: -16, edges: ['right'as const] } }
+const NESTED_CONFIG_LTR = {
+  edgeDetection: { threshold: -16, edges: ["left" as const] },
+};
+const NESTED_CONFIG_RTL = {
+  edgeDetection: { threshold: -16, edges: ["right" as const] },
+};
 
-const model = defineModel<Record<string, any>>({})
+const model = defineModel<Record<string, any>>({});
 
-const editable = ref(true)
-const nested = ref(true)
-const rtl = ref(false)
+const editable = ref(true);
+const nested = ref(true);
+const rtl = ref(false);
 
 const computePositionConfig = computed(() => {
   return {
-    placement: rtl.value ? 'right' as const : 'left' as const,
-  }
-})
+    placement: rtl.value ? ("right" as const) : ("left" as const),
+  };
+});
 
 const nestedOptions = computed(() => {
   if (!nested.value) {
-    return false
+    return false;
   }
 
-  return rtl.value ? NESTED_CONFIG_RTL : NESTED_CONFIG_LTR
-})
+  return rtl.value ? NESTED_CONFIG_RTL : NESTED_CONFIG_LTR;
+});
 
 const editor = useEditor({
   editable: editable.value,
@@ -57,57 +61,63 @@ const editor = useEditor({
       key: null,
     }),
     PageBlock,
-    BlockStyle
+    BlockStyle,
   ],
   onUpdate: ({ editor: currentEditor }) => {
-    editable.value = currentEditor.isEditable
-    model.value = currentEditor.getJSON()
-  }
-})
+    editable.value = currentEditor.isEditable;
+    model.value = currentEditor.getJSON();
+  },
+});
 
 watch(editable, (newValue) => {
   if (editor.value) {
-    editor.value.setEditable(newValue)
+    editor.value.setEditable(newValue);
   }
-})
+});
 
 watch(rtl, (newValue) => {
   if (!editor.value) {
-    return
+    return;
   }
 
   if (newValue) {
-    editor.value.view.dom.setAttribute('dir', 'rtl')
+    editor.value.view.dom.setAttribute("dir", "rtl");
   } else {
-    editor.value.view.dom.removeAttribute('dir')
+    editor.value.view.dom.removeAttribute("dir");
   }
-})
+});
 
 onMounted(() => {
   if (rtl.value && editor.value) {
-    editor.value.view.dom.setAttribute('dir', 'rtl')
+    editor.value.view.dom.setAttribute("dir", "rtl");
   }
-})
+});
 
-watch(() => model.value, (newValue) => {
-  if (!editor.value || !newValue) return
+watch(
+  () => model.value,
+  (newValue) => {
+    if (!editor.value || !newValue) return;
 
-  const isSame = JSON.stringify(newValue) === JSON.stringify(editor.value.getJSON())
+    const isSame =
+      JSON.stringify(newValue) === JSON.stringify(editor.value.getJSON());
 
-  if (!isSame) {
-    const { from, to } = editor.value.state.selection
-    editor.value.commands.setContent(newValue)
-    editor.value.commands.setTextSelection({ from, to })
-  }
-}, { deep: true })
+    if (!isSame) {
+      const { from, to } = editor.value.state.selection;
+      editor.value.commands.setContent(newValue);
+      editor.value.commands.setTextSelection({ from, to });
+    }
+  },
+  { deep: true },
+);
 
-const addPageLink = (pageData: import('@/core/domain/type').PageEntity) => {
-  editor.value?.chain().focus().insertPageBlock(pageData).run()
-}
+const addPageLink = (
+  pageData: import("@/core/domain/type").ContainerObjectEntity,
+) => {
+  editor.value?.chain().focus().insertPageBlock(pageData).run();
+};
 </script>
 
 <style lang="scss">
-
 .ProseMirror {
   .ProseMirror-widget * {
     margin-top: auto;
@@ -119,7 +129,6 @@ const addPageLink = (pageData: import('@/core/domain/type').PageEntity) => {
   }
 }
 
-
 .ProseMirror-selectednode,
 .ProseMirror-selectednoderange {
   position: relative;
@@ -128,7 +137,7 @@ const addPageLink = (pageData: import('@/core/domain/type').PageEntity) => {
     position: absolute;
     pointer-events: none;
     z-index: -1;
-    content: '';
+    content: "";
     top: -0.25rem;
     left: -0.25rem;
     right: -0.25rem;
@@ -145,17 +154,16 @@ const addPageLink = (pageData: import('@/core/domain/type').PageEntity) => {
     justify-content: center;
     width: 1.75rem;
     height: 1.75rem;
-    content: '⠿';
+    content: "⠿";
     cursor: grab;
     font-weight: 700;
     color: var(--icon-color);
   }
-  &:hover{
+  &:hover {
     background: var(--hover);
     border-radius: 0.5rem;
   }
 }
-
 
 .tiptap p.is-empty::before {
   color: #adb5bd;

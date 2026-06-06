@@ -1,4 +1,4 @@
-import type { EpObjectEntity, EpTypeEntity } from "../domain/type";
+import type { BaseEpObjectEntity, EpTypeEntity } from "../domain/type";
 import type { Icon, EpObjectId, EpTypeId, ObjectPath } from "../types";
 
 export const toEpType = (entity: EpTypeEntity): EpType => {
@@ -13,7 +13,7 @@ export const toEpTypeArray = (entities: EpTypeEntity[]): EpType[] => {
   return entities.map(toEpType);
 };
 
-export const toEpObject = (entity: EpObjectEntity): EpObject => {
+export const toEpObject = (entity: BaseEpObjectEntity): EpObject => {
   return {
     id: entity.id,
     type: entity.typeId,
@@ -22,7 +22,7 @@ export const toEpObject = (entity: EpObjectEntity): EpObject => {
   };
 };
 
-export const toEpObjectArray = (entities: EpObjectEntity[]): EpObject[] => {
+export const toEpObjectArray = (entities: BaseEpObjectEntity[]): EpObject[] => {
   return entities.map(toEpObject);
 };
 

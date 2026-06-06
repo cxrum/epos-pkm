@@ -12,5 +12,13 @@
     "erasableSyntaxOnly": true,
     "noFallthroughCasesInSwitch": true
   },
-  "include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.svg", "src/**/*.vue", "src/i18n/**.json"]
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts",
+    "src/**/*.tsx",
+    "src/**/*.svg",
+    "src/**/*.vue",
+    "src/i18n/**.json",
+    "fileSystemApiContract.d.ts"
+  ]
 }

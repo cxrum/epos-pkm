@@ -2,7 +2,6 @@ import type {
   Icon,
   EpObjectId,
   EpTypeId,
-  ObjectPath,
   SystemTypeId,
   DefaultTypeId,
 } from "../types";
@@ -59,9 +58,26 @@ export const createCompanionEpTypeEntity = () => {
   };
 };
 
-export interface EpObjectEntity {
+export interface BaseEpObjectEntity<
+  TType extends EpTypeId = EpTypeId,
+  TContent = Record<string, any>,
+> {
+  id: EpObjectId;
+  typeId: TType;
+  path: string;
+  content: TContent;
+}
+
+export interface PageContent {
+  title: string;
+  inlineObjects: Record<string, any>;
+}
+
+export type ContainerObjectEntity = BaseEpObjectEntity<"sys:page", PageContent>;
+export type EpObjectEntity = ContainerObjectEntity | BaseEpObjectEntity;
+
+export interface ObjectHierarchyNode {
   id: EpObjectId;
   typeId: EpTypeId;
-  path: ObjectPath;
-  content: Record<string, any>;
+  children: ObjectHierarchyNode[];
 }

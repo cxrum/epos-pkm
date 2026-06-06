@@ -1,13 +1,16 @@
 import type { EpObjectId, ObjectFilterOptions } from "@/core/types";
-import type { EpObjectEntity } from "../type";
+import type { BaseEpObjectEntity } from "../type";
 
 export interface ObjectStorageRepositoryContract {
-  get(id: EpObjectId): Promise<EpObjectEntity | undefined>;
-  create(data: EpObjectEntity): Promise<EpObjectEntity>;
-  update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity>;
+  get(id: EpObjectId): Promise<BaseEpObjectEntity | undefined>;
+  create(data: BaseEpObjectEntity): Promise<BaseEpObjectEntity>;
+  update(
+    id: EpObjectId,
+    newData: BaseEpObjectEntity,
+  ): Promise<BaseEpObjectEntity>;
   delete(id: EpObjectId): Promise<boolean>;
   getAll(
     filterOptions: ObjectFilterOptions | undefined,
-  ): Promise<EpObjectEntity[]>;
+  ): Promise<BaseEpObjectEntity[]>;
   move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean>;
 }

@@ -1,9 +1,9 @@
-import type { PageEntity } from "@/core/domain/type";
+import type { ContainerObjectEntity } from "@/core/domain/type";
 import type { PageDTO } from "./types";
 import type { ObjectStorageRepositoryContract } from "@/core/domain/repositories/objectRepositoryContract";
 
 const Mapper = {
-  toDomain(dto: PageDTO): PageEntity {
+  toDomain(dto: PageDTO): ContainerObjectEntity {
     return {
       id: dto.id,
       title: dto.title,
@@ -13,7 +13,7 @@ const Mapper = {
     };
   },
 
-  toDTO(entity: PageEntity): PageDTO {
+  toDTO(entity: ContainerObjectEntity): PageDTO {
     return {
       id: entity.id,
       title: entity.title,
@@ -68,7 +68,9 @@ const pagesDb: Record<number, PageDTO> = {
   },
 };
 
-const savePage = async (page: PageEntity): Promise<PageEntity> => {
+const savePage = async (
+  page: ContainerObjectEntity,
+): Promise<ContainerObjectEntity> => {
   const dtoToSave = Mapper.toDTO(page);
   const savedDTO = {
     ...dtoToSave,
@@ -81,7 +83,9 @@ const savePage = async (page: PageEntity): Promise<PageEntity> => {
   return Mapper.toDomain(savedDTO);
 };
 
-const getPage = async (pageId: number): Promise<PageEntity | null> => {
+const getPage = async (
+  pageId: number,
+): Promise<ContainerObjectEntity | null> => {
   const pageDTO = pagesDb[pageId];
 
   if (!pageDTO) {
@@ -94,7 +98,7 @@ const getPage = async (pageId: number): Promise<PageEntity | null> => {
   return Mapper.toDomain(pageDTO);
 };
 
-const getAllPages = async (): Promise<PageEntity[]> => {
+const getAllPages = async (): Promise<ContainerObjectEntity[]> => {
   const allDTOs = Object.values(pagesDb);
   return allDTOs.map((dto) => Mapper.toDomain(dto));
 };
