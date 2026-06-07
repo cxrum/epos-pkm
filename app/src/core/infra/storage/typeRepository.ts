@@ -11,6 +11,8 @@ import {
   flattenTree,
   type Edge,
 } from "../utils";
+import type { FileSystemApi } from "../../../../fileSystemApiContract";
+import type { RawEpType } from "./type";
 
 const ROOT: TypeHierarchyNode = {
   id: "sys:root",
@@ -65,11 +67,14 @@ const ROOT: TypeHierarchyNode = {
 };
 
 export class TypingRepository implements TypingRepositoryContract {
+  private readonly typesStorageApi: FileSystemApi<RawEpType>;
+
   private descendantCache: Record<EpTypeId, EpTypeId[]>;
   private typeTree: TypeHierarchyNode;
   private typeTreeEdges: Edge<EpTypeId>[];
 
-  constructor() {
+  constructor(userStorageApi: FileSystemApi<RawEpType>) {
+    this.typesStorageApi = userStorageApi;
     const tree: TypeHierarchyNode = this.loadTreeFromBd();
     const edges: Edge<EpTypeId>[] = extractTreeEdges(tree, "id", "children");
 

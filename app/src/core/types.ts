@@ -7,10 +7,22 @@ import type {
 export type Icon = DefaultIcon | LinkIcon | EmojiIcon;
 
 export type SystemTypeId = "sys:root" | "sys:page" | "sys:hard-page-link";
-export type DefaultTypeId = "def:text" | "def:latex" | "def:code";
+export type DefaultTypeId =
+  | "def:text"
+  | "def:latex"
+  | "def:code"
+  | "def:back-link"
+  | "def:arrowed-link";
 export type EpTypeId = SystemTypeId | DefaultTypeId | (string & {});
 export type UserTypeId = string & { readonly __isUser: unique symbol };
-export type EpObjectId = number;
+export type EpObjectId = string;
+
+export type _IsContainerPropertyId = "isContainer";
+export type SystemPropertyId = _IsContainerPropertyId;
+export type EpPropertyId = SystemPropertyId | (string & {});
+
+export type EpPropertyTypes = "text" | "boolean" | "select" | "number";
+// | "object"
 
 export type SettingType = "text" | "boolean" | "select" | "number";
 

@@ -1,15 +1,19 @@
 import type { ObjectStorageRepositoryContract } from "@/core/domain/repositories/objectRepositoryContract";
-import type { EpObjectEntity, ObjectHierarchyNode } from "@/core/domain/type";
+import type {
+  AllPropertiesMap,
+  EpObjectEntity,
+  ObjectHierarchyNode,
+} from "@/core/domain/type";
 import type { EpObjectId, EpTypeId, ObjectFilterOptions } from "@/core/types";
 import type { FileSystemApi } from "../../../../fileSystemApiContract";
 import type { RawContainerObject } from "./type";
-import type { Edge } from "../utils";
+import { findNode, type Edge } from "../utils";
 
 export class ObjectStorageRepository implements ObjectStorageRepositoryContract {
   private readonly userStorageApi: FileSystemApi<RawContainerObject>;
 
   private fileTreeStructure: ObjectHierarchyNode = {
-    id: -1,
+    id: "-1",
     typeId: "sys:root",
     children: [],
   };
@@ -48,7 +52,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     }
 
     const resultFileTree: ObjectHierarchyNode = {
-      id: -1 as EpObjectId,
+      id: "-1" as EpObjectId,
       typeId: "sys:root" as EpTypeId,
       children: [],
     };
@@ -88,9 +92,11 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       return undefined;
     }
 
+    // TODO: Also implement search inside containers
     return {
       id: result.id,
       typeId: result.typeId,
+      props: result.properties as AllPropertiesMap,
       content: result.rawData,
       path: "",
     };
@@ -101,35 +107,68 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     data: EpObjectEntity,
   ): Promise<EpObjectEntity> {
     const parent = await this.get(parentId);
+    let isSaved = false;
     if (!parent) {
-      throw Error();
+      throw Error(`Parent with id ${parentId} not found`);
     }
 
-    if (data.typeId === "sys:page") {
+    if (data.props.isContainer.value) {
       const container: RawContainerObject = {
         id: data.id,
         typeId: data.typeId,
         title: data.content.title,
-        rawData: data.content.inlineObjects,
+        properties: data.props,
+        order: [],
+        rawData: data.content.inlineObjects || {},
       };
-      this.userStorageApi.save(`${parent.path}/${container.title}`, container);
-    } else {
-      // HOW TO SAVE OBJECT IN A CONTAINER IN THE CORRECT ORDER AS ON FRONT ? DOES I NEED TO IMPLEMENT  INDEXING ????
+
+      await this.userStorageApi.save(
+        `${parent.path}/${container.id}.json`,
+        container,
+      );
+      isSaved = true;
+    } else if (parent.props.isContainer.value) {
+      const parentFilePath = `${parent.path}/${parent.content.title}.json`;
+      const parentContainer = await this.userStorageApi.get(parentFilePath);
+
+      if (!parentContainer) {
+        throw Error(`Cannot read container data for ${parentId}`);
+      }
+
+      if (!parentContainer.order) parentContainer.order = [];
+      if (!parentContainer.rawData) parentContainer.rawData = {};
+
+      parentContainer.rawData[data.id] = {
+        id: data.id,
+        typeId: data.typeId,
+        properties: data.props,
+        content: data.content,
+      };
+
+      if (!parentContainer.order.includes(data.id)) {
+        parentContainer.order.push(data.id);
+      }
+
+      await this.userStorageApi.save(parentFilePath, parentContainer);
+      isSaved = true;
     }
-
-    // // TODO: Move hierarchy logic to domain level companion object, call this fun on application level
-    // if (parent.typeId === "sys:root") {
-    //   if (data.typeId !== "sys:page") {
-    //     throw Error();
-    //   }
-    // }
-
-    // if (parent.typeId === 'sys:page') {
-
-    // }
-    await this.index();
+    if (isSaved) {
+      await this.index();
+    }
     return data;
   }
+
+  // // TODO: Move hierarchy logic to domain level companion object, call this fun on application level
+  // if (parent.typeId === "sys:root") {
+  //   if (data.typeId !== "sys:page") {
+  //     throw Error();
+  //   }
+  // }
+
+  // if (parent.typeId === 'sys:page') {
+
+  // }
+
   update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity> {
     throw new Error("Method not implemented.");
   }

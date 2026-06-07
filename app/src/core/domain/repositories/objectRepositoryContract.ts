@@ -1,9 +1,9 @@
 import type { EpObjectId, ObjectFilterOptions } from "@/core/types";
-import type { BaseEpObjectEntity } from "../type";
+import type { BaseEpObjectEntity, EpObjectEntity } from "../type";
 
 export interface ObjectStorageRepositoryContract {
   get(id: EpObjectId): Promise<BaseEpObjectEntity | undefined>;
-  create(data: BaseEpObjectEntity): Promise<BaseEpObjectEntity>;
+  create(parentId: EpObjectId, data: EpObjectEntity): Promise<EpObjectEntity>;
   update(
     id: EpObjectId,
     newData: BaseEpObjectEntity,

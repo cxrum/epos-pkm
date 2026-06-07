@@ -4,33 +4,99 @@ import type {
   EpTypeId,
   SystemTypeId,
   DefaultTypeId,
+  EpPropertyId,
+  EpPropertyTypes,
 } from "../types";
 
-export interface TypeHierarchyNode {
-  id: EpTypeId;
-  type: EpTypeEntity;
-  children: TypeHierarchyNode[];
+type _TypeKind = "default" | "system" | "user";
+
+export interface BasePropertySchemeEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+> {
+  id: TProperty;
+  title: string;
+  type: TPropertyType;
 }
 
-interface BaseTypeEntity {
+export interface ValuedPropertyEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TValue = unknown,
+> extends BasePropertySchemeEntry<TProperty, TPropertyType> {
+  value: TValue;
+}
+
+export interface BooleanValuedPropertyEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+> extends ValuedPropertyEntry<TProperty, "boolean", boolean> {}
+
+export interface NumberValuedPropertyEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+> extends ValuedPropertyEntry<TProperty, "number", number> {}
+
+export interface SelectPropertySchemeEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+> extends BasePropertySchemeEntry<TProperty, "select"> {
+  options: { id: string; title: string; color?: string }[];
+}
+
+export interface SelectValuedPropertyEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+> extends SelectPropertySchemeEntry<TProperty> {
+  value: string | string[];
+}
+
+export interface TextValuedPropertyEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+> extends ValuedPropertyEntry<TProperty, "text", string> {}
+
+export type AnyValidPropertyEntry =
+  | BooleanValuedPropertyEntry<string>
+  | NumberValuedPropertyEntry<string>
+  | SelectValuedPropertyEntry<string>
+  | TextValuedPropertyEntry<string>;
+
+export type SystemPropertiesMap = {
+  isContainer: BooleanValuedPropertyEntry<"isContainer">;
+};
+
+export type DynamicPropertiesMap = {
+  [key: string]: AnyValidPropertyEntry;
+};
+
+export type AllPropertiesMap = SystemPropertiesMap & DynamicPropertiesMap;
+
+export interface BaseProperties {
+  props: AllPropertiesMap;
+}
+
+export interface BasePropertiesScheme {
+  order: EpPropertyId[];
+  props: AllPropertiesMap;
+}
+
+interface BaseTypeEntity<
+  TTypeId extends EpTypeId,
+  TKind extends _TypeKind,
+  TProperties extends Record<string, any> = BasePropertiesScheme,
+> {
+  id: TTypeId;
+  kind: TKind;
   icon?: Icon;
   title: string;
+  properties: TProperties;
 }
 
-export interface DefaultTypeEntity extends BaseTypeEntity {
-  id: DefaultTypeId;
-  kind: "default";
-}
-
-export interface SystemTypeEntity extends BaseTypeEntity {
-  id: SystemTypeId;
-  kind: "system";
-}
-
-export interface UserTypeEntity extends BaseTypeEntity {
-  id: EpTypeId;
-  kind: "user";
-}
+export interface DefaultTypeEntity extends BaseTypeEntity<
+  DefaultTypeId,
+  "default"
+> {}
+export interface SystemTypeEntity extends BaseTypeEntity<
+  SystemTypeId,
+  "system"
+> {}
+export interface UserTypeEntity extends BaseTypeEntity<EpTypeId, "user"> {}
 
 export type EpTypeEntity =
   | SystemTypeEntity
@@ -58,10 +124,16 @@ export const createCompanionEpTypeEntity = () => {
   };
 };
 
+export interface TypeHierarchyNode {
+  id: EpTypeId;
+  type: EpTypeEntity;
+  children: TypeHierarchyNode[];
+}
+
 export interface BaseEpObjectEntity<
   TType extends EpTypeId = EpTypeId,
   TContent = Record<string, any>,
-> {
+> extends BaseProperties {
   id: EpObjectId;
   typeId: TType;
   path: string;
@@ -70,10 +142,15 @@ export interface BaseEpObjectEntity<
 
 export interface PageContent {
   title: string;
-  inlineObjects: Record<string, any>;
+  order: EpObjectId[];
+  inlineObjects: Record<EpObjectId, any>;
 }
 
-export type ContainerObjectEntity = BaseEpObjectEntity<"sys:page", PageContent>;
+export interface ContainerObjectEntity extends BaseEpObjectEntity<
+  "sys:page",
+  PageContent
+> {}
+
 export type EpObjectEntity = ContainerObjectEntity | BaseEpObjectEntity;
 
 export interface ObjectHierarchyNode {

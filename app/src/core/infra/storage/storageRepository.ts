@@ -10,6 +10,7 @@ declare global {
   }
 }
 
+// Add constructor with path prefix argument and use it for accessing to files
 export class IpcFileSystem<T> implements FileSystemApi<T> {
   async getAllFlat(rootPath: string): Promise<Record<string, T>> {
     return await window.electronFs.getAllFlat(rootPath);
