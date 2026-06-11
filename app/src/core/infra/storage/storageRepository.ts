@@ -10,10 +10,29 @@ declare global {
   }
 }
 export class IpcFileSystem<T> implements FileSystemApi<T> {
-  private readonly basePath: string;
+  private readonly basePath: string | undefined;
 
-  constructor(basePath: string) {
+  constructor(basePath: string | undefined) {
     this.basePath = basePath;
+  }
+
+  private resolvePath(targetPath: string): string {
+    if (!this.basePath) {
+      return targetPath;
+    }
+    const cleanTarget = targetPath.replace(/^(\.\/|\/+)+/, "");
+    if (!cleanTarget) {
+      return this.basePath;
+    }
+    if (this.basePath.endsWith("/")) {
+      return `${this.basePath}${cleanTarget}`;
+    }
+
+    return `${this.basePath}/${cleanTarget}`;
+  }
+
+  private toSerializable<TValue>(value: TValue): TValue {
+    return JSON.parse(JSON.stringify(value)) as TValue;
   }
 
   async rename(path: string, newPath: string): Promise<boolean> {
@@ -21,12 +40,6 @@ export class IpcFileSystem<T> implements FileSystemApi<T> {
       this.resolvePath(path),
       this.resolvePath(newPath),
     );
-  }
-
-  private resolvePath(targetPath: string): string {
-    const cleanBase = this.basePath.replace(/\/+$/, "");
-    const cleanTarget = targetPath.replace(/^\/+/, "");
-    return cleanBase ? `${cleanBase}/${cleanTarget}` : targetPath;
   }
 
   async getAllFlat(rootPath: string): Promise<Record<string, T>> {
@@ -42,7 +55,10 @@ export class IpcFileSystem<T> implements FileSystemApi<T> {
   }
 
   async save(path: string, data: T): Promise<void> {
-    await window.electronFs.save(this.resolvePath(path), data);
+    await window.electronFs.save(
+      this.resolvePath(path),
+      this.toSerializable(data),
+    );
   }
 
   async move(sourcePath: string, destinationPath: string): Promise<void> {

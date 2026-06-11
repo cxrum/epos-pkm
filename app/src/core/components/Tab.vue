@@ -15,7 +15,7 @@ const emit = defineEmits<{
   (e: "close", tabId: MetaId): void;
 }>();
 
-console.log(props.icon);
+//console.log(props.icon);
 
 const computedClasses = computed(() => {
   const baseClasses =

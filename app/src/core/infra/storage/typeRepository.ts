@@ -96,6 +96,10 @@ export class TypingRepository implements TypingRepositoryContract {
     this.typesStorageApi = userStorageApi;
   }
 
+  async init(): Promise<void> {
+    await this.index();
+  }
+
   private async loadTree(): Promise<RawEptTypeHierarchyNode> {
     const rawTree = await this.typesStorageApi.get(this.MAIN_TYPES_OBJECT_PATH);
     if (!rawTree) {
@@ -166,7 +170,7 @@ export class TypingRepository implements TypingRepositoryContract {
       }
     };
 
-    traverse(root.children, cache);
+    traverse([root], cache);
 
     return cache;
   }
@@ -326,7 +330,8 @@ export class TypingRepository implements TypingRepositoryContract {
 
   getFullPropsScheme(id: EpTypeId): BasePropertiesScheme {
     const ancestors = this.getAncestors(id);
-
+    //console.log("getFullPropsScheme: ancestors ---");
+    //console.log(ancestors);
     const aggregatedPropertiesScheme: BasePropertiesScheme = {
       order: [],
       props: {},
@@ -334,6 +339,10 @@ export class TypingRepository implements TypingRepositoryContract {
 
     for (const ancestor of ancestors) {
       const type = this.flattenTreeCache.get(ancestor);
+
+      //console.log("getFullPropsScheme: ancestor properties ---");
+      //console.log(type);
+      //console.log("getFullPropsScheme: ancestor properties ---");
 
       if (!type?.propertiesScheme) {
         continue;

@@ -6,6 +6,7 @@ import type {
 } from "../type";
 
 export interface ObjectStorageRepositoryContract {
+  init(): Promise<void>;
   get(id: EpObjectId): Promise<EpObjectEntity | undefined>;
   create(
     parentId: EpObjectId | undefined,

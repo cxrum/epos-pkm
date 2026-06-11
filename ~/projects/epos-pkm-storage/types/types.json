@@ -1,0 +1,75 @@
+{
+  "id": "sys:root",
+  "type": {
+    "id": "sys:root",
+    "title": "root",
+    "kind": "system",
+    "propertiesScheme": {
+      "order": [
+        "isContainer"
+      ],
+      "props": {
+        "isContainer": {
+          "id": "isContainer",
+          "title": "isContainer",
+          "type": "boolean"
+        }
+      }
+    }
+  },
+  "children": [
+    {
+      "id": "sys:page",
+      "type": {
+        "id": "sys:page",
+        "title": "Page",
+        "icon": {
+          "type": "default",
+          "name": "page"
+        },
+        "kind": "system"
+      },
+      "children": []
+    },
+    {
+      "id": "def:text",
+      "type": {
+        "id": "def:text",
+        "title": "Text",
+        "kind": "default"
+      },
+      "children": [
+        {
+          "id": "def:latex",
+          "type": {
+            "id": "def:latex",
+            "title": "LaTeX",
+            "kind": "default"
+          },
+          "children": []
+        },
+        {
+          "id": "def:code",
+          "type": {
+            "id": "def:code",
+            "title": "Code",
+            "kind": "default",
+            "propertiesScheme": {
+              "order": [
+                "codeLanguage"
+              ],
+              "props": {
+                "isContainer": {
+                  "id": "codeLanguage",
+                  "title": "codeLanguage",
+                  "type": "text"
+                }
+              }
+            }
+          },
+          "children": []
+        }
+      ]
+    }
+  ]
+}

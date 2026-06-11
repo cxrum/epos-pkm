@@ -55,3 +55,7 @@ export type RawObjectFilterOptions = {
 };
 
 export type AllRawEpObject = RawEpObject | RawContainerObject;
+
+export const isRawContainer = (obj: any): obj is RawContainerObject => {
+  return obj !== null && typeof obj === "object" && "title" in obj;
+};

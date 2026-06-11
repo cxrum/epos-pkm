@@ -6,12 +6,15 @@ import type {
 } from "@/core/domain/type";
 import type { EpObjectId, EpTypeId, ObjectPath, Path } from "@/core/types";
 import type { FileSystemApi } from "../../../../fileSystemApiContract";
-import type {
-  AllRawEpObject,
-  RawObjectFilterOptions,
-  RawContainerObject,
+import {
+  type AllRawEpObject,
+  type RawObjectFilterOptions,
+  type RawContainerObject,
+  type RawPropertiesSchemeEntry,
+  isRawContainer,
 } from "./type";
 import { type Edge } from "../utils";
+import type { an } from "vue-router/dist/router-CWoNjPRp.mjs";
 
 export class ObjectStorageRepository implements ObjectStorageRepositoryContract {
   private readonly userStorageApi: FileSystemApi<RawContainerObject>;
@@ -30,6 +33,32 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
   constructor(userStorageApi: FileSystemApi<RawContainerObject>) {
     this.userStorageApi = userStorageApi;
   }
+
+  async init(): Promise<void> {
+    const workspaceRoot = {
+      id: this.ROOT_ID,
+      typeId: "sys:workspace",
+      title: "workspace",
+      content: {},
+      order: [],
+      properties: {
+        isContainer: {
+          id: "isContainer",
+          title: "isContainer",
+          type: "boolean",
+          value: true,
+        },
+      },
+    } as RawContainerObject;
+
+    const root = await this.userStorageApi.get("./test-workspace.json");
+    if (!root) {
+      await this.userStorageApi.save("./test-workspace.json", workspaceRoot);
+    }
+
+    await this.index();
+  }
+
   private async loadTree(
     edges: Edge<string>[],
     flattenData: Record<string, RawContainerObject>,
@@ -60,12 +89,13 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
 
     const resultFileTree: ObjectHierarchyNode = {
       id: this.ROOT_ID,
-      typeId: "sys:root" as EpTypeId,
+      typeId: "sys:workspace" as EpTypeId,
       children: [],
     };
 
     for (const [pathKey, node] of nodeMap.entries()) {
       if (!targetsSet.has(pathKey)) {
+        if (node.id === this.ROOT_ID) continue;
         resultFileTree.children.push(node);
       }
     }
@@ -110,8 +140,8 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
   }
 
   private async index(): Promise<void> {
-    const edges = await this.userStorageApi.tree("./");
-    const flattenData = await this.userStorageApi.getAllFlat("./");
+    const edges = await this.userStorageApi.tree("");
+    const flattenData = await this.userStorageApi.getAllFlat("");
 
     this.objectPathCache.clear();
     for (const [filePath, container] of Object.entries(flattenData)) {
@@ -146,8 +176,24 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
 
   async get(id: EpObjectId): Promise<EpObjectEntity | undefined> {
     const result = this.fileTreeCache.get(id);
+
     if (!result) {
       return undefined;
+    }
+
+    if (isRawContainer(result)) {
+      return {
+        id: result.id,
+        typeId: result.typeId,
+        props: result.properties as AllPropertiesMap,
+        content: {
+          title: result.title,
+          order: result.order,
+          inlineObjects: result.content,
+        },
+        physicalRelativePath: this.objectPathCache.get(result.id) ?? "unknown",
+        objectPath: this.getAncestorPath(id),
+      };
     }
 
     return {
@@ -165,6 +211,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     data: EpObjectEntity,
   ): Promise<EpObjectEntity> {
     const parent = await this.get(parentId ?? this.ROOT_ID);
+    //console.log("CREATE:parent--\n", parent);
     let isSaved = false;
     if (!parent) {
       throw Error(`Parent with id ${parentId} not found`);
@@ -179,14 +226,18 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
         order: [],
         content: data.content.inlineObjects || {},
       };
-
+      const parentContainerPath = parent.physicalRelativePath.replace(
+        ".json",
+        "",
+      );
+      //console.log(parentContainerPath);
       await this.userStorageApi.save(
-        `${parent.physicalRelativePath}/${container.title}.json`,
+        `${parentContainerPath}/${container.title}.json`,
         container,
       );
       isSaved = true;
     } else if (parent.props.isContainer.value) {
-      const parentFilePath = `${parent.physicalRelativePath}/${parent.content.title}.json`;
+      const parentFilePath = parent.physicalRelativePath;
       const parentContainer = await this.userStorageApi.get(parentFilePath);
 
       if (!parentContainer) {
@@ -215,18 +266,6 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     }
     return data;
   }
-
-  // // TODO: Move hierarchy logic to domain level companion object, call this fun on application level
-  // if (parent.typeId === "sys:root") {
-  //   if (data.typeId !== "sys:page") {
-  //     throw Error();
-  //   }
-  // }
-
-  // if (parent.typeId === 'sys:page') {
-
-  // }
-
   async update(
     id: EpObjectId,
     newData: EpObjectEntity,
@@ -249,6 +288,25 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       const oldTitle = container.title;
       container.title = newData.content.title;
       container.properties = newData.props;
+      container.order = newData.content.order;
+      const cleanInlineObjects: Record<string, any> = {};
+      const sourceInlines: Record<string, any> =
+        newData.content.inlineObjects || {};
+
+      for (const [inlineId, inlineObj] of Object.entries(sourceInlines)) {
+        cleanInlineObjects[inlineId] = {
+          id: inlineObj.id,
+          typeId: inlineObj.typeId,
+          properties: { ...(inlineObj.props || inlineObj.properties) },
+          content: { ...inlineObj.content },
+        };
+
+        if (cleanInlineObjects[inlineId].content.inlineObjects) {
+          delete cleanInlineObjects[inlineId].content.inlineObjects;
+        }
+      }
+
+      container.content = cleanInlineObjects;
 
       if (oldTitle !== newData.content.title) {
         const lastSlashIndex = filePath.lastIndexOf("/");
@@ -269,11 +327,16 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
         throw new Error(`Inline object ${id} not found in ${filePath}`);
       }
 
+      const cleanContent = { ...newData.content };
+      if (cleanContent.inlineObjects) {
+        delete cleanContent.inlineObjects;
+      }
+
       container.content[id] = {
         id: newData.id,
         typeId: newData.typeId,
-        properties: newData.props,
-        content: newData.content,
+        properties: { ...newData.props },
+        content: cleanContent,
       };
 
       await this.userStorageApi.save(filePath, container);

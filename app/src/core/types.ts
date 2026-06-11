@@ -6,7 +6,11 @@ import type {
 
 export type Icon = DefaultIcon | LinkIcon | EmojiIcon;
 
-export type SystemTypeId = "sys:root" | "sys:page" | "sys:hard-page-link";
+export type SystemTypeId =
+  | "sys:root"
+  | "sys:workspace"
+  | "sys:page"
+  | "sys:hard-page-link";
 export type DefaultTypeId =
   | "def:text"
   | "def:table"

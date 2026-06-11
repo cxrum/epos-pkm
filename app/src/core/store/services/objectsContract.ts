@@ -1,5 +1,5 @@
 import type { EpObjectEntity, ObjectFilterOptions } from "@/core/domain/type";
-import type { EpObjectId, ObjectPath } from "@/core/types";
+import type { EpObjectId, EpTypeId, ObjectPath } from "@/core/types";
 import type { TreeNode } from "@/shared/components/tree/contract";
 
 export interface ObjetServiceContract {
@@ -10,6 +10,10 @@ export interface ObjetServiceContract {
   create(
     parentId: EpObjectId | undefined,
     object: EpObjectEntity,
+  ): Promise<EpObjectEntity>;
+  createEmpty(
+    parentId: EpObjectId | undefined,
+    objectType: EpTypeId,
   ): Promise<EpObjectEntity>;
   update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity>;
   delete(id: EpObjectId): Promise<boolean>;

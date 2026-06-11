@@ -115,7 +115,7 @@ export const extractTreeEdges = <T, K extends PropertyKey>(
     }
   };
 
-  traverse(root[childrenKey] as T[]);
+  traverse([root]);
 
   return edges;
 };

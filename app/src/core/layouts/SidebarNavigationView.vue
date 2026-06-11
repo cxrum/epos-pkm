@@ -17,8 +17,8 @@ import { useGlobalPageStore } from "../store/globalPageStore";
 import LoadingSpinner from "@/shared/components/LoadingSpinner.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
 
-const globalPageStore = useGlobalPageStore();
 const treeRef = ref();
+const globalPageStore = useGlobalPageStore();
 const treeController = useTreeController(globalPageStore.treeStructure);
 const globalNavigationStore = useGlobalNavigation();
 const workSpaceStore = useWorkspaceStore();
@@ -54,7 +54,7 @@ watch(
 watch(
   () => tabStore.activeTab,
   (tab) => {
-    console.log(tab);
+    //console.log(tab);
     if (tab) {
       globalNavigationStore.openPage(tab.id);
     } else {
@@ -66,7 +66,7 @@ watch(
 watch(
   () => globalNavigationStore.activePage,
   (pageMeta) => {
-    console.log(pageMeta);
+    //console.log(pageMeta);
     if (pageMeta) {
       treeController.selectNode(pageMeta.id);
       const res = tabStore.openTab(pageMeta.id);
@@ -88,6 +88,24 @@ const complexMenuData: MenuGroup[] = [
       { type: "button", label: "Profile", icon: Document },
       { type: "divider" },
       { type: "button", label: "Settings", icon: Document },
+    ],
+  },
+];
+
+const onCreateEmptyPage = () => {
+  globalPageStore.createEmptyPage(tabStore.activeTab?.id);
+};
+
+const treeHierarchyMenu: MenuGroup[] = [
+  {
+    title: "Hierarchy",
+    items: [
+      {
+        type: "button",
+        label: "Create",
+        icon: Document,
+        action: onCreateEmptyPage,
+      },
     ],
   },
 ];
@@ -168,7 +186,7 @@ const complexMenuData: MenuGroup[] = [
         </BaseButton>
       </Accordion>
 
-      <Accordion label="Tree" :menu-data="complexMenuData">
+      <Accordion label="Tree" :menu-data="treeHierarchyMenu">
         <Tree
           v-if="!globalPageStore.isTreeStructureLoading"
           ref="treeRef"

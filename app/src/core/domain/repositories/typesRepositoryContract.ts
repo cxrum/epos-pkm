@@ -7,6 +7,7 @@ import type {
 } from "../type";
 
 export interface TypingRepositoryContract {
+  init(): Promise<void>;
   get(id: EpTypeId): Promise<EpTypeEntity | undefined>;
   getAll(): Promise<EpTypeEntity[]>;
   create(type: Omit<UserTypeEntity, "kind">): Promise<UserTypeEntity>;

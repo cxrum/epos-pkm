@@ -9,12 +9,14 @@ import type {
 } from "../infra/storage/type";
 
 const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>(
-  "/workspace/",
+  "/workspace",
 );
-const typesStorageApi = new IpcFileSystem<RawEptTypeHierarchyNode>("/types/");
+const typesStorageApi = new IpcFileSystem<RawEptTypeHierarchyNode>("/types");
 
 const typingRepository = new TypingRepository(typesStorageApi);
+await typingRepository.init();
 const objectRepository = new ObjectStorageRepository(containerObjectStorageApi);
+await objectRepository.init();
 
 export const globalTypingService = new TypingService(typingRepository);
 export const globalObjectsService = new ObjectsService(

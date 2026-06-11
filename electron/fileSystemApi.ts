@@ -17,8 +17,12 @@ export class JsonNodeFileSystem<
 
   async get(targetPath: string): Promise<T | undefined> {
     const fullPath = this.getFullPath(targetPath);
-    const content = await fs.readFile(fullPath, "utf-8");
-    return JSON.parse(content) as T;
+    try {
+      const content = await fs.readFile(fullPath, "utf-8");
+      return JSON.parse(content) as T;
+    } catch {
+      return undefined;
+    }
   }
 
   async save(targetPath: string, data: T): Promise<void> {
@@ -150,7 +154,7 @@ export class JsonNodeFileSystem<
   }
 
   async getAllFlat(rootPath: string): Promise<Record<string, T>> {
-    const fullRootPath = this.getFullPath(rootPath);
+    const fullRootPath = path.resolve(this.getFullPath(rootPath));
 
     const traverse = async (
       currentPath: string,
@@ -161,8 +165,9 @@ export class JsonNodeFileSystem<
 
       for (let index = 0; index < entries.length; index++) {
         const el = entries[index];
-        const absolutePath = path.join(currentPath, el.name);
-        const relativeTarget = path.relative(this.basePath, absolutePath);
+        const absolutePath = path.resolve(currentPath, el.name);
+
+        const relativeTarget = path.relative(fullRootPath, absolutePath);
 
         if (!discovered.has(absolutePath)) {
           discovered.add(absolutePath);
@@ -172,9 +177,7 @@ export class JsonNodeFileSystem<
             await traverse(absolutePath, discovered, fileData);
           } else if (el.name.endsWith(".json")) {
             const content = await fs.readFile(absolutePath, "utf-8");
-            const parsedData = JSON.parse(content) as T;
-
-            fileData[relativeTarget] = parsedData;
+            fileData[relativeTarget] = JSON.parse(content) as T;
           }
         }
       }

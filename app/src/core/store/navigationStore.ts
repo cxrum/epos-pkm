@@ -5,7 +5,7 @@ import { globalObjectsService, globalTypingService } from "../di/global";
 
 export const useGlobalNavigation = defineStore("navigation", () => {
   const activePage = ref<ObjectMeta>();
-  const cachedPageMeta = ref<Record<EpObjectId, ObjectMeta>>({});
+  const cachedPageMeta = ref<Map<EpObjectId, ObjectMeta>>(new Map());
   const currentPath = ref<Path[]>([]);
 
   function setCurrentPath(els?: Path[]) {
@@ -18,9 +18,14 @@ export const useGlobalNavigation = defineStore("navigation", () => {
 
   const preloadPageMeta = async (objId: EpObjectId) => {
     const result = await globalObjectsService.get(objId);
-    const type = await globalTypingService.getType(objId);
 
-    let icon: Icon = { name: "page", type: "default" };
+    if (!result) {
+      return;
+    }
+
+    const type = await globalTypingService.getType(result.typeId);
+
+    let icon: Icon = { type: "emoji", emoji: "U" };
     let title: string = type?.title ?? "unknown";
 
     if (result) {
@@ -31,11 +36,20 @@ export const useGlobalNavigation = defineStore("navigation", () => {
       }
     }
 
-    activePage.value = cachedPageMeta.value[objId];
+    if (result) {
+      const meta = {
+        id: objId,
+        typeId: result.typeId,
+        title: title,
+        icon: icon,
+      } as ObjectMeta;
+      //console.log(meta);
+      cachedPageMeta.value.set(objId, meta);
+    }
   };
 
   const getMetaInfo = (pageId: EpObjectId): ObjectMeta | undefined => {
-    return cachedPageMeta.value[pageId];
+    return cachedPageMeta.value.get(pageId);
   };
 
   const openPage = (pageId: EpObjectId) => {

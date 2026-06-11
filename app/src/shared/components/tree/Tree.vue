@@ -1,21 +1,18 @@
 <script setup lang="ts">
-import BaseTreeItem from './TreeItem.vue'
-import type { TreeControllerContract } from './contract'
+import BaseTreeItem from "./TreeItem.vue";
+import type { TreeControllerContract } from "./contract";
 
 const props = defineProps<{
-  controller: TreeControllerContract
-}>()
-
-
+  controller: TreeControllerContract<string>;
+}>();
 </script>
 
 <template>
-  
   <ul class="tree-root">
-    <BaseTreeItem 
+    <BaseTreeItem
       :key="controller.rootNode.value.id"
       :node="controller.rootNode.value"
-      :controller="controller" 
+      :controller="controller"
       :layer="0"
     />
   </ul>

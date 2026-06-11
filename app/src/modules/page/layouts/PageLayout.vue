@@ -4,18 +4,20 @@ import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
 import { useGlobalPageStore } from "../../../core/store/globalPageStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
 import { useGlobalNavigation } from "@/core/store/navigationStore.ts";
+import type { EpObjectEntity } from "@/core/domain/type.ts";
 
 const props = defineProps();
 const pageStore = useGlobalPageStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
 
-const pageJsonData = ref<Record<string, any>>({});
+const currentPageEntity = ref<EpObjectEntity>();
+const firstOpen = ref<boolean>(true);
 
 watch(
   () => globalNavigationStore.activePage,
   (activePage) => {
-    if (activePage != null && activePage.id !== -1) {
+    if (activePage != null) {
       pageStore.get(activePage.id);
       workSpaceStore.setLoadingStatus(true);
     } else {
@@ -30,7 +32,8 @@ watch(
   (newData) => {
     if (newData) {
       globalNavigationStore.setCurrentPath(pageStore.paths[newData.id]);
-      pageJsonData.value = newData.content;
+      console.log("\nNEW-DATA\n", newData, "\nNEW-DATA-END\n");
+      currentPageEntity.value = newData;
       workSpaceStore.setLoadingStatus(false);
     } else {
       globalNavigationStore.clearCurrentPath();
@@ -39,11 +42,15 @@ watch(
 );
 
 watch(
-  pageJsonData,
+  currentPageEntity,
   (newData) => {
-    if (newData) {
-      pageStore.update(newData);
+    if (!newData) return;
+    if (firstOpen.value) {
+      firstOpen.value = false;
+      return;
     }
+
+    pageStore.update(newData);
   },
   { deep: true },
 );
@@ -51,10 +58,10 @@ watch(
 
 <template>
   <div v-if="pageStore.pageData" class="flex flex-col gap-2 w-full h-full page">
-    <h1>{{ pageStore.pageData.title }}</h1>
+    <h1>{{ pageStore.pageData.content.title }}</h1>
     <BaseEditor
-      v-if="globalNavigationStore.activePage"
-      v-model="pageJsonData"
+      v-if="currentPageEntity"
+      v-model="currentPageEntity"
     ></BaseEditor>
     <div class="h-80 shrink-0"></div>
   </div>

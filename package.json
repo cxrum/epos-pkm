@@ -10,7 +10,7 @@
     "electron:setup": "npm install",
     "setup": "npm run front:setup && npm run electron:setup",
     "serve:front": "cd app && npm run dev",
-    "serve:electron": "set APP_IS_NIGHTLY=yes && set APP_IS_DEV=yes && npm run build && wait-on tcp:3000 && electron .",
+    "serve:electron": "npm run build && wait-on tcp:3000 && electron .",
     "build:front": "cd app && npm run build",
     "electron:build": "npm run build",
     "electron:builder": "electron-builder",

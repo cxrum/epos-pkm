@@ -1,7 +1,7 @@
 import { ipcMain } from "electron";
 import { JsonNodeFileSystem } from "./fileSystemApi";
 
-const fsApi = new JsonNodeFileSystem("~/projects/epos-pkm-storage/");
+const fsApi = new JsonNodeFileSystem("/home/chrum/projects/epos-pkm-storage/");
 
 export function setupIpcHandlers() {
   ipcMain.handle("fs:get", async (_, path) => await fsApi.get(path));
@@ -20,4 +20,13 @@ export function setupIpcHandlers() {
     async (_, path) => await fsApi.isDirectory(path),
   );
   ipcMain.handle("fs:list", async (_, path) => await fsApi.list(path));
+  ipcMain.handle(
+    "fs:rename",
+    async (_, path, newPath) => await fsApi.rename(path, newPath),
+  );
+  ipcMain.handle("fs:tree", async (_, path) => await fsApi.tree(path));
+  ipcMain.handle(
+    "fs:getAllFlat",
+    async (_, path) => await fsApi.getAllFlat(path),
+  );
 }
