@@ -1,5 +1,10 @@
 import type { EpTypeId, SystemTypeId } from "@/core/types";
-import type { EpTypeEntity, TypeHierarchyNode, UserTypeEntity } from "../type";
+import type {
+  BasePropertiesScheme,
+  EpTypeEntity,
+  TypeHierarchyNode,
+  UserTypeEntity,
+} from "../type";
 
 export interface TypingRepositoryContract {
   get(id: EpTypeId): Promise<EpTypeEntity | undefined>;
@@ -15,9 +20,10 @@ export interface TypingRepositoryContract {
     parentId: EpTypeId,
     childId: Exclude<EpTypeId, SystemTypeId>,
   ): Promise<boolean>;
-
+  getFullPropsScheme(id: EpTypeId): BasePropertiesScheme;
   index(): void;
   getTree(): Promise<TypeHierarchyNode>;
-  getAncestors(id: EpTypeId): Promise<EpTypeId[]>;
-  getDescendants(id: EpTypeId): Promise<EpTypeId[]>;
+  getAncestors(id: EpTypeId): EpTypeId[];
+  getDescendants(id: EpTypeId): EpTypeId[];
+  getAllDescendants(): Map<EpTypeId, EpTypeId[]>;
 }

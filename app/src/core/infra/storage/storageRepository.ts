@@ -9,40 +9,62 @@ declare global {
     electronFs: FileSystemApi;
   }
 }
-
-// Add constructor with path prefix argument and use it for accessing to files
 export class IpcFileSystem<T> implements FileSystemApi<T> {
+  private readonly basePath: string;
+
+  constructor(basePath: string) {
+    this.basePath = basePath;
+  }
+
+  async rename(path: string, newPath: string): Promise<boolean> {
+    return await window.electronFs.rename(
+      this.resolvePath(path),
+      this.resolvePath(newPath),
+    );
+  }
+
+  private resolvePath(targetPath: string): string {
+    const cleanBase = this.basePath.replace(/\/+$/, "");
+    const cleanTarget = targetPath.replace(/^\/+/, "");
+    return cleanBase ? `${cleanBase}/${cleanTarget}` : targetPath;
+  }
+
   async getAllFlat(rootPath: string): Promise<Record<string, T>> {
-    return await window.electronFs.getAllFlat(rootPath);
+    return await window.electronFs.getAllFlat(this.resolvePath(rootPath));
   }
+
   async tree(rootPath: string): Promise<Edge<string>[]> {
-    return await window.electronFs.tree(rootPath);
+    return await window.electronFs.tree(this.resolvePath(rootPath));
   }
+
   async get(path: string): Promise<T | undefined> {
-    return await window.electronFs.get(path);
+    return await window.electronFs.get(this.resolvePath(path));
   }
 
   async save(path: string, data: T): Promise<void> {
-    await window.electronFs.save(path, data);
+    await window.electronFs.save(this.resolvePath(path), data);
   }
 
   async move(sourcePath: string, destinationPath: string): Promise<void> {
-    await window.electronFs.move(sourcePath, destinationPath);
+    await window.electronFs.move(
+      this.resolvePath(sourcePath),
+      this.resolvePath(destinationPath),
+    );
   }
 
   async remove(path: string): Promise<void> {
-    await window.electronFs.remove(path);
+    await window.electronFs.remove(this.resolvePath(path));
   }
 
   async exists(path: string): Promise<boolean> {
-    return await window.electronFs.exists(path);
+    return await window.electronFs.exists(this.resolvePath(path));
   }
 
   async isDirectory(path: string): Promise<boolean> {
-    return await window.electronFs.isDirectory(path);
+    return await window.electronFs.isDirectory(this.resolvePath(path));
   }
 
   async list(directoryPath: string): Promise<FileInfo[]> {
-    return await window.electronFs.list(directoryPath);
+    return await window.electronFs.list(this.resolvePath(directoryPath));
   }
 }

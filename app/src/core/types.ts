@@ -19,7 +19,7 @@ export type EpObjectId = string;
 
 export type _IsContainerPropertyId = "isContainer";
 export type SystemPropertyId = _IsContainerPropertyId;
-export type EpPropertyId = SystemPropertyId | (string & {});
+export type EpPropertyId = SystemPropertyId | "title" | (string & {});
 
 export type EpPropertyTypes = "text" | "boolean" | "select" | "number";
 // | "object"
@@ -54,9 +54,3 @@ export interface SettingsCategory {
   label: string;
   settingEntries: SettingEntry[];
 }
-
-export type ObjectFilterOptions = {
-  types?: EpTypeId[] | EpTypeId;
-  descendantTypes?: boolean;
-  text?: string;
-};

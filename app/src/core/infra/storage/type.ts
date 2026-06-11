@@ -1,27 +1,57 @@
-import type { EpObjectId, EpTypeId, Icon } from "@/core/types";
+import type { _TypeKind } from "@/core/domain/type";
+import type {
+  EpObjectId,
+  EpPropertyId,
+  EpPropertyTypes,
+  EpTypeId,
+  Icon,
+} from "@/core/types";
 
-export interface RawEpObject {
+export interface RawBaseEpObject<TContent> {
   id: EpObjectId;
   typeId: EpTypeId;
   properties: Record<string, any>;
-  content: Record<string, any>;
+  content: TContent;
 }
 
-export interface RawContainerObject {
-  id: EpObjectId;
-  typeId: EpTypeId;
+export interface RawEpObject extends RawBaseEpObject<Record<EpObjectId, any>> {}
+
+export interface RawContainerObject extends RawBaseEpObject<
+  Record<EpObjectId, RawEpObject>
+> {
   title: string;
   order: EpObjectId[];
-  properties: Record<string, any>;
-  rawData: Record<EpObjectId, RawEpObject>;
 }
 
-export type RawProperties = Record<string, any>;
+export type RawPropertiesSchemeEntry = {
+  id: EpPropertyId;
+  title: string;
+  type: EpPropertyTypes;
+};
+
+export type RawPropertiesScheme = {
+  order: EpTypeId[];
+  props: Record<string, RawPropertiesSchemeEntry>;
+};
 
 export interface RawEpType {
   id: EpTypeId;
-  kind: string;
+  kind: _TypeKind;
   icon?: Icon;
   title: string;
-  properties: RawProperties;
+  propertiesScheme?: RawPropertiesScheme;
 }
+
+export interface RawEptTypeHierarchyNode {
+  id: EpTypeId;
+  type: RawEpType;
+  children: RawEptTypeHierarchyNode[];
+}
+
+export type RawObjectFilterOptions = {
+  types?: EpTypeId[] | EpTypeId;
+  descendantTypes?: boolean;
+  text?: string;
+};
+
+export type AllRawEpObject = RawEpObject | RawContainerObject;

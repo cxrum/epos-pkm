@@ -95,6 +95,18 @@ export class JsonNodeFileSystem<
     });
   }
 
+  async rename(path: string, newPath: string): Promise<boolean> {
+    const newFileExist = await this.exists(newPath);
+    const current = await this.exists(path);
+
+    if (!newFileExist && current) {
+      await fs.rename(path, newPath);
+      return true;
+    }
+
+    return false;
+  }
+
   async tree(rootPath: string): Promise<{ source: string; target: string }[]> {
     const fullRootPath = this.getFullPath(rootPath);
 
@@ -150,6 +162,7 @@ export class JsonNodeFileSystem<
       for (let index = 0; index < entries.length; index++) {
         const el = entries[index];
         const absolutePath = path.join(currentPath, el.name);
+        const relativeTarget = path.relative(this.basePath, absolutePath);
 
         if (!discovered.has(absolutePath)) {
           discovered.add(absolutePath);
@@ -161,7 +174,7 @@ export class JsonNodeFileSystem<
             const content = await fs.readFile(absolutePath, "utf-8");
             const parsedData = JSON.parse(content) as T;
 
-            fileData[parsedData.id] = parsedData;
+            fileData[relativeTarget] = parsedData;
           }
         }
       }

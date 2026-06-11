@@ -1,11 +1,20 @@
-import type { EpObject, ObjectHierarchyNode } from "@/core/application/types";
-import type { EpObjectId, ObjectFilterOptions, ObjectPath } from "@/core/types";
+import type {
+  EpObjectEntity,
+  ObjectFilterOptions,
+  ObjectHierarchyNode,
+} from "@/core/domain/type";
+import type { EpObjectId, ObjectPath } from "@/core/types";
 
 export interface ObjetServiceContract {
-  get(id: EpObjectId): Promise<EpObject>;
-  getAll(filterOptions: ObjectFilterOptions | undefined): Promise<EpObject[]>;
-  create(object: EpObject): Promise<EpObject>;
-  update(id: EpObjectId, newData: EpObject): Promise<EpObject>;
+  get(id: EpObjectId): Promise<EpObjectEntity | undefined>;
+  getAll(
+    filterOptions: ObjectFilterOptions | undefined,
+  ): Promise<EpObjectEntity[]>;
+  create(
+    parentId: EpObjectId | undefined,
+    object: EpObjectEntity,
+  ): Promise<EpObjectEntity>;
+  update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity>;
   delete(id: EpObjectId): Promise<boolean>;
   move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean>;
 

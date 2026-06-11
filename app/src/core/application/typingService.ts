@@ -1,7 +1,6 @@
 import type { TypingRepositoryContract } from "@/core/domain/repositories/typesRepositoryContract";
 import type { EpTypeId, SystemTypeId } from "@/core/types";
 import type { TypingServiceContract } from "../store/services/typingEngineContract";
-import { toEpType, type EpType } from "./types";
 import { createCompanionEpTypeEntity, type EpTypeEntity } from "../domain/type";
 
 export class TypingService implements TypingServiceContract {
@@ -11,22 +10,22 @@ export class TypingService implements TypingServiceContract {
     this.typingRepository = typingRepository;
   }
 
-  async getType(id: EpTypeId): Promise<EpType | undefined> {
+  async getType(id: EpTypeId): Promise<EpTypeEntity | undefined> {
     return await this.typingRepository.get(id);
   }
 
-  async getAllTypes(): Promise<EpType[]> {
+  async getAllTypes(): Promise<EpTypeEntity[]> {
     return await this.typingRepository.getAll();
   }
 
-  async createType(type: EpType): Promise<EpType> {
-    return toEpType(await this.typingRepository.create(type));
+  async createType(type: EpTypeEntity): Promise<EpTypeEntity> {
+    return await this.typingRepository.create(type);
   }
 
   async updateType(
     id: Exclude<EpTypeId, SystemTypeId>,
-    newData: Partial<EpType>,
-  ): Promise<EpType | undefined> {
+    newData: Partial<EpTypeEntity>,
+  ): Promise<EpTypeEntity | undefined> {
     const existingType = await this.typingRepository.get(id);
 
     if (!existingType || existingType.kind === "system") {
@@ -42,7 +41,7 @@ export class TypingService implements TypingServiceContract {
 
     const result = await this.typingRepository.update(id, updatedType);
 
-    return result ? toEpType(result) : undefined;
+    return result ?? undefined;
   }
 
   async deleteType(id: Exclude<EpTypeId, SystemTypeId>): Promise<boolean> {
@@ -106,9 +105,9 @@ export class TypingService implements TypingServiceContract {
     return descendants.includes(childType);
   }
 
-  async getDescendants(parentType: EpTypeId): Promise<EpType[]> {
+  async getDescendants(parentType: EpTypeId): Promise<EpTypeEntity[]> {
     const descendants = await this.typingRepository.getDescendants(parentType);
-    const result: EpType[] = [];
+    const result: EpTypeEntity[] = [];
 
     for (const val in descendants) {
       const res = await this.typingRepository.get(val);

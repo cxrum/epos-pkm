@@ -3,10 +3,15 @@ import { TypingService } from "@/core/application/typingService";
 import { ObjectStorageRepository } from "@/core/infra/storage/objectsRepository";
 import { TypingRepository } from "@/core/infra/storage/typeRepository";
 import { IpcFileSystem } from "../infra/storage/storageRepository";
-import type { RawContainerObject, RawEpType } from "../infra/storage/type";
+import type {
+  RawContainerObject,
+  RawEptTypeHierarchyNode,
+} from "../infra/storage/type";
 
-const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>();
-const typesStorageApi = new IpcFileSystem<RawEpType>();
+const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>(
+  "/workspace/",
+);
+const typesStorageApi = new IpcFileSystem<RawEptTypeHierarchyNode>("/types/");
 
 const typingRepository = new TypingRepository(typesStorageApi);
 const objectRepository = new ObjectStorageRepository(containerObjectStorageApi);

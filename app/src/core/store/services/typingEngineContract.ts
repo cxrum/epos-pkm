@@ -1,15 +1,15 @@
-import type { EpType } from "@/core/application/types";
+import type { EpTypeEntity } from "@/core/domain/type";
 import type { EpTypeId, SystemTypeId } from "@/core/types";
 
 export interface TypingServiceContract {
-  getType(id: EpTypeId): Promise<EpType | undefined>;
-  getAllTypes(): Promise<EpType[]>;
+  getType(id: EpTypeId): Promise<EpTypeEntity | undefined>;
+  getAllTypes(): Promise<EpTypeEntity[]>;
 
-  createType(type: EpType): Promise<EpType>;
+  createType(type: EpTypeEntity): Promise<EpTypeEntity>;
   updateType(
     id: Exclude<EpTypeId, SystemTypeId>,
-    newData: Partial<EpType>,
-  ): Promise<EpType | undefined>;
+    newData: Partial<EpTypeEntity>,
+  ): Promise<EpTypeEntity | undefined>;
   deleteType(id: Exclude<EpTypeId, SystemTypeId>): Promise<boolean>;
 
   inherit(
@@ -25,5 +25,5 @@ export interface TypingServiceContract {
     parentType: EpTypeId,
     childType: EpTypeId,
   ): Promise<boolean>;
-  getDescendants(parentType: EpTypeId): Promise<EpType[]>;
+  getDescendants(parentType: EpTypeId): Promise<EpTypeEntity[]>;
 }

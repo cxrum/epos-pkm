@@ -1,8 +1,12 @@
 import type { ObjectStorageRepositoryContract } from "../domain/repositories/objectRepositoryContract";
 import type { TypingRepositoryContract } from "../domain/repositories/typesRepositoryContract";
+import type {
+  EpObjectEntity,
+  ObjectFilterOptions,
+  ObjectHierarchyNode,
+} from "../domain/type";
 import type { ObjetServiceContract } from "../store/services/objectsContract";
-import type { EpObjectId, ObjectFilterOptions, ObjectPath } from "../types";
-import type { EpObject, EpType, ObjectHierarchyNode } from "./types";
+import type { EpObjectId, EpTypeId, ObjectPath } from "../types";
 
 export class ObjectsService implements ObjetServiceContract {
   private readonly typingRepository: TypingRepositoryContract;
@@ -15,31 +19,79 @@ export class ObjectsService implements ObjetServiceContract {
     this.typingRepository = typingRepository;
     this.objectsStorageRepository = objectsStorageRepository;
   }
-  move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean> {
-    throw new Error("Method not implemented.");
+  async move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean> {
+    return await this.objectsStorageRepository.move(movedId, parentId);
   }
-  get(id: EpObjectId): Promise<EpObject> {
-    throw new Error("Method not implemented.");
+  async get(id: EpObjectId): Promise<EpObjectEntity | undefined> {
+    const result = await this.objectsStorageRepository.get(id);
+    if (!result) {
+      return undefined;
+    }
+    const type = await this.typingRepository.get(result.typeId);
+    if (!type) {
+      return undefined;
+    }
+
+    return result;
   }
-  getAll(filterOptions: ObjectFilterOptions | undefined): Promise<EpObject[]> {
-    throw new Error("Method not implemented.");
+  async getAll(
+    filterOptions: ObjectFilterOptions | undefined,
+  ): Promise<EpObjectEntity[]> {
+    let expandedTypes: EpTypeId[] | undefined = undefined;
+    const descendantsMap = await this.typingRepository.getAllDescendants();
+
+    if (filterOptions && filterOptions.descendantTypes && filterOptions.types) {
+      const baseTypes = Array.isArray(filterOptions.types)
+        ? filterOptions.types
+        : [filterOptions.types];
+
+      const collectedTypes = [...baseTypes];
+      for (let i = 0; i < baseTypes.length; i++) {
+        const children = descendantsMap.get(baseTypes[i]);
+        if (children) {
+          for (let j = 0; j < children.length; j++) {
+            collectedTypes.push(children[j]);
+          }
+        }
+      }
+      expandedTypes = collectedTypes;
+    }
+
+    const res = await this.objectsStorageRepository.getAll(
+      filterOptions,
+      descendantsMap,
+    );
+
+    if (!res) {
+      return [];
+    }
+
+    return res;
   }
-  create(object: EpObject): Promise<EpObject> {
-    throw new Error("Method not implemented.");
+
+  async create(
+    parentId: EpObjectId | undefined,
+    object: EpObjectEntity,
+  ): Promise<EpObjectEntity> {
+    const res = await this.objectsStorageRepository.create(parentId, object);
+    return res;
   }
-  update(id: EpObjectId, newData: EpObject): Promise<EpObject> {
-    throw new Error("Method not implemented.");
+  async update(
+    id: EpObjectId,
+    newData: EpObjectEntity,
+  ): Promise<EpObjectEntity> {
+    return await this.objectsStorageRepository.update(id, newData);
   }
-  delete(id: EpObjectId): Promise<boolean> {
-    throw new Error("Method not implemented.");
+  async delete(id: EpObjectId): Promise<boolean> {
+    return await this.objectsStorageRepository.delete(id);
   }
-  getTree(): Promise<ObjectHierarchyNode> {
-    throw new Error("Method not implemented.");
+  async getTree(): Promise<ObjectHierarchyNode> {
+    return await this.objectsStorageRepository.getTreeHierarchy();
   }
-  getObjectPath(id: EpObjectId): Promise<ObjectPath> {
-    throw new Error("Method not implemented.");
+  async getObjectPath(id: EpObjectId): Promise<ObjectPath> {
+    return await this.getObjectPath(id);
   }
-  getPaths(): Promise<Record<EpObjectId, ObjectPath>> {
+  async getPaths(): Promise<Record<EpObjectId, ObjectPath>> {
     throw new Error("Method not implemented.");
   }
 }

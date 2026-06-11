@@ -6,9 +6,11 @@ import type {
   DefaultTypeId,
   EpPropertyId,
   EpPropertyTypes,
+  Path,
+  ObjectPath,
 } from "../types";
 
-type _TypeKind = "default" | "system" | "user";
+export type _TypeKind = "default" | "system" | "user";
 
 export interface BasePropertySchemeEntry<
   TProperty extends EpPropertyId = EpPropertyId,
@@ -67,13 +69,9 @@ export type DynamicPropertiesMap = {
 
 export type AllPropertiesMap = SystemPropertiesMap & DynamicPropertiesMap;
 
-export interface BaseProperties {
-  props: AllPropertiesMap;
-}
-
 export interface BasePropertiesScheme {
   order: EpPropertyId[];
-  props: AllPropertiesMap;
+  props: Record<string, BasePropertySchemeEntry>; // TODO: Idk, it seems to me its bad idea, too wide type.
 }
 
 interface BaseTypeEntity<
@@ -85,7 +83,7 @@ interface BaseTypeEntity<
   kind: TKind;
   icon?: Icon;
   title: string;
-  properties: TProperties;
+  propertiesScheme: TProperties;
 }
 
 export interface DefaultTypeEntity extends BaseTypeEntity<
@@ -133,11 +131,14 @@ export interface TypeHierarchyNode {
 export interface BaseEpObjectEntity<
   TType extends EpTypeId = EpTypeId,
   TContent = Record<string, any>,
-> extends BaseProperties {
+  TProperties extends Record<string, AnyValidPropertyEntry> = AllPropertiesMap,
+> {
   id: EpObjectId;
   typeId: TType;
-  path: string;
+  physicalRelativePath: string;
+  objectPath: ObjectPath;
   content: TContent;
+  props: TProperties;
 }
 
 export interface PageContent {
@@ -158,3 +159,9 @@ export interface ObjectHierarchyNode {
   typeId: EpTypeId;
   children: ObjectHierarchyNode[];
 }
+
+export type ObjectFilterOptions = {
+  types?: EpTypeId[] | EpTypeId;
+  descendantTypes?: boolean;
+  text?: string;
+};
