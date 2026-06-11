@@ -6,7 +6,6 @@ import type {
   DefaultTypeId,
   EpPropertyId,
   EpPropertyTypes,
-  Path,
   ObjectPath,
 } from "../types";
 

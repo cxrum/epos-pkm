@@ -1,26 +1,22 @@
 import type { EpObjectId, EpTypeId } from "@/core/types";
 import type {
-  BaseEpObjectEntity,
   EpObjectEntity,
   ObjectFilterOptions,
   ObjectHierarchyNode,
 } from "../type";
 
 export interface ObjectStorageRepositoryContract {
-  get(id: EpObjectId): Promise<BaseEpObjectEntity | undefined>;
+  get(id: EpObjectId): Promise<EpObjectEntity | undefined>;
   create(
     parentId: EpObjectId | undefined,
     data: EpObjectEntity,
   ): Promise<EpObjectEntity>;
-  update(
-    id: EpObjectId,
-    newData: BaseEpObjectEntity,
-  ): Promise<BaseEpObjectEntity>;
+  update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity>;
   delete(id: EpObjectId): Promise<boolean>;
   getAll(
     filterOptions: ObjectFilterOptions | undefined,
     descendantTypes: Map<EpTypeId, EpTypeId[]> | undefined,
-  ): Promise<BaseEpObjectEntity[]>;
+  ): Promise<EpObjectEntity[]>;
   getTreeHierarchy(): Promise<ObjectHierarchyNode>;
   move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean>;
 }

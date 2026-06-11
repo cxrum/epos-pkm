@@ -59,7 +59,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     }
 
     const resultFileTree: ObjectHierarchyNode = {
-      id: "-1" as EpObjectId,
+      id: this.ROOT_ID,
       typeId: "sys:root" as EpTypeId,
       children: [],
     };

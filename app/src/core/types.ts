@@ -9,6 +9,7 @@ export type Icon = DefaultIcon | LinkIcon | EmojiIcon;
 export type SystemTypeId = "sys:root" | "sys:page" | "sys:hard-page-link";
 export type DefaultTypeId =
   | "def:text"
+  | "def:table"
   | "def:latex"
   | "def:code"
   | "def:back-link"
@@ -54,3 +55,20 @@ export interface SettingsCategory {
   label: string;
   settingEntries: SettingEntry[];
 }
+
+export type SystemPageId = "graph" | "aggregator";
+export type MetaId = EpObjectId | SystemPageId;
+
+export interface BasePageMeta<TId extends MetaId = MetaId> {
+  id: TId;
+  title: string;
+  icon: Icon;
+}
+
+export interface ObjectMeta extends BasePageMeta<EpObjectId> {
+  typeId: EpTypeId;
+}
+
+export interface SystemPageMeta extends BasePageMeta<SystemPageId> {}
+
+export type PageMeta = ObjectMeta | SystemPageMeta;

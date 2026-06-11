@@ -7,18 +7,9 @@ import type {
   BasePropertiesScheme,
 } from "@/core/domain/type";
 import type { EpTypeId, SystemTypeId } from "@/core/types";
-import {
-  deepTraversal,
-  extractTreeEdges,
-  flattenTree,
-  type Edge,
-} from "../utils";
+import { deepTraversal, extractTreeEdges, type Edge } from "../utils";
 import type { FileSystemApi } from "../../../../fileSystemApiContract";
-import type {
-  RawEptTypeHierarchyNode,
-  RawEpType,
-  RawPropertiesScheme,
-} from "./type";
+import type { RawEptTypeHierarchyNode, RawEpType } from "./type";
 
 const ROOT: RawEptTypeHierarchyNode = {
   id: "sys:root",
@@ -45,7 +36,7 @@ const ROOT: RawEptTypeHierarchyNode = {
         title: "Page",
         icon: {
           type: "default",
-          name: "document",
+          name: "page",
         },
         kind: "system",
       },

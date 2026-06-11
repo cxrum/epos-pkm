@@ -1,3 +1,4 @@
+import type { TreeNode } from "@/shared/components/tree/contract";
 import type { ObjectStorageRepositoryContract } from "../domain/repositories/objectRepositoryContract";
 import type { TypingRepositoryContract } from "../domain/repositories/typesRepositoryContract";
 import type {
@@ -85,8 +86,46 @@ export class ObjectsService implements ObjetServiceContract {
   async delete(id: EpObjectId): Promise<boolean> {
     return await this.objectsStorageRepository.delete(id);
   }
-  async getTree(): Promise<ObjectHierarchyNode> {
-    return await this.objectsStorageRepository.getTreeHierarchy();
+  async getFileTree(): Promise<TreeNode> {
+    const result = await this.objectsStorageRepository.getTreeHierarchy();
+
+    const convertor = async (
+      rawRoot: ObjectHierarchyNode,
+      cache: Map<EpTypeId, TreeNode> = new Map(),
+    ): Promise<TreeNode> => {
+      if (cache.has(rawRoot.id)) {
+        return cache.get(rawRoot.id)!;
+      }
+
+      const type = await this.typingRepository.get(rawRoot.typeId);
+      const object = await this.objectsStorageRepository.get(rawRoot.id);
+
+      let title = type?.title ?? "unknown";
+      if (object && object.typeId === "sys:page") {
+        title = object.content.title;
+      }
+
+      const newNode: TreeNode = {
+        id: rawRoot.id,
+        type: type,
+        title: title,
+        children: [],
+      };
+
+      cache.set(newNode.id, newNode);
+
+      if (rawRoot.children && rawRoot.children.length > 0) {
+        for (let i = 0; i < rawRoot.children.length; i++) {
+          const rawChild = rawRoot.children[i];
+          const convertedChild = await convertor(rawChild, cache);
+          newNode.children.push(convertedChild);
+        }
+      }
+
+      return newNode;
+    };
+
+    return await convertor(result);
   }
   async getObjectPath(id: EpObjectId): Promise<ObjectPath> {
     return await this.getObjectPath(id);

@@ -1,18 +1,18 @@
 <script setup lang="ts">
 import BaseButton from "@/shared/components/BaseButton.vue";
 import Search from "@/assets/icons/Search.vue";
-import TypeDicitionary from "@/assets/icons/TypeDicitionary.vue";
+import TypeDictionary from "@/assets/icons/TypeDictionary.vue";
 import Graph from "@/assets/icons/Graph.vue";
 import Accordion from "@/shared/components/Accordion.vue";
 import type { MenuGroup } from "@/shared/components/popUpMenu/type";
 import Document from "@/assets/icons/Document.vue";
 import AddDocument from "@/assets/icons/AddDocument.vue";
-import { useWorkSpaceStore } from "../store/workSpaceStore";
+import { useWorkspaceStore } from "../store/workspaceStore";
 import { computed, ref, watch } from "vue";
 import Tree from "@/shared/components/tree/Tree.vue";
 import { useTreeController } from "@/shared/components/tree/baseTreeController";
 import { onClickOutside } from "@vueuse/core";
-import { useGlobalTabStore } from "../store/browserTabsStore";
+import { useGlobalTabsStore } from "../store/browserTabsStore";
 import { useGlobalPageStore } from "../store/globalPageStore";
 import LoadingSpinner from "@/shared/components/LoadingSpinner.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
@@ -21,8 +21,8 @@ const globalPageStore = useGlobalPageStore();
 const treeRef = ref();
 const treeController = useTreeController(globalPageStore.treeStructure);
 const globalNavigationStore = useGlobalNavigation();
-const workSpaceStore = useWorkSpaceStore();
-const tabStore = useGlobalTabStore();
+const workSpaceStore = useWorkspaceStore();
+const tabStore = useGlobalTabsStore();
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
 
 globalPageStore.refreshTreeStructure();
@@ -65,14 +65,14 @@ watch(
 
 watch(
   () => globalNavigationStore.activePage,
-  (pageMetha) => {
-    console.log(pageMetha);
-    if (pageMetha) {
-      treeController.selectNode(pageMetha.id);
-      const res = tabStore.openTab(pageMetha.id);
+  (pageMeta) => {
+    console.log(pageMeta);
+    if (pageMeta) {
+      treeController.selectNode(pageMeta.id);
+      const res = tabStore.openTab(pageMeta.id);
       if (!res) {
-        tabStore.createTab(pageMetha);
-        tabStore.openTab(pageMetha.id);
+        tabStore.createTab(pageMeta);
+        tabStore.openTab(pageMeta.id);
       }
     } else {
       treeController.clearSelection();
@@ -107,7 +107,7 @@ const complexMenuData: MenuGroup[] = [
     <BaseButton
       class="w-full"
       :is-content-visible="isSidebarOpen"
-      :icon="TypeDicitionary"
+      :icon="TypeDictionary"
     >
       Type
     </BaseButton>

@@ -1,12 +1,11 @@
 import { defineStore } from "pinia";
-import type { PageMetha } from "../types";
 import { ref } from "vue";
-import { PageRepository } from "../infra/storage/stubPageRepository";
-import type { Path } from "../domain/type";
+import type { EpObjectId, Icon, ObjectMeta, Path } from "../types";
+import { globalObjectsService, globalTypingService } from "../di/global";
 
 export const useGlobalNavigation = defineStore("navigation", () => {
-  const activePage = ref<PageMetha>();
-  const chachedPageMeta = ref<Record<number, PageMetha>>({});
+  const activePage = ref<ObjectMeta>();
+  const cachedPageMeta = ref<Record<EpObjectId, ObjectMeta>>({});
   const currentPath = ref<Path[]>([]);
 
   function setCurrentPath(els?: Path[]) {
@@ -17,32 +16,38 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     currentPath.value = els;
   }
 
-  const preloadPageMeta = async (pageId: number) => {
-    const result = await PageRepository.get(pageId);
+  const preloadPageMeta = async (objId: EpObjectId) => {
+    const result = await globalObjectsService.get(objId);
+    const type = await globalTypingService.getType(objId);
+
+    let icon: Icon = { name: "page", type: "default" };
+    let title: string = type?.title ?? "unknown";
+
     if (result) {
-      chachedPageMeta.value[pageId] = {
-        id: result.id,
-        title: result.title,
-        type: result.typeId,
-      };
+      if (result.typeId === "sys:page") {
+        title = result.content.title;
+      } else if (type) {
+        icon = type.icon ?? { type: "default", name: "object" };
+      }
     }
-    activePage.value = chachedPageMeta.value[pageId];
+
+    activePage.value = cachedPageMeta.value[objId];
   };
 
-  const getMetaInfo = (pageId: number): PageMetha | undefined => {
-    return chachedPageMeta.value[pageId];
+  const getMetaInfo = (pageId: EpObjectId): ObjectMeta | undefined => {
+    return cachedPageMeta.value[pageId];
   };
 
-  const openPage = (pageId: number) => {
-    const metha = getMetaInfo(pageId);
-    if (metha !== undefined) {
-      activePage.value = metha;
+  const openPage = (pageId: EpObjectId) => {
+    const meta = getMetaInfo(pageId);
+    if (meta !== undefined) {
+      activePage.value = meta;
     } else {
       preloadPageMeta(pageId);
     }
   };
 
-  const closePage = (pageId: number) => {
+  const closePage = (pageId: EpObjectId) => {
     if (pageId === activePage.value?.id) {
       activePage.value = undefined;
     }

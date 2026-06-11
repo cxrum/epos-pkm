@@ -1,115 +1,125 @@
-import { ref, isRef, type Ref } from 'vue'
-import type { TreeControllerContract, TreeNode } from './contract'
+import { ref, isRef, type Ref } from "vue";
+import type { TreeControllerContract, TreeNode } from "./contract";
 
-export function useTreeController(initialNodes: Ref<TreeNode> | TreeNode): TreeControllerContract {
-  const rootNode = isRef(initialNodes) ? initialNodes : ref(initialNodes)
-  const indexedNodes = ref<Record<number, number[]>>({})
+export function useTreeController(
+  initialNodes: Ref<TreeNode> | TreeNode,
+): TreeControllerContract<string> {
+  const rootNode = isRef(initialNodes) ? initialNodes : ref(initialNodes);
+  const indexedNodes = ref<Record<string, string[]>>({});
 
-  const selectedId = ref<number | null>(null)
-  const expandedIds = ref<Set<number>>(new Set())
-  
-  const isSelected = (id: number): boolean => {
-    return selectedId.value === id
-  }
+  const selectedId = ref<string | null>(null);
+  const expandedIds = ref<Set<string>>(new Set());
 
-  const isExpanded = (id: number): boolean => {
-    return expandedIds.value.has(id)
-  }
+  const isSelected = (id: string): boolean => {
+    return selectedId.value === id;
+  };
 
-  const selectNode = (id: number): void => {
-    selectedId.value = id
-  }
+  const isExpanded = (id: string): boolean => {
+    return expandedIds.value.has(id);
+  };
 
-  const toggleExpand = (id: number): void => {
+  const selectNode = (id: string): void => {
+    selectedId.value = id;
+  };
+
+  const toggleExpand = (id: string): void => {
     if (expandedIds.value.has(id)) {
-      expandedIds.value.delete(id)
+      expandedIds.value.delete(id);
     } else {
-      expandedIds.value.add(id)
+      expandedIds.value.add(id);
     }
-  }
+  };
 
   const setRootNode = (root: TreeNode) => {
-    rootNode.value = root
-  }
+    rootNode.value = root;
+  };
 
-  const deep_travelsal = (root: TreeNode, discovered: number[], paths: Record<number, number[]>): Record<number, number[]>  => {
+  const deep_traversal = (
+    root: TreeNode,
+    discovered: string[],
+    paths: Record<string, string[]>,
+  ): Record<string, string[]> => {
     if (!paths[root.id]) {
       paths[root.id] = [];
     }
 
     for (let index = 0; index < root.children.length; index++) {
       const el = root.children[index];
-      if (!discovered.includes(el.id)){
-        discovered.push(el.id)
-        
-        if(paths[root.id]){
-          paths[el.id] = paths[root.id].concat(root.id) 
-        }else{
-          paths[root.id] = []
+      if (!discovered.includes(el.id)) {
+        discovered.push(el.id);
+
+        if (paths[root.id]) {
+          paths[el.id] = paths[root.id].concat(root.id);
+        } else {
+          paths[root.id] = [];
         }
-        
-        deep_travelsal(el, discovered, paths)
+
+        deep_traversal(el, discovered, paths);
       }
     }
-    return paths
-  }
+    return paths;
+  };
 
   const index = () => {
-    indexedNodes.value = deep_travelsal(rootNode.value, [], {})
-  }
+    indexedNodes.value = deep_traversal(rootNode.value, [], {});
+  };
 
-  index()
+  index();
 
-  const find = (id: number, root: TreeNode, discovered: number[]): TreeNode | undefined => {
-    if(id === root.id){
-      return root
+  const find = (
+    id: string,
+    root: TreeNode,
+    discovered: string[],
+  ): TreeNode | undefined => {
+    if (id === root.id) {
+      return root;
     }
 
-    if (root.children == undefined){
-      return undefined
+    if (root.children == undefined) {
+      return undefined;
     }
 
     for (let index = 0; index < root.children.length; index++) {
       const el = root.children[index];
-      if (!discovered.includes(el.id)){
-        discovered.push(el.id)
-        const node = find(id, el, discovered)
+      if (!discovered.includes(el.id)) {
+        discovered.push(el.id);
+        const node = find(id, el, discovered);
         if (node !== undefined) {
-          return node
+          return node;
         }
       }
     }
-    return undefined
-  }
+    return undefined;
+  };
 
-  const getNodeContext = (id: number, path: number[]) => {
-    let parentArray: TreeNode[] = rootNode.value.children
+  const getNodeContext = (id: string, path: string[]) => {
+    let parentArray: TreeNode[] = rootNode.value.children;
     let node: TreeNode | undefined = undefined;
 
     for (let i = 0; i < path.length; i++) {
-      node = parentArray.find(el => el.id === path[i])
-      
+      node = parentArray.find((el) => el.id === path[i]);
+
       if (node) {
-        if (!node .children) {
-          node.children = []
+        if (!node.children) {
+          node.children = [];
         }
-        parentArray = node.children
+        parentArray = node.children;
       }
     }
 
-    const fNode = parentArray.find(el => el.id === id) 
-    return {node: fNode , parentArray: parentArray }
-  }
+    const fNode = parentArray.find((el) => el.id === id);
+    return { node: fNode, parentArray: parentArray };
+  };
 
-  const moveIn = (id: number, toId: number): void => {
-    index()
+  const moveIn = (id: string, toId: string): void => {
+    index();
     const movedNode = getNodeContext(id, indexedNodes.value[id]);
     const destinationNode = getNodeContext(toId, indexedNodes.value[toId]);
     if (!movedNode.node || !destinationNode.node) return;
 
-    const oldIndex = movedNode.parentArray.findIndex(n => n.id === id);
+    const oldIndex = movedNode.parentArray.findIndex((n) => n.id === id);
     if (oldIndex > -1) {
-      movedNode.parentArray.splice(oldIndex, 1); 
+      movedNode.parentArray.splice(oldIndex, 1);
     }
 
     if (!destinationNode.node.children) {
@@ -117,41 +127,47 @@ export function useTreeController(initialNodes: Ref<TreeNode> | TreeNode): TreeC
     }
     destinationNode.node.children.push(movedNode.node);
 
-    index()
-  }
+    index();
+  };
 
-  const move = (id: number, toId: number, shift: number = 0): void => {
+  const move = (id: string, toId: string, shift: number = 0): void => {
     const movedNode = getNodeContext(id, indexedNodes.value[id]);
     const destinationNode = getNodeContext(toId, indexedNodes.value[toId]);
     if (!movedNode.node || !destinationNode.node) return;
 
-    const oldIndex = movedNode.parentArray.findIndex(n => n.id === id);
+    const oldIndex = movedNode.parentArray.findIndex((n) => n.id === id);
     if (oldIndex > -1) {
-      movedNode.parentArray.splice(oldIndex, 1); 
+      movedNode.parentArray.splice(oldIndex, 1);
     }
 
-    const destinationNodeIndex = destinationNode.parentArray.findIndex(n => n.id === toId);
+    const destinationNodeIndex = destinationNode.parentArray.findIndex(
+      (n) => n.id === toId,
+    );
 
     if (destinationNodeIndex > -1) {
-      destinationNode.parentArray.splice(destinationNodeIndex + shift, 0, movedNode.node);
+      destinationNode.parentArray.splice(
+        destinationNodeIndex + shift,
+        0,
+        movedNode.node,
+      );
     }
-  }
+  };
 
-  const moveAbove = (id: number, toId: number): void => {
-    index(); 
-    move(id, toId, 0); 
-    index(); 
-  }
+  const moveAbove = (id: string, toId: string): void => {
+    index();
+    move(id, toId, 0);
+    index();
+  };
 
-  const moveBelow = (id: number, toId: number): void => {
+  const moveBelow = (id: string, toId: string): void => {
     index();
-    move(id, toId, 1); 
+    move(id, toId, 1);
     index();
-  }
+  };
 
   const clearSelection = (): void => {
-    selectedId.value = -1
-  }
+    selectedId.value = "";
+  };
 
   return {
     rootNode,
@@ -163,9 +179,9 @@ export function useTreeController(initialNodes: Ref<TreeNode> | TreeNode): TreeC
     selectNode,
     clearSelection,
     toggleExpand,
-    
+
     moveIn,
     moveBelow,
-    moveAbove
-  }
+    moveAbove,
+  };
 }

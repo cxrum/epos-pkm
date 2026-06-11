@@ -1,57 +1,59 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
-import Tab from '@/core/components/Tab.vue';
-import { useGlobalTabStore } from '@/core/store/browserTabsStore';
-import DynamicIcon from '@/shared/components/icon/DynamicIcon.vue';
+import { computed, ref } from "vue";
+import Tab from "@/core/components/Tab.vue";
+import { useGlobalTabsStore } from "@/core/store/browserTabsStore";
+import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
+import type { MetaId } from "../types";
 
-const globalTabStore = useGlobalTabStore();
+const globalTabStore = useGlobalTabsStore();
 
-const activePageId = computed(()=>{
-  return globalTabStore.activeTab?.id
-})
+const activePageId = computed(() => {
+  return globalTabStore.activeTab?.id;
+});
 
-const props = defineProps()
+const props = defineProps();
 
-const scrollContainer = ref<HTMLElement | null>(null)
+const scrollContainer = ref<HTMLElement | null>(null);
 
 const handleHorizontalScroll = (event: WheelEvent) => {
-  if (!scrollContainer.value) return
+  if (!scrollContainer.value) return;
 
   if (event.deltaY !== 0) {
-    event.preventDefault()
-    scrollContainer.value.scrollLeft += event.deltaY
+    event.preventDefault();
+    scrollContainer.value.scrollLeft += event.deltaY;
   }
-}
+};
 
-const onClosePageClick = (pageId: number) => {
-  globalTabStore.closeTab(pageId)
-}
+const onClosePageClick = (pageId: MetaId) => {
+  globalTabStore.closeTab(pageId);
+};
 
-const onTabClick = (pageId: number) => {
-  globalTabStore.openTab(pageId)
-}
-
+const onTabClick = (pageId: MetaId) => {
+  globalTabStore.openTab(pageId);
+};
 </script>
 
 <template>
-<div 
+  <div
     ref="scrollContainer"
     @wheel="handleHorizontalScroll"
     class="flex w-full h-full items-center mx-auto overflow-x-auto no-scrollbar"
-    >
-    <Tab 
+  >
+    <Tab
       v-for="page in globalTabStore.openedTabs"
       :id="page.id"
-      :active="activePageId===page.id"
+      :active="activePageId === page.id"
       @close="onClosePageClick"
       @tab-click="onTabClick"
-      >
+    >
       <template #icon>
-        <DynamicIcon :icon="page.type?.icon" class="w-5 h-5 shrink-0 text-(--icon-color)" />
+        <DynamicIcon
+          :icon="page.icon"
+          class="w-5 h-5 shrink-0 text-(--icon-color)"
+        />
       </template>
-      
+
       {{ page.title }}
     </Tab>
-
-</div>
+  </div>
 </template>
