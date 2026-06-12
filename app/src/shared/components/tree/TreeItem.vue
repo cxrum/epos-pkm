@@ -3,7 +3,9 @@ import ChevronRight from "@/assets/icons/ChevronRight.vue";
 import type { TreeControllerContract, TreeNode } from "./contract";
 import BaseIcon from "../icon/BaseIcon.vue";
 import DynamicIcon from "../icon/DynamicIcon.vue";
-import { ref } from "vue";
+import { nextTick, ref } from "vue";
+import type { EpObjectId } from "@/core/types.ts";
+import BaseInput from "../BaseInput.vue";
 
 const props = defineProps<{
   node: TreeNode;
@@ -13,6 +15,9 @@ const props = defineProps<{
 }>();
 
 const emit = defineEmits(["moveNode"]);
+const editingId = ref<EpObjectId | undefined>(undefined);
+const inputRef = ref<HTMLObjectElement>();
+const localTitle = ref(props.node.title);
 
 const dropState = ref<"above" | "inside" | "below" | "none">("none");
 
@@ -100,6 +105,22 @@ const onDrop = (event: DragEvent, targetId: string | undefined) => {
 
   dropState.value = "none";
 };
+
+const editTitle = async (id: EpObjectId) => {
+  editingId.value = id;
+  await nextTick();
+  inputRef.value?.focus();
+};
+
+const saveEditedTitle = (id: EpObjectId) => {
+  if (localTitle.value === props.node.title) return;
+  props.controller.renameCallBack.value?.(id, localTitle.value);
+  editingId.value = undefined;
+};
+
+const cancelEditTitle = (id: EpObjectId) => {
+  editingId.value = undefined;
+};
 </script>
 
 <template>
@@ -129,18 +150,28 @@ const onDrop = (event: DragEvent, targetId: string | undefined) => {
         <ChevronRight />
       </BaseIcon>
       <div
+        v-if="!editingId"
         draggable="true"
         @dragstart="onDragStart($event, node.id.toString())"
         @dragover="onDragOver($event)"
         @dragleave="onDragLeave"
         @drop="onDrop($event, node.id.toString())"
         @click="controller.selectNode(node.id)"
-        @dblclick="controller.toggleExpand(node.id)"
+        @dblclick="editTitle(node.id)"
         :class="[`drop-${dropState} w-full`]"
       >
         <DynamicIcon :icon="node.type?.icon" class="base-icon" />
         {{ node.title }}
       </div>
+      <BaseInput
+        v-else
+        ref="inputRef"
+        v-model="localTitle"
+        :placeholder="node.title"
+        @keydown.enter="saveEditedTitle(node.id)"
+        @blur="cancelEditTitle(node.id)"
+        type="text"
+      />
     </span>
 
     <ul class="childs" v-if="controller.isExpanded(node.id) && node.children">

@@ -10,6 +10,9 @@ export function useTreeController(
   const selectedId = ref<string | null>(null);
   const expandedIds = ref<Set<string>>(new Set());
 
+  const renameCallBack = ref();
+  const updateStructureCallBack = ref();
+
   const isSelected = (id: string): boolean => {
     return selectedId.value === id;
   };
@@ -169,9 +172,19 @@ export function useTreeController(
     selectedId.value = "";
   };
 
+  const setRenameCallBack = (func: (id: string, newTitle: string) => void) => {
+    renameCallBack.value = func;
+  };
+
+  const setUpdateStructureCallBack = (func: (root: TreeNode) => void) => {
+    updateStructureCallBack.value = func;
+  };
+
   return {
     rootNode,
     selectedId,
+    renameCallBack,
+    updateStructureCallBack,
 
     setRootNode,
     isSelected,
@@ -183,5 +196,8 @@ export function useTreeController(
     moveIn,
     moveBelow,
     moveAbove,
+
+    setRenameCallBack,
+    setUpdateStructureCallBack,
   };
 }

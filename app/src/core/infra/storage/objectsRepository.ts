@@ -10,11 +10,9 @@ import {
   type AllRawEpObject,
   type RawObjectFilterOptions,
   type RawContainerObject,
-  type RawPropertiesSchemeEntry,
   isRawContainer,
 } from "./type";
 import { type Edge } from "../utils";
-import type { an } from "vue-router/dist/router-CWoNjPRp.mjs";
 
 export class ObjectStorageRepository implements ObjectStorageRepositoryContract {
   private readonly userStorageApi: FileSystemApi<RawContainerObject>;
@@ -204,6 +202,19 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       physicalRelativePath: this.objectPathCache.get(result.id) ?? "unknown",
       objectPath: this.getAncestorPath(id),
     };
+  }
+
+  async rename(id: EpObjectId, newTitle: string): Promise<boolean> {
+    const result = this.fileTreeCache.get(id);
+    if (!result) {
+      return false;
+    }
+    const path = this.objectPathCache.get(result.id);
+    if (!path) {
+      return false;
+    }
+
+    return false;
   }
 
   async create(

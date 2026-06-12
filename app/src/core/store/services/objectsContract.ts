@@ -18,7 +18,6 @@ export interface ObjetServiceContract {
   update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity>;
   delete(id: EpObjectId): Promise<boolean>;
   move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean>;
-
   getFileTree(): Promise<TreeNode>;
   getObjectPath(id: EpObjectId): Promise<ObjectPath>;
   getPaths(): Promise<Record<EpObjectId, ObjectPath>>;

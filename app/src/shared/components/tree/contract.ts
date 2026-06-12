@@ -13,6 +13,9 @@ export interface TreeControllerContract<TId extends MetaId> {
   rootNode: Ref<TreeNode>;
   selectedId: Ref<TId | null>;
 
+  renameCallBack: Ref<Function | undefined>;
+  updateStructureCallBack: Ref<Function | undefined>;
+
   isSelected(id: TId): boolean;
   isExpanded(id: TId): boolean;
   selectNode(id: TId): void;
@@ -23,4 +26,7 @@ export interface TreeControllerContract<TId extends MetaId> {
   moveIn(id: TId, toId: TId): void;
   moveAbove(id: TId, toId: TId): void;
   moveBelow(id: TId, toId: TId): void;
+
+  setRenameCallBack(func: (id: TId, newTitle: string) => void): void;
+  setUpdateStructureCallBack(func: (root: TreeNode) => void): void;
 }

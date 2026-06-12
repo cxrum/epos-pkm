@@ -27,6 +27,10 @@ const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
 
 globalPageStore.refreshTreeStructure();
 
+treeController.setRenameCallBack((id, newTitle) => {
+  globalPageStore.rename(id, newTitle);
+});
+
 onClickOutside(treeRef, () => {
   if (treeController.selectedId.value !== tabStore.activeTab?.id) {
     treeController.clearSelection();

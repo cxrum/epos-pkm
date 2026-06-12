@@ -13,6 +13,16 @@ export const useGlobalPageStore = defineStore("page", () => {
   const isObjectLoading = ref(false);
   const isTreeStructureLoading = ref(false);
 
+  const rename = async (objId: EpObjectId, newTitle: string) => {
+    isObjectLoading.value = true;
+    const result = await globalObjectsService.get(objId);
+    if (result) {
+      result.content.title = newTitle;
+      await globalObjectsService.update(objId, result);
+      await refreshTreeStructure();
+    }
+  };
+
   const create = async (
     parentId: EpObjectId | undefined,
     obj: EpObjectEntity,
@@ -26,6 +36,7 @@ export const useGlobalPageStore = defineStore("page", () => {
     isObjectLoading.value = true;
     await globalObjectsService.createEmpty(parentId, "sys:page");
     isObjectLoading.value = false;
+    await refreshTreeStructure();
   };
 
   const update = async (newEntity: EpObjectEntity) => {
@@ -33,6 +44,7 @@ export const useGlobalPageStore = defineStore("page", () => {
       const res = toRaw(newEntity);
       //console.log(res);
       await globalObjectsService.update(currentObject.value.id, res);
+      await refreshTreeStructure();
     }
   };
 
@@ -71,5 +83,6 @@ export const useGlobalPageStore = defineStore("page", () => {
     get,
     create,
     createEmptyPage,
+    rename,
   };
 });

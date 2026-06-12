@@ -103,8 +103,11 @@ export class JsonNodeFileSystem<
     const newFileExist = await this.exists(newPath);
     const current = await this.exists(path);
 
+    const fullOldPath = this.getFullPath(path);
+    const fullNewPath = this.getFullPath(newPath);
+
     if (!newFileExist && current) {
-      await fs.rename(path, newPath);
+      await fs.rename(fullOldPath, fullNewPath);
       return true;
     }
 

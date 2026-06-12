@@ -9,7 +9,7 @@ declare global {
     electronFs: FileSystemApi;
   }
 }
-export class IpcFileSystem<T> implements FileSystemApi<T> {
+export class IpcFileSystem<T extends any> implements FileSystemApi<T> {
   private readonly basePath: string | undefined;
 
   constructor(basePath: string | undefined) {
