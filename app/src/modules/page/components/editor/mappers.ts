@@ -1,5 +1,12 @@
 import type { JSONContent } from "@tiptap/core";
-import type { EpObjectEntity } from "../../../../core/domain/type";
+import {
+  isHeadingInlineEntity,
+  type BasePropertySchemeEntry,
+  type DynamicPropertiesMap,
+  type EpObjectEntity,
+  type HeadingObjectPropertiesMap,
+  type NumberValuedPropertyEntry,
+} from "../../../../core/domain/type";
 import type { EpObjectId } from "@/core/types";
 
 export interface MappedArray {
@@ -37,6 +44,10 @@ export const entitiesToTiptapDoc = (
         },
       };
 
+      if (tiptapType === "heading" && isHeadingInlineEntity(entity)) {
+        node.attrs!.level = entity.props?.level?.value || 1;
+      }
+
       if (isCustomBlock) {
         node.attrs!.domainContent = entity.content;
       } else {
@@ -58,8 +69,8 @@ export const entitiesToTiptapDoc = (
 };
 
 const mapEpTypeToTiptapType = (typeId: string): string => {
-  if (typeId === "sys:heading") return "heading";
-  if (typeId === "sys:text") return "paragraph";
+  if (typeId === "def:text") return "paragraph";
+  if (typeId === "def:heading") return "heading";
   return "epBlock";
 };
 
@@ -70,26 +81,42 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
   const entities = tiptapDoc.content.map((node) => {
     console.log(node);
     const isNewNode = !node.attrs?.id;
-    const typeId = !node.attrs?.typeId;
+    let resolvedTypeId = node.attrs?.typeId;
     const id = isNewNode ? crypto.randomUUID() : node.attrs?.id;
     order.push(id);
 
+    let props = node.attrs?.props || {};
     let entityContent: any = [];
 
     const isTextBlock = node.type === "paragraph" || node.type === "heading";
 
     if (isTextBlock) {
-      entityContent = node.content || [];
+      if (node.type === "heading") {
+        if (!resolvedTypeId) resolvedTypeId = "def:heading";
+
+        entityContent = node.content || [];
+        const levelProperty = {
+          id: "level",
+          title: "level",
+          type: "number",
+          value: node.attrs?.level || 1,
+        };
+        props = { ...props, level: levelProperty };
+      } else if (node.type === "paragraph") {
+        if (!resolvedTypeId) resolvedTypeId = "def:text";
+
+        entityContent = node.content || [];
+      }
     } else {
       entityContent = node.attrs?.domainContent || {};
     }
 
     return {
       id: id,
-      typeId: node.attrs?.typeId || "sys:text",
+      typeId: resolvedTypeId,
       physicalRelativePath: node.attrs?.physicalRelativePath || "",
       objectPath: node.attrs?.objectPath || [],
-      props: node.attrs?.props || {},
+      props: props,
       content: entityContent,
     };
   });

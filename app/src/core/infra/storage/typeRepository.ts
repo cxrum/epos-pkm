@@ -80,6 +80,25 @@ const ROOT: RawEptTypeHierarchyNode = {
         },
       ],
     },
+    {
+      id: "def:heading",
+      type: {
+        id: "def:heading",
+        title: "Heading",
+        kind: "default",
+        propertiesScheme: {
+          order: ["level"],
+          props: {
+            isContainer: {
+              id: "level",
+              title: "level",
+              type: "number",
+            },
+          },
+        },
+      },
+      children: [],
+    },
   ],
 };
 

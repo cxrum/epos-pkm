@@ -13,6 +13,7 @@ export type SystemTypeId =
   | "sys:hard-page-link";
 export type DefaultTypeId =
   | "def:text"
+  | "def:heading"
   | "def:table"
   | "def:latex"
   | "def:code"

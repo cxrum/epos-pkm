@@ -221,7 +221,7 @@ export type SystemInlinePropertiesMap = Omit<
   };
 };
 
-export interface SystemInlineEntity extends BaseEpObjectEntity<
+export interface StandardInlineEntity extends BaseEpObjectEntity<
   SystemTypeId,
   Record<string, any>,
   SystemInlinePropertiesMap
@@ -229,13 +229,51 @@ export interface SystemInlineEntity extends BaseEpObjectEntity<
 
 export function isSystemInlineEntity(
   entity: EpObjectEntity,
-): entity is SystemInlineEntity {
+): entity is StandardInlineEntity {
   return (
     entity.props.isContainer?.value === false &&
     entity.typeId !== "sys:hard-page-link"
   );
 }
 // STANDARD INLINE OBJECT  -------------------------------------------------
+
+// HEADING INLINE OBJECT  -----------------------------------------------------
+export type HeadingObjectPropertiesMap = Omit<
+  SystemPropertiesMap,
+  "isContainer"
+> & {
+  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
+    value: false;
+  };
+  level: Omit<NumberValuedPropertyEntry<"level">, "value"> & {
+    value: 1 | 2 | 3 | 4 | 5 | 6;
+  };
+};
+
+export interface HeadingObjectEntity extends BaseEpObjectEntity<
+  DefaultTypeId,
+  Record<string, any>,
+  HeadingObjectPropertiesMap
+> {}
+
+export function isHeadingInlineEntity(
+  entity: EpObjectEntity,
+): entity is HeadingObjectEntity {
+  return entity.typeId === "def:heading";
+}
+// HEADING INLINE OBJECT  --------------------------------------------------
+
+// TEXT INLINE OBJECT  -----------------------------------------------------
+export interface TextObjectEntity extends BaseEpObjectEntity<
+  DefaultTypeId,
+  Record<string, any>,
+  HeadingObjectPropertiesMap
+> {}
+
+export function isAnyText(entity: EpObjectEntity): entity is TextObjectEntity {
+  return entity.typeId === "def:heading" && entity.typeId === "def:heading";
+}
+// TEXT INLINE OBJECT  -----------------------------------------------------
 
 // USER INLINE OBJECT  -----------------------------------------------------
 export type CustomInlinePropertiesMap = Omit<
@@ -255,7 +293,7 @@ export interface CustomInlineEntity extends BaseEpObjectEntity<
 
 export function isAnyInlineEntity(
   entity: EpObjectEntity,
-): entity is CustomInlineEntity | SystemInlineEntity {
+): entity is CustomInlineEntity | StandardInlineEntity {
   return (
     entity.props.isContainer?.value === false &&
     entity.typeId !== "sys:hard-page-link"
@@ -284,8 +322,9 @@ export type EpContainerObjectEntity =
 
 export type EpInlineObjectEntity =
   | MountedContainerObjectEntity
-  | SystemInlineEntity
-  | CustomInlineEntity;
+  | StandardInlineEntity
+  | CustomInlineEntity
+  | HeadingObjectEntity;
 
 export type EpObjectEntity = EpContainerObjectEntity | EpInlineObjectEntity;
 

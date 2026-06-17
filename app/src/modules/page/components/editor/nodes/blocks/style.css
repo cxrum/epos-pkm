@@ -5,6 +5,7 @@
   border: 1px solid var(--border);
   border-radius: 8px;
   cursor: pointer;
+  color: var(--text-default-color);
 }
 
 .page-link-card:hover {

@@ -21,7 +21,6 @@ import { computed } from "vue";
 import { nodeViewProps, NodeViewWrapper, NodeViewContent } from "@tiptap/vue-3";
 
 import PageLinkBlock from "./blocks/PageLinkBlock.vue";
-import TextBlock from "./blocks/TextBlock.vue";
 import UnknownBlock from "./blocks/UnknownBlock.vue";
 
 const props = defineProps(nodeViewProps);
@@ -37,8 +36,8 @@ const resolvedComponent = computed(() => {
 
 const isTextEditable = computed(() => {
   return (
-    props.node.attrs.typeId === "sys:text" ||
-    props.node.attrs.typeId === "sys:heading"
+    props.node.attrs.typeId === "def:text" ||
+    props.node.attrs.typeId === "def:heading"
   );
 });
 </script>

@@ -12,7 +12,7 @@ export const EpBlockExtension = Node.create({
   addAttributes() {
     return {
       id: { default: null },
-      typeId: { default: "sys:text" },
+      typeId: { default: "def:text" },
       physicalRelativePath: { default: "" },
       objectPath: { default: [] },
       props: { default: {} },

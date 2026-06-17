@@ -112,7 +112,7 @@
     font-weight: 400;
     font-size: 16px;
     font-family: var(--fixel);
-    color: var(--text-secondary-color);
+    color: var(--text-default-color);
   }
 
   label {
