@@ -1,6 +1,7 @@
 import type { EpTypeEntity } from "@/core/domain/type";
 import type { EpObjectId, MetaId } from "@/core/types";
 import type { Ref } from "vue";
+import type { MenuGroup } from "../popUpMenu/type";
 
 export interface TreeNode {
   id: EpObjectId;
@@ -15,6 +16,7 @@ export interface TreeControllerContract<TId extends MetaId> {
 
   renameCallBack: Ref<Function | undefined>;
   updateStructureCallBack: Ref<Function | undefined>;
+  menuItemsGroup: Ref<MenuGroup | undefined>;
 
   isSelected(id: TId): boolean;
   isExpanded(id: TId): boolean;
@@ -27,6 +29,7 @@ export interface TreeControllerContract<TId extends MetaId> {
   moveAbove(id: TId, toId: TId): void;
   moveBelow(id: TId, toId: TId): void;
 
+  setMenuItems(items: MenuGroup[]): void;
   setMoveCallBack(
     func: (
       id: string,

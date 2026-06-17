@@ -77,8 +77,6 @@ const onDrop = (event: DragEvent, targetId: string | undefined) => {
       position: dropState.value,
     });
 
-    //console.log(`${draggedId} to ${targetId} as ${dropState.value}`);
-
     const parsedDraggedId = draggedId;
     const parsedTargetId = targetId ?? "-1";
 
@@ -140,6 +138,10 @@ const cancelEditTitle = (id: EpObjectId) => {
     <span
       class="tree-row"
       :class="{ 'is-selected': controller.isSelected(node.id) }"
+      v-context-menu="{
+        menu: controller.menuItemsGroup.value ?? [],
+        context: { id: props.node.id, title: props.node.title },
+      }"
     >
       <BaseIcon
         :class="controller.isExpanded(node.id) ? 'rotate-90' : ''"

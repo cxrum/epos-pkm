@@ -1,13 +1,19 @@
-<script setup lang="ts">
+<script setup lang="ts" generic="T">
 import type { PropType, Teleport } from "vue";
 import type { MenuGroup } from "./type";
 
-const props = defineProps({
-  groups: {
-    type: Array as PropType<MenuGroup[]>,
-    required: true,
-  },
-});
+const props = defineProps<{
+  groups: MenuGroup<T>[];
+  contextData?: T;
+}>();
+
+const handleItemClick = (action?: (context: T) => void) => {
+  if (action && props.contextData) {
+    action(props.contextData);
+  } else if (action) {
+    (action as () => void)();
+  }
+};
 </script>
 
 <template>
@@ -34,7 +40,7 @@ const props = defineProps({
 
         <button
           v-else-if="item.type === 'button'"
-          @click="item.action && item.action()"
+          @click="handleItemClick(item.action)"
           :disabled="item.disabled"
           class="inline-flex justify-start items-center h-fit w-full min-w-[4em] min-h-[2em] px-2 py-[0.2rem] gap-2 rounded-md transition-colors text-(--text-default-color)"
           type="button"
@@ -44,7 +50,6 @@ const props = defineProps({
             v-if="item.icon"
             class="w-5.5 h-5.5 text-(--icon-color) shrink-0"
           />
-
           <span class="truncate">{{ item.label }}</span>
         </button>
       </template>

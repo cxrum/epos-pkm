@@ -1,5 +1,7 @@
 import { ref, isRef, type Ref } from "vue";
 import type { TreeControllerContract, TreeNode } from "./contract";
+import type { MenuGroup } from "../popUpMenu/type";
+import type { TreeMenuGroup } from "./type";
 
 export function useTreeController(
   initialNodes: Ref<TreeNode> | TreeNode,
@@ -12,6 +14,7 @@ export function useTreeController(
 
   const renameCallBack = ref();
   const updateStructureCallBack = ref();
+  const menuItemsGroup = ref();
 
   const moveCallBack = ref();
 
@@ -194,12 +197,18 @@ export function useTreeController(
     updateStructureCallBack.value = func;
   };
 
+  const setMenuItems = (items: TreeMenuGroup) => {
+    menuItemsGroup.value = items;
+  };
+
   return {
     rootNode,
     selectedId,
     renameCallBack,
     updateStructureCallBack,
+    menuItemsGroup,
 
+    setMenuItems,
     setRootNode,
     isSelected,
     isExpanded,

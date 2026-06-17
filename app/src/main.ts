@@ -1,39 +1,45 @@
-import { createApp } from 'vue'
-import './style.css'
-import './assets/fonts/fixel.css'
-import App from './App.vue'
-import { i18n } from './core/i18n'
-import router from './router'
-import { createPinia } from 'pinia'
+import { createApp } from "vue";
+import "./style.css";
+import "./assets/fonts/fixel.css";
+import App from "./App.vue";
+import { i18n } from "./core/i18n";
+import router from "./router";
+import { createPinia } from "pinia";
+import { vContextMenu } from "./shared/components/contextMenu/index.ts";
 
-const app = createApp(App)
-const pinia = createPinia()
+const app = createApp(App);
+const pinia = createPinia();
 
-app.use(pinia).use(router).use(i18n).mount('#app')
+app.directive("context-menu", vContextMenu);
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
+app.use(pinia).use(router).use(i18n).mount("#app");
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
     const el = document.activeElement as HTMLElement;
-    if (el && (el.tagName === 'BUTTON' || el.getAttribute('role') === 'button')) {
-      el.classList.add('keyboard-active');
+    if (
+      el &&
+      (el.tagName === "BUTTON" || el.getAttribute("role") === "button")
+    ) {
+      el.classList.add("keyboard-active");
     }
   }
 });
 
-document.addEventListener('keyup', (e) => {
-  if (e.key === 'Enter' || e.key === ' ') {
+document.addEventListener("keyup", (e) => {
+  if (e.key === "Enter" || e.key === " ") {
     const el = document.activeElement as HTMLElement;
     if (el) {
-      el.classList.remove('keyboard-active');
+      el.classList.remove("keyboard-active");
     }
   }
 });
 
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") {
     const activeEl = document.activeElement as HTMLElement | null;
-    
-    if (activeEl && typeof activeEl.blur === 'function') {
+
+    if (activeEl && typeof activeEl.blur === "function") {
       activeEl.blur();
     }
   }

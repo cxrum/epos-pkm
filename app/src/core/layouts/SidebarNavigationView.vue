@@ -5,21 +5,67 @@ import TypeDictionary from "@/assets/icons/TypeDictionary.vue";
 import Graph from "@/assets/icons/Graph.vue";
 import Accordion from "@/shared/components/Accordion.vue";
 import type { MenuGroup } from "@/shared/components/popUpMenu/type";
-import Document from "@/assets/icons/Document.vue";
+import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
 import AddDocument from "@/assets/icons/AddDocument.vue";
 import { useWorkspaceStore } from "../store/workspaceStore";
-import { computed, ref, watch } from "vue";
+import { computed, markRaw, ref, watch } from "vue";
 import Tree from "@/shared/components/tree/Tree.vue";
 import { useTreeController } from "@/shared/components/tree/baseTreeController";
 import { useGlobalPageStore } from "../store/globalPageStore";
 import LoadingSpinner from "@/shared/components/LoadingSpinner.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
+import type { TreeMenuGroup } from "@/shared/components/tree/type";
+import type { EpObjectId } from "../types";
+
+const stubMenuGroup: MenuGroup[] = [
+  {
+    title: "Stub",
+    items: [
+      { type: "button", label: "Stub", icon: DocumentIcon },
+      { type: "divider" },
+      { type: "button", label: "Stub", icon: DocumentIcon },
+    ],
+  },
+];
 
 const globalPageStore = useGlobalPageStore();
 const treeController = useTreeController(globalPageStore.treeStructure);
 const globalNavigationStore = useGlobalNavigation();
 const workSpaceStore = useWorkspaceStore();
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
+
+const createEmptyPageInside = (parentId: EpObjectId) => {
+  globalPageStore.createEmptyPage(parentId);
+};
+
+const onCreateEmptyPageRoot = () => {
+  globalPageStore.createEmptyPage(undefined);
+};
+
+const treeItemsGroup: TreeMenuGroup = [
+  {
+    items: [
+      {
+        type: "button",
+        label: "Remove",
+        icon: markRaw(DocumentIcon),
+        action(context) {
+          console.log(context);
+        },
+      },
+      {
+        type: "button",
+        label: "Create page",
+        icon: markRaw(DocumentIcon),
+        action(context) {
+          createEmptyPageInside(context.id);
+        },
+      },
+    ],
+  },
+];
+
+treeController.setMenuItems(treeItemsGroup);
 
 globalPageStore.refreshTreeStructure();
 
@@ -60,21 +106,6 @@ watch(
   },
 );
 
-const complexMenuData: MenuGroup[] = [
-  {
-    title: "Account",
-    items: [
-      { type: "button", label: "Profile", icon: Document },
-      { type: "divider" },
-      { type: "button", label: "Settings", icon: Document },
-    ],
-  },
-];
-
-const onCreateEmptyPage = () => {
-  globalPageStore.createEmptyPage(treeController.selectedId.value ?? undefined);
-};
-
 const treeHierarchyMenu: MenuGroup[] = [
   {
     title: "Hierarchy",
@@ -82,8 +113,8 @@ const treeHierarchyMenu: MenuGroup[] = [
       {
         type: "button",
         label: "Create",
-        icon: Document,
-        action: onCreateEmptyPage,
+        icon: DocumentIcon,
+        action: onCreateEmptyPageRoot,
       },
     ],
   },
@@ -117,7 +148,7 @@ const treeHierarchyMenu: MenuGroup[] = [
     </BaseButton>
 
     <div v-show="isSidebarOpen">
-      <Accordion label="Fast Actions" :menu-data="complexMenuData">
+      <Accordion label="Fast Actions" :menu-data="stubMenuGroup">
         <BaseButton
           class="w-full"
           :is-content-visible="isSidebarOpen"
@@ -141,7 +172,7 @@ const treeHierarchyMenu: MenuGroup[] = [
         </BaseButton>
       </Accordion>
 
-      <Accordion label="Pinned" :menu-data="complexMenuData">
+      <Accordion label="Pinned" :menu-data="stubMenuGroup">
         <BaseButton
           class="w-full"
           :is-content-visible="isSidebarOpen"

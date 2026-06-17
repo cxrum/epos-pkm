@@ -9,7 +9,7 @@ import BarsFilter from "@/assets/icons/BarsFilter.vue";
 import { offset, useFloating } from "@floating-ui/vue";
 import PopUpMenu from "@/shared/components/popUpMenu/PopUpMenu.vue";
 import type { MenuGroup } from "@/shared/components/popUpMenu/type";
-import Document from "@/assets/icons/Document.vue";
+import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
 
 const selectedMenu = ref("all");
 const isRegexChecked = ref(false);
@@ -62,9 +62,9 @@ const filterOptionsData: MenuGroup[] = [
   {
     title: "Account",
     items: [
-      { type: "button", label: "Profile", icon: Document },
+      { type: "button", label: "Profile", icon: DocumentIcon },
       { type: "divider" },
-      { type: "button", label: "Settings", icon: Document },
+      { type: "button", label: "Settings", icon: DocumentIcon },
     ],
   },
 ];
@@ -73,9 +73,9 @@ const sorterOptionsData: MenuGroup[] = [
   {
     title: "Account",
     items: [
-      { type: "button", label: "Profile", icon: Document },
+      { type: "button", label: "Profile", icon: DocumentIcon },
       { type: "divider" },
-      { type: "button", label: "Settings", icon: Document },
+      { type: "button", label: "Settings", icon: DocumentIcon },
     ],
   },
 ];

@@ -12,7 +12,7 @@ import SidebarState from "@/assets/icons/SidebarState.vue";
 import type { MenuGroup } from "@/shared/components/popUpMenu/type";
 import { offset, useFloating } from "@floating-ui/vue";
 import PopUpMenu from "@/shared/components/popUpMenu/PopUpMenu.vue";
-import Document from "@/assets/icons/Document.vue";
+import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
 import TypeEditor from "@/core/layouts/TypeEditorLayout.vue";
 import OmniSearchView from "@/core/layouts/OmniSearchView.vue";
 import User from "@/assets/icons/User.vue";
@@ -86,9 +86,9 @@ const pageMenuData: MenuGroup[] = [
   {
     title: "Page",
     items: [
-      { type: "button", label: "Wtf", icon: Document },
+      { type: "button", label: "Wtf", icon: DocumentIcon },
       { type: "divider" },
-      { type: "button", label: "Wtf", icon: Document },
+      { type: "button", label: "Wtf", icon: DocumentIcon },
     ],
   },
 ];

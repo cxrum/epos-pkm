@@ -1,16 +1,16 @@
-import type { Component } from 'vue'
+import type { Component } from "vue";
 
-export type MenuItemType = 'button' | 'divider'
+export type MenuItemType = "button" | "divider";
 
-export interface MenuItem {
-  type: MenuItemType
-  label?: string
-  icon?: Component | string | null
-  action?: () => void
-  disabled?: boolean
+export interface MenuItem<T = any> {
+  type: MenuItemType;
+  label?: string;
+  icon?: Component | string | null;
+  action?: (context: T) => void;
+  disabled?: boolean;
 }
 
-export interface MenuGroup {
-  title?: string
-  items: MenuItem[]
+export interface MenuGroup<T = any> {
+  title?: string;
+  items: MenuItem<T>[];
 }
