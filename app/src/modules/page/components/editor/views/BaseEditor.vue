@@ -14,22 +14,20 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, toRaw } from "vue";
+import { ref, computed, watch, onMounted, toRaw, onBeforeUnmount } from "vue";
 import { DragHandle } from "@tiptap/extension-drag-handle-vue-3";
 import NodeRange from "@tiptap/extension-node-range";
 import StarterKit from "@tiptap/starter-kit";
 import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { Placeholder } from "@tiptap/extensions";
-import { BlockStyle } from "../extension/blockStyle";
-import { PageBlock } from "../nodes/blocks/pageBlock";
 import { EpObjectAttributesExtension } from "../extension/customObjectExtension";
-import type { ContainerObjectEntity, EpObjectEntity } from "@/core/domain/type";
+import type { EpContainerObjectEntity } from "@/core/domain/type";
 import {
   entitiesToTiptapDoc,
-  mapEntityRecordsToArray,
   mapObjectEntitiesToContent,
   tiptapDocToEntities,
 } from "../mappers";
+import { EpBlockExtension } from "../nodes/EpBlockExtension";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },
@@ -38,13 +36,43 @@ const NESTED_CONFIG_RTL = {
   edgeDetection: { threshold: -16, edges: ["right" as const] },
 };
 
-const model = defineModel<EpObjectEntity>({});
+const model = defineModel<EpContainerObjectEntity>({});
+
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let maxWaitTimer: ReturnType<typeof setInterval> | null = null;
+let pendingJsonData: any = null;
 
 const editable = ref(true);
 const nested = ref(true);
 const rtl = ref(false);
 
 let isInternalUpdate = false;
+
+const performSave = () => {
+  if (!pendingJsonData) return;
+
+  isInternalUpdate = true;
+
+  const mapped = tiptapDocToEntities(pendingJsonData);
+
+  if (model.value) {
+    model.value.content.inlineObjects = toRaw(
+      mapObjectEntitiesToContent(mapped.content),
+    );
+    model.value.content.order = toRaw(mapped.order);
+  }
+
+  pendingJsonData = null;
+
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  if (maxWaitTimer) {
+    clearInterval(maxWaitTimer);
+    maxWaitTimer = null;
+  }
+};
 
 const computePositionConfig = computed(() => {
   return {
@@ -64,29 +92,29 @@ const editor = useEditor({
   editable: editable.value,
   content: model.value?.content?.inlineObjects
     ? entitiesToTiptapDoc(
-        mapEntityRecordsToArray(toRaw(model.value.content.inlineObjects)),
+        toRaw(model.value.content.inlineObjects),
+        toRaw(model.value.content.order),
       )
     : undefined,
   extensions: [
     StarterKit,
     EpObjectAttributesExtension,
+    EpBlockExtension,
     Placeholder.configure({
       placeholder: "Press '/' for commands, or type to write...",
     }),
     NodeRange.configure({
       key: null,
     }),
-    PageBlock,
-    BlockStyle,
   ],
   onUpdate: ({ editor: currentEditor }) => {
-    editable.value = currentEditor.isEditable;
-    if (model.value) {
-      isInternalUpdate = true;
-      const res = mapObjectEntitiesToContent(
-        tiptapDocToEntities(currentEditor.getJSON()),
-      );
-      model.value.content.inlineObjects = toRaw(res);
+    pendingJsonData = currentEditor.getJSON();
+
+    if (debounceTimer) clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(performSave, 800);
+
+    if (!maxWaitTimer) {
+      maxWaitTimer = setInterval(performSave, 5000);
     }
   },
 });
@@ -118,23 +146,23 @@ onMounted(() => {
 watch(
   () => model.value?.content?.inlineObjects,
   (newInlineObjects) => {
-    if (!editor.value || !newInlineObjects) return;
+    if (!editor.value || !newInlineObjects || !model.value?.content?.order)
+      return;
 
     if (isInternalUpdate) {
       isInternalUpdate = false;
       return;
     }
+
     const currentSelection = editor.value.state.selection;
     const { from, to } = currentSelection;
 
-    const res = mapEntityRecordsToArray(toRaw(newInlineObjects));
-    console.log(
-      "\nWATCH\n",
-      `isInternal: ${isInternalUpdate}\n`,
-      res,
-      "\nWATCH-END\n",
+    editor.value.commands.setContent(
+      entitiesToTiptapDoc(
+        toRaw(newInlineObjects),
+        toRaw(model.value.content.order),
+      ),
     );
-    editor.value.commands.setContent(entitiesToTiptapDoc(res));
 
     try {
       editor.value.commands.setTextSelection({ from, to });
@@ -145,11 +173,14 @@ watch(
   { deep: true },
 );
 
-const addPageLink = (
-  pageData: import("@/core/domain/type").ContainerObjectEntity,
-) => {
-  editor.value?.chain().focus().insertPageBlock(pageData).run();
-};
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  if (maxWaitTimer) clearInterval(maxWaitTimer);
+
+  if (pendingJsonData) {
+    performSave();
+  }
+});
 </script>
 
 <style lang="scss">

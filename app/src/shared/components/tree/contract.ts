@@ -27,6 +27,14 @@ export interface TreeControllerContract<TId extends MetaId> {
   moveAbove(id: TId, toId: TId): void;
   moveBelow(id: TId, toId: TId): void;
 
+  setMoveCallBack(
+    func: (
+      id: string,
+      toId: string,
+      oldParentId: string,
+      type: "above" | "below" | "in",
+    ) => void,
+  ): void;
   setRenameCallBack(func: (id: TId, newTitle: string) => void): void;
   setUpdateStructureCallBack(func: (root: TreeNode) => void): void;
 }

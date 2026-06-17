@@ -15,7 +15,6 @@ export interface RawBaseEpObject<TContent> {
 }
 
 export interface RawEpObject extends RawBaseEpObject<Record<EpObjectId, any>> {}
-
 export interface RawContainerObject extends RawBaseEpObject<
   Record<EpObjectId, RawEpObject>
 > {

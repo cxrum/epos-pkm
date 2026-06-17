@@ -32,7 +32,6 @@ watch(
   (newData) => {
     if (newData) {
       globalNavigationStore.setCurrentPath(pageStore.paths[newData.id]);
-      console.log("\nNEW-DATA\n", newData, "\nNEW-DATA-END\n");
       currentPageEntity.value = newData;
       workSpaceStore.setLoadingStatus(false);
     } else {

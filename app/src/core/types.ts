@@ -9,7 +9,7 @@ export type Icon = DefaultIcon | LinkIcon | EmojiIcon;
 export type SystemTypeId =
   | "sys:root"
   | "sys:workspace"
-  | "sys:page"
+  | "sys:container"
   | "sys:hard-page-link";
 export type DefaultTypeId =
   | "def:text"

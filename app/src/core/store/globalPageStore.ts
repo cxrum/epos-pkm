@@ -1,6 +1,6 @@
 import { defineStore } from "pinia";
 import { ref, toRaw } from "vue";
-import type { EpObjectEntity } from "../domain/type";
+import { isContainerEntity, type EpObjectEntity } from "../domain/type";
 import type { TreeNode } from "@/shared/components/tree/contract";
 import type { EpObjectId, ObjectPath } from "../types";
 import { globalObjectsService } from "../di/global";
@@ -15,12 +15,15 @@ export const useGlobalPageStore = defineStore("page", () => {
 
   const rename = async (objId: EpObjectId, newTitle: string) => {
     isObjectLoading.value = true;
+    isOjectSaving.value = true;
     const result = await globalObjectsService.get(objId);
-    if (result) {
+    if (result && isContainerEntity(result)) {
       result.content.title = newTitle;
       await globalObjectsService.update(objId, result);
       await refreshTreeStructure();
     }
+    isObjectLoading.value = false;
+    isOjectSaving.value = false;
   };
 
   const create = async (
@@ -34,7 +37,7 @@ export const useGlobalPageStore = defineStore("page", () => {
 
   const createEmptyPage = async (parentId: EpObjectId | undefined) => {
     isObjectLoading.value = true;
-    await globalObjectsService.createEmpty(parentId, "sys:page");
+    await globalObjectsService.createEmpty(parentId, "sys:container");
     isObjectLoading.value = false;
     await refreshTreeStructure();
   };
@@ -42,10 +45,19 @@ export const useGlobalPageStore = defineStore("page", () => {
   const update = async (newEntity: EpObjectEntity) => {
     if (currentObject.value !== undefined) {
       const res = toRaw(newEntity);
-      //console.log(res);
       await globalObjectsService.update(currentObject.value.id, res);
       await refreshTreeStructure();
     }
+  };
+
+  const move = async (
+    movedId: EpObjectId,
+    newParentId: EpObjectId,
+    oldParentId: EpObjectId,
+  ) => {
+    isObjectLoading.value = true;
+    await globalObjectsService.move(movedId, newParentId, oldParentId);
+    isObjectLoading.value = false;
   };
 
   const get = async (id: EpObjectId) => {
@@ -60,7 +72,6 @@ export const useGlobalPageStore = defineStore("page", () => {
   const refreshTreeStructure = async () => {
     isTreeStructureLoading.value = true;
     const result = await globalObjectsService.getFileTree();
-    //console.log(result);
     treeStructure.value = result;
     isTreeStructureLoading.value = false;
   };
@@ -84,5 +95,6 @@ export const useGlobalPageStore = defineStore("page", () => {
     create,
     createEmptyPage,
     rename,
+    move,
   };
 });

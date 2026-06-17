@@ -12,6 +12,7 @@ const iconMap: Record<string, Component> = {
   document: defineAsyncComponent(() => import("@/assets/icons/Document.vue")),
   object: defineAsyncComponent(() => import("@/assets/icons/TypeIcon.vue")),
   table: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
+  error: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
 };
 
 const computedIcon = computed<Component>(() => {

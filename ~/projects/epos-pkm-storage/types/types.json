@@ -5,9 +5,7 @@
     "title": "root",
     "kind": "system",
     "propertiesScheme": {
-      "order": [
-        "isContainer"
-      ],
+      "order": ["isContainer"],
       "props": {
         "isContainer": {
           "id": "isContainer",
@@ -19,9 +17,9 @@
   },
   "children": [
     {
-      "id": "sys:page",
+      "id": "sys:container",
       "type": {
-        "id": "sys:page",
+        "id": "sys:container",
         "title": "Page",
         "icon": {
           "type": "default",
@@ -55,9 +53,7 @@
             "title": "Code",
             "kind": "default",
             "propertiesScheme": {
-              "order": [
-                "codeLanguage"
-              ],
+              "order": ["codeLanguage"],
               "props": {
                 "isContainer": {
                   "id": "codeLanguage",

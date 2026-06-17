@@ -31,6 +31,10 @@ treeController.setRenameCallBack((id, newTitle) => {
   globalPageStore.rename(id, newTitle);
 });
 
+treeController.setMoveCallBack((id, newParentId, oldParentId, type) => {
+  globalPageStore.move(id, newParentId, oldParentId);
+});
+
 onClickOutside(treeRef, () => {
   if (treeController.selectedId.value !== tabStore.activeTab?.id) {
     treeController.clearSelection();

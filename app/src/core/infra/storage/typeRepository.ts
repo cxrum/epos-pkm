@@ -30,9 +30,9 @@ const ROOT: RawEptTypeHierarchyNode = {
   },
   children: [
     {
-      id: "sys:page",
+      id: "sys:container",
       type: {
-        id: "sys:page",
+        id: "sys:container",
         title: "Page",
         icon: {
           type: "default",

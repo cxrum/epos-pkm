@@ -13,6 +13,8 @@ export function useTreeController(
   const renameCallBack = ref();
   const updateStructureCallBack = ref();
 
+  const moveCallBack = ref();
+
   const isSelected = (id: string): boolean => {
     return selectedId.value === id;
   };
@@ -111,26 +113,7 @@ export function useTreeController(
     }
 
     const fNode = parentArray.find((el) => el.id === id);
-    return { node: fNode, parentArray: parentArray };
-  };
-
-  const moveIn = (id: string, toId: string): void => {
-    index();
-    const movedNode = getNodeContext(id, indexedNodes.value[id]);
-    const destinationNode = getNodeContext(toId, indexedNodes.value[toId]);
-    if (!movedNode.node || !destinationNode.node) return;
-
-    const oldIndex = movedNode.parentArray.findIndex((n) => n.id === id);
-    if (oldIndex > -1) {
-      movedNode.parentArray.splice(oldIndex, 1);
-    }
-
-    if (!destinationNode.node.children) {
-      destinationNode.node.children = [];
-    }
-    destinationNode.node.children.push(movedNode.node);
-
-    index();
+    return { node: fNode, parentArray: parentArray, parent: node };
   };
 
   const move = (id: string, toId: string, shift: number = 0): void => {
@@ -156,6 +139,26 @@ export function useTreeController(
     }
   };
 
+  const moveIn = (id: string, toId: string): void => {
+    index();
+    const movedNode = getNodeContext(id, indexedNodes.value[id]);
+    const destinationNode = getNodeContext(toId, indexedNodes.value[toId]);
+    if (!movedNode.node || !destinationNode.node) return;
+
+    const oldIndex = movedNode.parentArray.findIndex((n) => n.id === id);
+    if (oldIndex > -1) {
+      movedNode.parentArray.splice(oldIndex, 1);
+    }
+
+    if (!destinationNode.node.children) {
+      destinationNode.node.children = [];
+    }
+    destinationNode.node.children.push(movedNode.node);
+    console.log(id, toId, movedNode.parent?.id);
+    moveCallBack.value(id, toId, movedNode.parent?.id, "inside");
+    index();
+  };
+
   const moveAbove = (id: string, toId: string): void => {
     index();
     move(id, toId, 0);
@@ -174,6 +177,17 @@ export function useTreeController(
 
   const setRenameCallBack = (func: (id: string, newTitle: string) => void) => {
     renameCallBack.value = func;
+  };
+
+  const setMoveCallBack = (
+    func: (
+      id: string,
+      toId: string,
+      oldParentId: string,
+      type: "above" | "below" | "in",
+    ) => void,
+  ) => {
+    moveCallBack.value = func;
   };
 
   const setUpdateStructureCallBack = (func: (root: TreeNode) => void) => {
@@ -197,6 +211,7 @@ export function useTreeController(
     moveBelow,
     moveAbove,
 
+    setMoveCallBack,
     setRenameCallBack,
     setUpdateStructureCallBack,
   };

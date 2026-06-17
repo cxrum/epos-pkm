@@ -7,6 +7,7 @@ import type {
   EpPropertyId,
   EpPropertyTypes,
   ObjectPath,
+  UserTypeId,
 } from "../types";
 
 export type _TypeKind = "default" | "system" | "user";
@@ -70,7 +71,7 @@ export type AllPropertiesMap = SystemPropertiesMap & DynamicPropertiesMap;
 
 export interface BasePropertiesScheme {
   order: EpPropertyId[];
-  props: Record<string, BasePropertySchemeEntry>; // TODO: Idk, it seems to me its bad idea, too wide type.
+  props: Record<string, BasePropertySchemeEntry>;
 }
 
 interface BaseTypeEntity<
@@ -146,12 +147,163 @@ export interface PageContent {
   inlineObjects: Record<EpObjectId, any>;
 }
 
-export interface ContainerObjectEntity extends BaseEpObjectEntity<
-  "sys:page",
-  PageContent
+// MOUNTED CONTAINER LINK --------------------------------------------------
+export type MountedContainerPropertiesMap = Omit<
+  SystemPropertiesMap,
+  "isContainer"
+> & {
+  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
+    value: false;
+  };
+};
+
+export interface MountedContainerObjectContent {
+  toId: EpObjectId;
+}
+
+export interface MountedContainerObjectEntity extends BaseEpObjectEntity<
+  "sys:hard-page-link",
+  MountedContainerObjectContent,
+  MountedContainerPropertiesMap
 > {}
 
-export type EpObjectEntity = ContainerObjectEntity | BaseEpObjectEntity;
+export function isMountedContainerEntity(
+  entity: EpObjectEntity,
+): entity is MountedContainerObjectEntity {
+  return entity.typeId === "sys:hard-page-link";
+}
+// MOUNTED CONTAINER LINK --------------------------------------------------
+
+// SYSTEM CONTAINER --------------------------------------------------------
+export interface SystemContainerEntity extends BaseEpObjectEntity<
+  "sys:container",
+  PageContent,
+  AllPropertiesMap
+> {}
+
+export function isContainerEntity(
+  entity: EpObjectEntity,
+): entity is SystemContainerEntity {
+  return entity.typeId === "sys:container";
+}
+// SYSTEM CONTAINER --------------------------------------------------------
+
+// WORKSPACE CONTAINER -----------------------------------------------------
+export type WorkspacePropertiesMap = Omit<
+  SystemPropertiesMap,
+  "isContainer"
+> & {
+  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
+    value: true;
+  };
+};
+
+export interface WorkspaceEntity extends BaseEpObjectEntity<
+  "sys:workspace",
+  PageContent,
+  WorkspacePropertiesMap
+> {}
+
+export function isWorkspaceEntity(
+  entity: EpObjectEntity,
+): entity is WorkspaceEntity {
+  return entity.typeId === "sys:workspace";
+}
+// WORKSPACE CONTAINER --------------------------------------------------------
+
+// STANDARD INLINE OBJECT  -------------------------------------------------
+export type SystemInlinePropertiesMap = Omit<
+  SystemPropertiesMap,
+  "isContainer"
+> & {
+  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
+    value: false;
+  };
+};
+
+export interface SystemInlineEntity extends BaseEpObjectEntity<
+  SystemTypeId,
+  Record<string, any>,
+  SystemInlinePropertiesMap
+> {}
+
+export function isSystemInlineEntity(
+  entity: EpObjectEntity,
+): entity is SystemInlineEntity {
+  return (
+    entity.props.isContainer?.value === false &&
+    entity.typeId !== "sys:hard-page-link"
+  );
+}
+// STANDARD INLINE OBJECT  -------------------------------------------------
+
+// USER INLINE OBJECT  -----------------------------------------------------
+export type CustomInlinePropertiesMap = Omit<
+  SystemPropertiesMap,
+  "isContainer"
+> & {
+  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
+    value: false;
+  };
+};
+
+export interface CustomInlineEntity extends BaseEpObjectEntity<
+  UserTypeId,
+  Record<string, any>,
+  CustomInlinePropertiesMap
+> {}
+
+export function isAnyInlineEntity(
+  entity: EpObjectEntity,
+): entity is CustomInlineEntity | SystemInlineEntity {
+  return (
+    entity.props.isContainer?.value === false &&
+    entity.typeId !== "sys:hard-page-link"
+  );
+}
+// USER INLINE OBJECT  -----------------------------------------------------
+
+// CUSTOM CONTAINER --------------------------------------------------------
+export interface CustomContainerEntity extends BaseEpObjectEntity<
+  UserTypeId,
+  PageContent,
+  AllPropertiesMap
+> {}
+export function isAnyContainer(
+  entity: EpObjectEntity,
+): entity is SystemContainerEntity | CustomContainerEntity | WorkspaceEntity {
+  // console.log(entity, "\n---\n", entity.props.isContainer.value);
+  return entity.props.isContainer.value === true;
+}
+// CUSTOM CONTAINER --------------------------------------------------------
+
+export type EpContainerObjectEntity =
+  | WorkspaceEntity
+  | SystemContainerEntity
+  | CustomContainerEntity;
+
+export type EpInlineObjectEntity =
+  | MountedContainerObjectEntity
+  | SystemInlineEntity
+  | CustomInlineEntity;
+
+export type EpObjectEntity = EpContainerObjectEntity | EpInlineObjectEntity;
+
+export function resolveTitle(entity: EpObjectEntity): string {
+  if (isAnyContainer(entity)) {
+    return entity.content.title;
+  } else if (isAnyInlineEntity(entity)) {
+    return "Inline Object";
+  }
+
+  return "Unknown";
+}
+
+export function isMountedPage(
+  entity: EpObjectEntity,
+): entity is MountedContainerObjectEntity {
+  return entity.typeId === "sys:hard-page-link";
+}
 
 export interface ObjectHierarchyNode {
   id: EpObjectId;

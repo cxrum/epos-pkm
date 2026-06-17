@@ -2,6 +2,7 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { EpObjectId, Icon, ObjectMeta, Path } from "../types";
 import { globalObjectsService, globalTypingService } from "../di/global";
+import { isContainerEntity, resolveTitle } from "../domain/type";
 
 export const useGlobalNavigation = defineStore("navigation", () => {
   const activePage = ref<ObjectMeta>();
@@ -16,48 +17,53 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     currentPath.value = els;
   }
 
-  const preloadPageMeta = async (objId: EpObjectId) => {
+  const preloadPageMeta = async (
+    objId: EpObjectId,
+  ): Promise<ObjectMeta | undefined> => {
+    if (cachedPageMeta.value.has(objId)) {
+      return cachedPageMeta.value.get(objId);
+    }
+
     const result = await globalObjectsService.get(objId);
 
     if (!result) {
-      return;
+      return undefined;
     }
 
     const type = await globalTypingService.getType(result.typeId);
 
     let icon: Icon = { type: "emoji", emoji: "U" };
-    let title: string = type?.title ?? "unknown";
+    let title: string = resolveTitle(result);
 
-    if (result) {
-      if (result.typeId === "sys:page") {
-        title = result.content.title;
-      } else if (type) {
-        icon = type.icon ?? { type: "default", name: "object" };
-      }
+    if (type) {
+      icon = type.icon ?? { type: "default", name: "object" };
     }
 
-    if (result) {
-      const meta = {
-        id: objId,
-        typeId: result.typeId,
-        title: title,
-        icon: icon,
-      } as ObjectMeta;
-      //console.log(meta);
-      cachedPageMeta.value.set(objId, meta);
-    }
+    const meta = {
+      id: objId,
+      typeId: result.typeId,
+      title: title,
+      icon: icon,
+    } as ObjectMeta;
+
+    cachedPageMeta.value.set(objId, meta);
+
+    return meta;
   };
 
   const getMetaInfo = (pageId: EpObjectId): ObjectMeta | undefined => {
     return cachedPageMeta.value.get(pageId);
   };
 
-  const openPage = (pageId: EpObjectId) => {
-    const meta = getMetaInfo(pageId);
+  const openPage = async (pageId: EpObjectId) => {
+    let meta = getMetaInfo(pageId);
+
+    if (!meta) {
+      meta = await preloadPageMeta(pageId);
+    }
+
     if (meta !== undefined) {
       activePage.value = meta;
-    } else {
-      preloadPageMeta(pageId);
     }
   };
 

@@ -1,4 +1,4 @@
-import type { EpObjectId, EpTypeId } from "@/core/types";
+import type { EpObjectId, EpTypeId, ObjectPath } from "@/core/types";
 import type {
   EpObjectEntity,
   ObjectFilterOptions,
@@ -19,5 +19,6 @@ export interface ObjectStorageRepositoryContract {
     descendantTypes: Map<EpTypeId, EpTypeId[]> | undefined,
   ): Promise<EpObjectEntity[]>;
   getTreeHierarchy(): Promise<ObjectHierarchyNode>;
+  getAncestors(objId: EpObjectId): EpObjectId[];
   move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean>;
 }

@@ -1,11 +1,15 @@
 import type { TreeNode } from "@/shared/components/tree/contract";
 import type { ObjectStorageRepositoryContract } from "../domain/repositories/objectRepositoryContract";
 import type { TypingRepositoryContract } from "../domain/repositories/typesRepositoryContract";
-import type {
-  AllPropertiesMap,
-  EpObjectEntity,
-  ObjectFilterOptions,
-  ObjectHierarchyNode,
+import {
+  isAnyContainer,
+  isMountedContainerEntity,
+  isWorkspaceEntity,
+  type AllPropertiesMap,
+  type EpObjectEntity,
+  type MountedContainerObjectEntity,
+  type ObjectFilterOptions,
+  type ObjectHierarchyNode,
 } from "../domain/type";
 import type { ObjetServiceContract } from "../store/services/objectsContract";
 import type { EpObjectId, EpTypeId, ObjectPath } from "../types";
@@ -21,9 +25,78 @@ export class ObjectsService implements ObjetServiceContract {
     this.typingRepository = typingRepository;
     this.objectsStorageRepository = objectsStorageRepository;
   }
-  async move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean> {
-    return await this.objectsStorageRepository.move(movedId, parentId);
+
+  getMountedLinks(parent: EpObjectEntity): MountedContainerObjectEntity[] {
+    if (!isAnyContainer(parent)) {
+      return [];
+    }
+    console.log("\n aaaaaaaaa \n", parent, "\n aaaaaaaaa \n");
+    const links: MountedContainerObjectEntity[] = [];
+    const objectsMap = parent.content.inlineObjects;
+
+    for (const id of parent.content.order) {
+      const child = objectsMap[id];
+      if (child && isMountedContainerEntity(child)) {
+        links.push(child);
+      }
+    }
+
+    return links;
   }
+
+  async move(
+    movedPageId: EpObjectId,
+    newParentId?: EpObjectId,
+    oldParentId?: EpObjectId,
+  ): Promise<boolean> {
+    const targetNewParentId = newParentId ?? ("-1" as EpObjectId);
+    const targetOldParentId = oldParentId ?? ("-1" as EpObjectId);
+
+    const newParent =
+      await this.objectsStorageRepository.get(targetNewParentId);
+    const oldParent =
+      await this.objectsStorageRepository.get(targetOldParentId);
+    const movedPage = await this.objectsStorageRepository.get(movedPageId);
+
+    if (!newParent || !oldParent || !movedPage) {
+      console.error("Move failed: Object or parent not found");
+      return false;
+    }
+
+    if (
+      isAnyContainer(newParent) &&
+      isAnyContainer(oldParent) &&
+      isAnyContainer(movedPage)
+    ) {
+      const oldMountedLinks = this.getMountedLinks(oldParent);
+      const linkToDelete = oldMountedLinks.find(
+        (link) => link.content?.toId === movedPageId,
+      );
+
+      if (linkToDelete) {
+        await this.objectsStorageRepository.delete(linkToDelete.id);
+      }
+
+      const newMountedLinks = this.getMountedLinks(newParent);
+      const alreadyExists = newMountedLinks.some(
+        (link) => link.content?.toId === movedPageId,
+      );
+
+      if (!alreadyExists) {
+        const newLinkObj = this.createContainerLink(movedPageId);
+        await this.objectsStorageRepository.create(
+          targetNewParentId,
+          newLinkObj,
+        );
+      }
+    }
+
+    return await this.objectsStorageRepository.move(
+      movedPageId,
+      targetNewParentId,
+    );
+  }
+
   async get(id: EpObjectId): Promise<EpObjectEntity | undefined> {
     const result = await this.objectsStorageRepository.get(id);
     if (!result) {
@@ -71,11 +144,39 @@ export class ObjectsService implements ObjetServiceContract {
     return res;
   }
 
+  private createContainerLink(
+    mountedContainerId: EpObjectId,
+  ): MountedContainerObjectEntity {
+    return {
+      id: crypto.randomUUID(),
+      typeId: "sys:hard-page-link",
+      physicalRelativePath: "",
+      objectPath: [],
+      content: {
+        toId: mountedContainerId,
+      },
+      props: {
+        isContainer: {
+          id: "isContainer",
+          title: "Is Container",
+          type: "boolean",
+          value: false,
+        },
+      },
+    };
+  }
+
   async create(
     parentId: EpObjectId | undefined,
     object: EpObjectEntity,
   ): Promise<EpObjectEntity> {
     const res = await this.objectsStorageRepository.create(parentId, object);
+    const parent = await this.objectsStorageRepository.get(parentId ?? "-1"); // TODO: Fix hardcoded workspace ID. Rebase it to current workspace meta.
+    if (isAnyContainer(object) && parent && isAnyContainer(parent)) {
+      const obj = this.createContainerLink(object.id);
+      console.log(obj);
+      await this.objectsStorageRepository.create(parentId, obj);
+    }
     return res;
   }
 
@@ -138,23 +239,31 @@ export class ObjectsService implements ObjetServiceContract {
       content: initialContent,
       physicalRelativePath: "",
       objectPath: objectPath as ObjectPath,
-    };
+    } as EpObjectEntity;
 
-    const targetParentId = parentId ?? ("-1" as EpObjectId);
+    const targetParentId = parentId ?? ("-1" as EpObjectId); // TODO: Fix hardcoded workspace ID. Rebase it to current workspace meta.
+    const parent = await this.objectsStorageRepository.get(targetParentId);
 
     //console.log(newObject);
-
-    return await this.objectsStorageRepository.create(
+    const res = await this.objectsStorageRepository.create(
       targetParentId,
       newObject,
     );
+
+    if (isContainer && parent && isAnyContainer(parent)) {
+      const obj = this.createContainerLink(res.id);
+      // console.log(obj);
+      await this.objectsStorageRepository.create(targetParentId, obj);
+    }
+
+    return res;
   }
 
   async update(
     id: EpObjectId,
     newData: EpObjectEntity,
   ): Promise<EpObjectEntity> {
-    // //console.log("UPDATE!\n", newData, "\nUPDATE");
+    console.log("UPDATE!\n", newData, "\nUPDATE");
     return await this.objectsStorageRepository.update(id, newData);
   }
   async delete(id: EpObjectId): Promise<boolean> {
@@ -162,6 +271,7 @@ export class ObjectsService implements ObjetServiceContract {
   }
   async getFileTree(): Promise<TreeNode> {
     const result = await this.objectsStorageRepository.getTreeHierarchy();
+    console.log(result);
     const convertor = async (
       rawRoot: ObjectHierarchyNode,
       cache: Map<EpTypeId, TreeNode> = new Map(),
@@ -173,14 +283,12 @@ export class ObjectsService implements ObjetServiceContract {
       const type = await this.typingRepository.get(rawRoot.typeId);
       const object = await this.objectsStorageRepository.get(rawRoot.id);
 
-      let title = type?.title ?? "unknown";
+      let title = "Unknown";
 
-      if (object) {
-        if (object.typeId === "sys:page") {
-          title = object.content.title;
-        } else if (type) {
-          title = type?.title;
-        }
+      if (object && isAnyContainer(object)) {
+        title = object.content.title;
+      } else if (object && isMountedContainerEntity(object)) {
+        title = object.content.toId;
       }
 
       const newNode: TreeNode = {
@@ -205,9 +313,20 @@ export class ObjectsService implements ObjetServiceContract {
 
     return await convertor(result);
   }
+
   async getObjectPath(id: EpObjectId): Promise<ObjectPath> {
-    return await this.getObjectPath(id);
+    const ancestors = await this.objectsStorageRepository.getAncestors(id);
+    return await Promise.all(
+      ancestors.map(async (it) => {
+        const obj = await this.objectsStorageRepository.get(it);
+        return {
+          id: it,
+          title: obj?.content.title ?? "unknown",
+        };
+      }),
+    );
   }
+
   async getPaths(): Promise<Record<EpObjectId, ObjectPath>> {
     throw new Error("Method not implemented.");
   }

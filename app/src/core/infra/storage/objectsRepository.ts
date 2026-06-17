@@ -1,8 +1,13 @@
 import type { ObjectStorageRepositoryContract } from "@/core/domain/repositories/objectRepositoryContract";
-import type {
-  AllPropertiesMap,
-  EpObjectEntity,
-  ObjectHierarchyNode,
+import {
+  isAnyContainer,
+  isAnyInlineEntity,
+  isContainerEntity,
+  isMountedPage,
+  isWorkspaceEntity,
+  type AllPropertiesMap,
+  type EpObjectEntity,
+  type ObjectHierarchyNode,
 } from "@/core/domain/type";
 import type { EpObjectId, EpTypeId, ObjectPath, Path } from "@/core/types";
 import type { FileSystemApi } from "../../../../fileSystemApiContract";
@@ -58,47 +63,47 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
   }
 
   private async loadTree(
-    edges: Edge<string>[],
-    flattenData: Record<string, RawContainerObject>,
+    flattenContainers: Record<string, RawContainerObject>,
   ): Promise<ObjectHierarchyNode> {
-    const nodeMap = new Map<string, ObjectHierarchyNode>();
-    const targetsSet = new Set<string>();
+    const nodeMap = new Map<EpObjectId, ObjectHierarchyNode>();
 
-    for (const [pathKey, rawData] of Object.entries(flattenData)) {
-      nodeMap.set(pathKey, {
+    for (const rawData of Object.values(flattenContainers)) {
+      nodeMap.set(rawData.id, {
         id: rawData.id as EpObjectId,
         typeId: rawData.typeId as EpTypeId,
         children: [],
       });
     }
 
-    for (let i = 0; i < edges.length; i++) {
-      const el = edges[i];
-      if (el) {
-        const parentNode = nodeMap.get(el.source);
-        const childNode = nodeMap.get(el.target);
+    for (const rawData of Object.values(flattenContainers)) {
+      const parentNode = nodeMap.get(rawData.id);
 
-        if (parentNode && childNode) {
-          parentNode.children.push(childNode);
-          targetsSet.add(el.target);
+      if (!parentNode || !rawData.order) continue;
+
+      for (const childId of rawData.order) {
+        const childRaw = rawData.content[childId];
+
+        if (childRaw && childRaw.typeId === "sys:hard-page-link") {
+          const targetId = childRaw.content.toId;
+
+          if (targetId) {
+            const childNode = nodeMap.get(targetId);
+
+            if (childNode) {
+              parentNode.children.push(childNode);
+            }
+          }
         }
       }
     }
 
-    const resultFileTree: ObjectHierarchyNode = {
-      id: this.ROOT_ID,
-      typeId: "sys:workspace" as EpTypeId,
-      children: [],
-    };
+    const rootNode = nodeMap.get(this.ROOT_ID);
 
-    for (const [pathKey, node] of nodeMap.entries()) {
-      if (!targetsSet.has(pathKey)) {
-        if (node.id === this.ROOT_ID) continue;
-        resultFileTree.children.push(node);
-      }
+    if (!rootNode) {
+      throw new Error();
     }
 
-    return resultFileTree;
+    return rootNode;
   }
 
   private async loadFileCache(
@@ -109,11 +114,42 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     for (const rawContainer of Object.values(flattenData)) {
       nodeMap.set(rawContainer.id, rawContainer);
       for (const rawObject of Object.values(rawContainer.content)) {
-        nodeMap.set(rawObject.id, rawObject);
+        if (!nodeMap.has(rawObject.id)) {
+          nodeMap.set(rawObject.id, rawObject);
+        }
       }
     }
 
     return nodeMap;
+  }
+
+  private buildObjectEdges(
+    flattenData: Record<string, RawContainerObject>,
+  ): Edge<EpObjectId>[] {
+    const edges: Edge<EpObjectId>[] = [];
+    const seenEdges = new Set<string>();
+
+    for (const rawContainer of Object.values(flattenData)) {
+      const childIds = rawContainer.order?.length
+        ? rawContainer.order
+        : Object.keys(rawContainer.content || {});
+
+      for (const childId of childIds) {
+        const edgeKey = `${rawContainer.id}->${childId}`;
+
+        if (seenEdges.has(edgeKey)) {
+          continue;
+        }
+
+        seenEdges.add(edgeKey);
+        edges.push({
+          source: rawContainer.id,
+          target: childId as EpObjectId,
+        });
+      }
+    }
+
+    return edges;
   }
 
   getAncestors(id: EpTypeId): EpTypeId[] {
@@ -138,7 +174,6 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
   }
 
   private async index(): Promise<void> {
-    const edges = await this.userStorageApi.tree("");
     const flattenData = await this.userStorageApi.getAllFlat("");
 
     this.objectPathCache.clear();
@@ -150,17 +185,19 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     }
 
     this.fileTreeCache = await this.loadFileCache(flattenData);
-    this.fileTreeStructure = await this.loadTree(edges, flattenData);
-    this.objectTreeEdges = edges;
+    this.objectTreeEdges = this.buildObjectEdges(flattenData);
+    this.fileTreeStructure = await this.loadTree(flattenData);
+
+    console.log(this.fileTreeStructure);
   }
 
   private getAncestorPath(id: EpObjectId): ObjectPath {
     const ancestorsPath = this.getAncestors(id).map((it): Path => {
       const res = this.fileTreeCache.get(it);
-      if (res !== undefined) {
+      if (res && isRawContainer(res)) {
         return {
           id: res.id,
-          title: res?.content?.title,
+          title: res.title,
         };
       } else {
         return {
@@ -191,7 +228,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
         },
         physicalRelativePath: this.objectPathCache.get(result.id) ?? "unknown",
         objectPath: this.getAncestorPath(id),
-      };
+      } as EpObjectEntity;
     }
 
     return {
@@ -201,7 +238,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       content: result.content,
       physicalRelativePath: this.objectPathCache.get(result.id) ?? "unknown",
       objectPath: this.getAncestorPath(id),
-    };
+    } as EpObjectEntity;
   }
 
   async rename(id: EpObjectId, newTitle: string): Promise<boolean> {
@@ -222,32 +259,31 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     data: EpObjectEntity,
   ): Promise<EpObjectEntity> {
     const parent = await this.get(parentId ?? this.ROOT_ID);
-    //console.log("CREATE:parent--\n", parent);
+    let relativePath = "";
     let isSaved = false;
     if (!parent) {
       throw Error(`Parent with id ${parentId} not found`);
     }
 
-    if (data.props.isContainer.value) {
+    if (isAnyContainer(data)) {
       const container: RawContainerObject = {
         id: data.id,
         typeId: data.typeId,
         title: data.content.title,
         properties: data.props,
-        order: [],
+        order: data.content.order || [],
         content: data.content.inlineObjects || {},
       };
       const parentContainerPath = parent.physicalRelativePath.replace(
         ".json",
         "",
       );
-      //console.log(parentContainerPath);
-      await this.userStorageApi.save(
-        `${parentContainerPath}/${container.title}.json`,
-        container,
-      );
+      relativePath = `${parentContainerPath}/${container.title}.json`;
+
+      await this.userStorageApi.save(relativePath, container);
+
       isSaved = true;
-    } else if (parent.props.isContainer.value) {
+    } else if (isAnyContainer(parent)) {
       const parentFilePath = parent.physicalRelativePath;
       const parentContainer = await this.userStorageApi.get(parentFilePath);
 
@@ -272,11 +308,14 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       await this.userStorageApi.save(parentFilePath, parentContainer);
       isSaved = true;
     }
+
     if (isSaved) {
       await this.index();
     }
-    return data;
+
+    return { ...data, physicalRelativePath: relativePath };
   }
+
   async update(
     id: EpObjectId,
     newData: EpObjectEntity,
@@ -295,7 +334,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
 
     let isSaved = false;
 
-    if (newData.props.isContainer.value) {
+    if (isAnyContainer(newData)) {
       const oldTitle = container.title;
       container.title = newData.content.title;
       container.properties = newData.props;
@@ -333,12 +372,13 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
         await this.userStorageApi.save(filePath, container);
       }
       isSaved = true;
-    } else {
+    } else if (isAnyInlineEntity(newData) && !isMountedPage(newData)) {
       if (!container.content[id]) {
         throw new Error(`Inline object ${id} not found in ${filePath}`);
       }
 
       const cleanContent = { ...newData.content };
+
       if (cleanContent.inlineObjects) {
         delete cleanContent.inlineObjects;
       }
@@ -454,7 +494,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
         content: rawObj.content,
         physicalRelativePath: this.objectPathCache.get(rawObj.id) || "",
         objectPath: this.getAncestorPath(id),
-      });
+      } as EpObjectEntity);
     }
 
     return results;
@@ -474,11 +514,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     let isMoved = false;
 
     if (movedObj.properties?.isContainer?.value) {
-      const lastSlashIndex = newParentFilePath.lastIndexOf("/");
-      const newDirPath =
-        lastSlashIndex !== -1
-          ? newParentFilePath.substring(0, lastSlashIndex)
-          : "";
+      const newDirPath = newParentFilePath.replace(".json", "");
 
       const oldFileName = oldFilePath.split("/").pop() || "";
       const newFilePath = newDirPath
