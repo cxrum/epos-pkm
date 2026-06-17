@@ -11,18 +11,14 @@ import { useWorkspaceStore } from "../store/workspaceStore";
 import { computed, ref, watch } from "vue";
 import Tree from "@/shared/components/tree/Tree.vue";
 import { useTreeController } from "@/shared/components/tree/baseTreeController";
-import { onClickOutside } from "@vueuse/core";
-import { useGlobalTabsStore } from "../store/browserTabsStore";
 import { useGlobalPageStore } from "../store/globalPageStore";
 import LoadingSpinner from "@/shared/components/LoadingSpinner.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
 
-const treeRef = ref();
 const globalPageStore = useGlobalPageStore();
 const treeController = useTreeController(globalPageStore.treeStructure);
 const globalNavigationStore = useGlobalNavigation();
 const workSpaceStore = useWorkspaceStore();
-const tabStore = useGlobalTabsStore();
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
 
 globalPageStore.refreshTreeStructure();
@@ -35,11 +31,16 @@ treeController.setMoveCallBack((id, newParentId, oldParentId, type) => {
   globalPageStore.move(id, newParentId, oldParentId);
 });
 
-onClickOutside(treeRef, () => {
-  if (treeController.selectedId.value !== tabStore.activeTab?.id) {
-    treeController.clearSelection();
-  }
-});
+watch(
+  () => globalNavigationStore.activePage,
+  (pageMeta) => {
+    if (pageMeta) {
+      treeController.selectNode(pageMeta.id);
+    } else {
+      treeController.clearSelection();
+    }
+  },
+);
 
 watch(
   () => globalPageStore.treeStructure,
@@ -59,36 +60,6 @@ watch(
   },
 );
 
-watch(
-  () => tabStore.activeTab,
-  (tab) => {
-    //console.log(tab);
-    if (tab) {
-      globalNavigationStore.openPage(tab.id);
-    } else {
-      globalNavigationStore.clearPageSelection();
-    }
-  },
-);
-
-watch(
-  () => globalNavigationStore.activePage,
-  (pageMeta) => {
-    //console.log(pageMeta);
-    if (pageMeta) {
-      treeController.selectNode(pageMeta.id);
-      const res = tabStore.openTab(pageMeta.id);
-      if (!res) {
-        tabStore.createTab(pageMeta);
-        tabStore.openTab(pageMeta.id);
-      }
-    } else {
-      treeController.clearSelection();
-      tabStore.clearSelection();
-    }
-  },
-);
-
 const complexMenuData: MenuGroup[] = [
   {
     title: "Account",
@@ -101,7 +72,7 @@ const complexMenuData: MenuGroup[] = [
 ];
 
 const onCreateEmptyPage = () => {
-  globalPageStore.createEmptyPage(tabStore.activeTab?.id);
+  globalPageStore.createEmptyPage(treeController.selectedId.value ?? undefined);
 };
 
 const treeHierarchyMenu: MenuGroup[] = [
@@ -197,7 +168,6 @@ const treeHierarchyMenu: MenuGroup[] = [
       <Accordion label="Tree" :menu-data="treeHierarchyMenu">
         <Tree
           v-if="!globalPageStore.isTreeStructureLoading"
-          ref="treeRef"
           :controller="treeController"
         />
         <LoadingSpinner v-else class="w-full h-5.5 algin-self-center" />

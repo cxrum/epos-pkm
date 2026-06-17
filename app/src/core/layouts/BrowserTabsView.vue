@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, ref, watch } from "vue";
 import Tab from "@/core/components/Tab.vue";
 import { useGlobalTabsStore } from "@/core/store/browserTabsStore";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 import type { MetaId } from "../types";
+import { useGlobalNavigation } from "../store/navigationStore";
 
+const globalNavigationStore = useGlobalNavigation();
 const globalTabStore = useGlobalTabsStore();
 
 const activePageId = computed(() => {
@@ -31,6 +33,32 @@ const onClosePageClick = (pageId: MetaId) => {
 const onTabClick = (pageId: MetaId) => {
   globalTabStore.openTab(pageId);
 };
+
+watch(
+  () => globalTabStore.activeTab,
+  (tab) => {
+    if (tab) {
+      globalNavigationStore.openPage(tab.id);
+    } else {
+      globalNavigationStore.clearPageSelection();
+    }
+  },
+);
+
+watch(
+  () => globalNavigationStore.activePage,
+  (pageMeta) => {
+    if (pageMeta) {
+      const res = globalTabStore.openTab(pageMeta.id);
+      if (!res) {
+        globalTabStore.createTab(pageMeta);
+        globalTabStore.openTab(pageMeta.id);
+      }
+    } else {
+      globalTabStore.clearSelection();
+    }
+  },
+);
 </script>
 
 <template>
