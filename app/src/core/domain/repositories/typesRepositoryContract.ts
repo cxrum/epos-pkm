@@ -1,4 +1,4 @@
-import type { EpTypeId, SystemTypeId } from "@/core/types";
+import type { DefaultTypeId, EpTypeId, SystemTypeId } from "@/core/types";
 import type {
   BasePropertiesScheme,
   EpTypeEntity,
@@ -15,7 +15,7 @@ export interface TypingRepositoryContract {
     id: Exclude<EpTypeId, SystemTypeId>,
     newData: UserTypeEntity,
   ): Promise<UserTypeEntity | undefined>;
-  remove(id: Exclude<EpTypeId, SystemTypeId>): Promise<boolean>;
+  remove(id: Exclude<EpTypeId, SystemTypeId | DefaultTypeId>): Promise<boolean>;
 
   inherit(
     parentId: EpTypeId,

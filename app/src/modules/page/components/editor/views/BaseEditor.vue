@@ -22,13 +22,10 @@ import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { Placeholder } from "@tiptap/extensions";
 import { EpObjectAttributesExtension } from "../extension/customObjectExtension";
 import type { EpContainerObjectEntity } from "@/core/domain/type";
-import {
-  entitiesToTiptapDoc,
-  mapObjectEntitiesToContent,
-  tiptapDocToEntities,
-} from "../mappers";
+import { entitiesToTiptapDoc, tiptapDocToEntities } from "../mappers";
 import { EpBlockExtension } from "../nodes/EpBlockExtension";
 import type { EditorControllerContract } from "../contract";
+import { mapObjectEntitiesToContent } from "../helpers";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },

@@ -6,8 +6,8 @@ import type {
   _TypeKind,
   BasePropertiesScheme,
 } from "@/core/domain/type";
-import type { EpTypeId, SystemTypeId } from "@/core/types";
-import { deepTraversal, extractTreeEdges, type Edge } from "../utils";
+import type { DefaultTypeId, EpTypeId, SystemTypeId } from "@/core/types";
+import { deepTraversal, extractTreeEdges, findNode, type Edge } from "../utils";
 import type { FileSystemApi } from "../../../../fileSystemApiContract";
 import type { RawEptTypeHierarchyNode, RawEpType } from "./type";
 
@@ -107,9 +107,10 @@ export class TypingRepository implements TypingRepositoryContract {
   private readonly MAIN_TYPES_OBJECT_PATH = "./types.json";
 
   private typeTree: RawEptTypeHierarchyNode = ROOT;
-  private flattenTreeCache: Map<string, RawEpType> = new Map(); // FIXME
+
+  private flattenTree: Map<string, RawEpType> = new Map(); // FIXME
   private typeTreeEdges: Edge<EpTypeId>[] = [];
-  private descendantCache: Map<string, EpTypeId[]> = new Map(); // FIXME
+  private descendants: Map<string, EpTypeId[]> = new Map(); // FIXME
 
   constructor(userStorageApi: FileSystemApi<RawEptTypeHierarchyNode>) {
     this.typesStorageApi = userStorageApi;
@@ -216,7 +217,7 @@ export class TypingRepository implements TypingRepositoryContract {
   }
 
   getAllDescendants(): Map<EpTypeId, EpTypeId[]> {
-    return this.descendantCache;
+    return this.descendants;
   }
 
   async index(): Promise<void> {
@@ -231,35 +232,16 @@ export class TypingRepository implements TypingRepositoryContract {
       rawTree,
       "id",
       "children",
-    ); // TODO: Optimize
+    );
 
     for (const [id, value] of Object.entries(rawDescendants)) {
-      this.descendantCache.set(id, value);
+      this.descendants.set(id, value);
     }
 
-    this.flattenTreeCache = this.flatten(rawTree);
+    this.flattenTree = this.flatten(rawTree);
     this.typeTreeEdges = rawTreeEdges;
     this.typeTree = rawTree;
   }
-
-  private getNodeContext = (id: EpTypeId, path: EpTypeId[] = []) => {
-    let parentArray: RawEptTypeHierarchyNode[] = [this.typeTree];
-    let node: RawEptTypeHierarchyNode | undefined = undefined;
-
-    for (let i = 0; i < path.length; i++) {
-      node = parentArray.find((el) => el.id === path[i]);
-
-      if (node && i < path.length - 1) {
-        if (!node.children) {
-          node.children = [];
-        }
-        parentArray = node.children;
-      }
-    }
-
-    const fNode = parentArray.find((el) => el.id === id);
-    return { node: fNode, parentArray: parentArray };
-  };
 
   private async saveState(): Promise<void> {
     this.typesStorageApi.save(this.MAIN_TYPES_OBJECT_PATH, this.typeTree);
@@ -267,7 +249,7 @@ export class TypingRepository implements TypingRepositoryContract {
   }
 
   async get(id: EpTypeId): Promise<EpTypeEntity | undefined> {
-    const result = this.flattenTreeCache.get(id);
+    const result = this.flattenTree.get(id);
     if (!result) {
       return undefined;
     }
@@ -275,9 +257,52 @@ export class TypingRepository implements TypingRepositoryContract {
   }
 
   async getAll(): Promise<EpTypeEntity[]> {
-    return Array.from(this.flattenTreeCache.values()).map((it) =>
+    return Array.from(this.flattenTree.values()).map((it) =>
       this.convertRawTypeToEntity(it),
     );
+  }
+
+  private rebuildTreeFromFlatState(): RawEptTypeHierarchyNode {
+    const nodeMap = new Map<string, RawEptTypeHierarchyNode>();
+
+    for (const [id, typeData] of this.flattenTree.entries()) {
+      nodeMap.set(id, {
+        id: id,
+        type: typeData,
+        children: [],
+      });
+    }
+
+    let rootNode: RawEptTypeHierarchyNode | undefined;
+
+    for (const edge of this.typeTreeEdges) {
+      const parent = nodeMap.get(edge.source);
+      const child = nodeMap.get(edge.target);
+
+      if (parent && child) {
+        parent.children!.push(child);
+      }
+    }
+
+    rootNode = nodeMap.get("sys:root");
+
+    if (!rootNode) {
+      throw new Error(
+        "Critical Error: Root node 'sys:root' not found after rebuild.",
+      );
+    }
+
+    return rootNode;
+  }
+
+  private domainToRaw(domain: UserTypeEntity): RawEpType {
+    return {
+      id: domain.id,
+      icon: domain.icon,
+      kind: domain.kind,
+      title: domain.title,
+      propertiesScheme: domain.propertiesScheme,
+    };
   }
 
   async create(
@@ -292,21 +317,13 @@ export class TypingRepository implements TypingRepositoryContract {
       propertiesScheme: type.propertiesScheme,
     };
 
-    const newNode: TypeHierarchyNode = {
-      id: userType.id,
-      type: userType,
-      children: [],
-    };
+    this.flattenTree.set(userType.id, this.domainToRaw(userType));
+    this.typeTreeEdges.push({ source: parentId, target: userType.id });
 
-    const path = this.descendantCache.get(parentId) || [];
-    const parentContext = this.getNodeContext(parentId, path);
+    this.typeTree = this.rebuildTreeFromFlatState();
 
-    if (parentContext.node) {
-      if (!parentContext.node.children) parentContext.node.children = [];
-      parentContext.node.children.push(newNode);
-    }
+    await this.saveState();
 
-    this.saveState();
     return userType;
   }
 
@@ -314,19 +331,28 @@ export class TypingRepository implements TypingRepositoryContract {
     id: Exclude<EpTypeId, SystemTypeId>,
     newData: UserTypeEntity,
   ): Promise<UserTypeEntity | undefined> {
-    const path = this.descendantCache.get(id);
-    const context = this.getNodeContext(id, path);
-
-    if (!context.node) {
+    if (!this.flattenTree.has(id)) {
       return undefined;
     }
-    context.node.type = newData;
+    const userType: UserTypeEntity = {
+      id: newData.id,
+      title: newData.title,
+      icon: newData.icon,
+      kind: newData.kind,
+      propertiesScheme: newData.propertiesScheme,
+    };
+
+    this.flattenTree.set(userType.id, this.domainToRaw(userType));
+    this.typeTree = this.rebuildTreeFromFlatState();
+
     this.saveState();
 
     return newData;
   }
 
-  async remove(id: Exclude<EpTypeId, SystemTypeId>): Promise<boolean> {
+  async remove(
+    id: Exclude<EpTypeId, SystemTypeId | DefaultTypeId>,
+  ): Promise<boolean> {
     await this.index();
     const descendants = await this.getDescendants(id);
 
@@ -334,17 +360,19 @@ export class TypingRepository implements TypingRepositoryContract {
       return false;
     }
 
-    const path = this.descendantCache.get(id);
-    const nodeContext = this.getNodeContext(id, path);
-
-    const oldIndex = nodeContext.parentArray.findIndex((n) => n.id === id);
-    if (oldIndex > -1) {
-      nodeContext.parentArray.splice(oldIndex, 1);
-      this.saveState();
-      return true;
+    if (!this.flattenTree.has(id)) {
+      return false;
     }
 
-    return false;
+    this.flattenTree.delete(id);
+    const edgeIndex = this.typeTreeEdges.findIndex((it) => it.target === id);
+    if (edgeIndex > -1) {
+      this.typeTreeEdges.splice(edgeIndex, 1);
+    }
+
+    this.typeTree = this.rebuildTreeFromFlatState();
+
+    return true;
   }
 
   getFullPropsScheme(id: EpTypeId): BasePropertiesScheme {
@@ -355,7 +383,7 @@ export class TypingRepository implements TypingRepositoryContract {
     };
 
     for (const ancestor of ancestors) {
-      const type = this.flattenTreeCache.get(ancestor);
+      const type = this.flattenTree.get(ancestor);
 
       if (!type?.propertiesScheme) {
         continue;
@@ -378,28 +406,21 @@ export class TypingRepository implements TypingRepositoryContract {
   ): Promise<boolean> {
     await this.index();
 
-    const movedNode = this.getNodeContext(
-      childId,
-      this.descendantCache.get(childId),
-    );
-    const destinationNode = this.getNodeContext(
-      parentId,
-      this.descendantCache.get(parentId),
-    );
+    const movedNode = this.flattenTree.get(childId);
+    const destinationNode = this.flattenTree.get(parentId);
 
-    if (!movedNode.node || !destinationNode.node) return false;
+    if (!movedNode || !destinationNode) return false;
 
-    const oldIndex = movedNode.parentArray.findIndex((n) => n.id === childId);
+    const oldIndex = this.typeTreeEdges.findIndex(
+      (it) => it.target === childId,
+    );
     if (oldIndex > -1) {
-      movedNode.parentArray.splice(oldIndex, 1);
+      this.typeTreeEdges.splice(oldIndex, 1);
     }
 
-    if (!destinationNode.node.children) {
-      destinationNode.node.children = [];
-    }
-    destinationNode.node.children.push(movedNode.node);
+    this.typeTreeEdges.push({ source: parentId, target: childId });
+    this.typeTree = this.rebuildTreeFromFlatState();
 
-    await this.saveState();
     return true;
   }
 

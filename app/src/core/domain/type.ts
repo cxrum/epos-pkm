@@ -271,7 +271,7 @@ export interface TextObjectEntity extends BaseEpObjectEntity<
 > {}
 
 export function isAnyText(entity: EpObjectEntity): entity is TextObjectEntity {
-  return entity.typeId === "def:heading" && entity.typeId === "def:heading";
+  return entity.typeId === "def:text" || entity.typeId === "def:heading";
 }
 // TEXT INLINE OBJECT  -----------------------------------------------------
 

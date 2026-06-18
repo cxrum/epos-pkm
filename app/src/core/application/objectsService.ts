@@ -108,9 +108,7 @@ export class ObjectsService implements ObjetServiceContract {
 
     return result;
   }
-  async getAll(
-    filterOptions: ObjectFilterOptions | undefined,
-  ): Promise<EpObjectEntity[]> {
+  async getAll(filterOptions: ObjectFilterOptions): Promise<EpObjectEntity[]> {
     let expandedTypes: EpTypeId[] | undefined = undefined;
     const descendantsMap = await this.typingRepository.getAllDescendants();
 
@@ -131,10 +129,10 @@ export class ObjectsService implements ObjetServiceContract {
       expandedTypes = collectedTypes;
     }
 
-    const res = await this.objectsStorageRepository.getAll(
-      filterOptions,
-      descendantsMap,
-    );
+    const res = await this.objectsStorageRepository.getAll({
+      text: filterOptions.text,
+      types: expandedTypes,
+    });
 
     if (!res) {
       return [];

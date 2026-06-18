@@ -465,8 +465,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
   }
 
   async getAll(
-    filterOptions: RawObjectFilterOptions | undefined,
-    descendantTypes: Map<EpTypeId, EpTypeId[]> | undefined, // FIXME: Smell code, remove this argument. A) Implement application level sort (very slow in action but fast solution) B) Inject typingRepo into this repo (smell code, but efficient)
+    filterOptions: RawObjectFilterOptions,
   ): Promise<EpObjectEntity[]> {
     const results: EpObjectEntity[] = [];
 
@@ -479,15 +478,10 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     const searchText = filterOptions?.text?.toLowerCase();
 
     for (const [id, rawObj] of this.fileTreeCache.entries()) {
-      if (
-        allowedTypes &&
-        descendantTypes &&
-        filterOptions?.descendantTypes === true
-      ) {
+      if (allowedTypes) {
         let isFit = false;
         if (!allowedTypes.includes(rawObj.id)) {
-          const types = descendantTypes.get(rawObj.typeId) ?? [];
-          for (const typeId of types) {
+          for (const typeId of allowedTypes) {
             if (rawObj.typeId === typeId) {
               isFit = true;
               break;

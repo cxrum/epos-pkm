@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vue-tsc --noEmit &&  vite build --emptyOutDir",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "vitest"
   },
   "dependencies": {
     "@floating-ui/vue": "^1.1.11",
@@ -42,6 +43,7 @@
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.59.4",
     "vite": "^8.0.4",
+    "vitest": "^4.1.9",
     "vue-tsc": "^3.2.6"
   }
 }

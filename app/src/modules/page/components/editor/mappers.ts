@@ -1,10 +1,11 @@
 import type { JSONContent } from "@tiptap/core";
+import type { EpObjectId } from "@/core/types";
 import {
   isHeadingInlineEntity,
   type EpInlineObjectEntity,
   type EpObjectEntity,
-} from "../../../../core/domain/type";
-import type { EpObjectId } from "@/core/types";
+} from "@/core/domain/type";
+import { mapObjectEntitiesToContent, mapEpTypeToTiptapType } from "./helpers";
 
 export interface MappedArray {
   order: EpObjectId[];
@@ -65,12 +66,6 @@ export const entitiesToTiptapDoc = (
   };
 };
 
-const mapEpTypeToTiptapType = (typeId: string): string => {
-  if (typeId === "def:text") return "paragraph";
-  if (typeId === "def:heading") return "heading";
-  return "epBlock";
-};
-
 export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
   if (!tiptapDoc.content) return { order: [], content: [] };
 
@@ -121,14 +116,4 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
     order: order,
     content: entities,
   };
-};
-
-export const mapObjectEntitiesToContent = (
-  data: EpObjectEntity[],
-): Record<EpObjectId, EpObjectEntity> => {
-  const res: Record<EpObjectId, EpObjectEntity> = {};
-  data.forEach((it) => {
-    res[it.id] = it;
-  });
-  return res;
 };

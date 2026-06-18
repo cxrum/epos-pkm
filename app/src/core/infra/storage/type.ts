@@ -49,7 +49,6 @@ export interface RawEptTypeHierarchyNode {
 
 export type RawObjectFilterOptions = {
   types?: EpTypeId[] | EpTypeId;
-  descendantTypes?: boolean;
   text?: string;
 };
 

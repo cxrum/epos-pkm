@@ -4,9 +4,7 @@ import type { TreeNode } from "@/shared/components/tree/contract";
 
 export interface ObjetServiceContract {
   get(id: EpObjectId): Promise<EpObjectEntity | undefined>;
-  getAll(
-    filterOptions: ObjectFilterOptions | undefined,
-  ): Promise<EpObjectEntity[]>;
+  getAll(filterOptions: ObjectFilterOptions): Promise<EpObjectEntity[]>;
   create(
     parentId: EpObjectId | undefined,
     object: EpObjectEntity,

@@ -10,6 +10,7 @@
     "electron:setup": "npm install",
     "setup": "npm run front:setup && npm run electron:setup",
     "serve:front": "cd app && npm run dev",
+    "front:test": "cd app && npm run test",
     "serve:electron": "npm run build && wait-on tcp:3000 && electron .",
     "build:front": "cd app && npm run build",
     "electron:build": "npm run build",

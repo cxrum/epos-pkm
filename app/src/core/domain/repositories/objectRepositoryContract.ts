@@ -1,9 +1,6 @@
 import type { EpObjectId, EpTypeId, ObjectPath } from "@/core/types";
-import type {
-  EpObjectEntity,
-  ObjectFilterOptions,
-  ObjectHierarchyNode,
-} from "../type";
+import type { EpObjectEntity, ObjectHierarchyNode } from "../type";
+import type { RawObjectFilterOptions } from "@/core/infra/storage/type";
 
 export interface ObjectStorageRepositoryContract {
   init(): Promise<void>;
@@ -14,10 +11,7 @@ export interface ObjectStorageRepositoryContract {
   ): Promise<EpObjectEntity>;
   update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity>;
   delete(id: EpObjectId): Promise<boolean>;
-  getAll(
-    filterOptions: ObjectFilterOptions | undefined,
-    descendantTypes: Map<EpTypeId, EpTypeId[]> | undefined,
-  ): Promise<EpObjectEntity[]>;
+  getAll(filterOptions: RawObjectFilterOptions): Promise<EpObjectEntity[]>;
   getTreeHierarchy(): Promise<ObjectHierarchyNode>;
   getAncestors(objId: EpObjectId): EpObjectId[];
   move(movedId: EpObjectId, parentId: EpObjectId): Promise<boolean>;
