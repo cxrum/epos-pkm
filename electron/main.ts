@@ -74,9 +74,7 @@ app.whenReady().then(async () => {
     try {
       const { installExt } = await import("./installDevTool");
       await installExt();
-    } catch (e) {
-      //console.log("Can not install extension!");
-    }
+    } catch (e) {}
   }
 
   ipcMain.handle("system:read-file", async (event, filePath: string) => {

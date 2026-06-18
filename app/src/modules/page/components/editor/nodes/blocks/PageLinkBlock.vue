@@ -46,7 +46,7 @@ watchEffect(async () => {
   isLoading.value = true;
 
   try {
-    const res = await store.get(id);
+    const res = await store.getMetaInfo(id);
     title.value = res.title ?? "Unknown";
     icon.value = res.icon ?? {
       type: "default",
@@ -63,7 +63,6 @@ watchEffect(async () => {
 const openPage = () => {
   const targetId = targetPageId.value;
   if (targetId) {
-    console.log("OPEN:", targetId);
   }
 };
 </script>

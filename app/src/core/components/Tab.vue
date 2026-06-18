@@ -15,8 +15,6 @@ const emit = defineEmits<{
   (e: "close", tabId: MetaId): void;
 }>();
 
-//console.log(props.icon);
-
 const computedClasses = computed(() => {
   const baseClasses =
     "flex w-[10em] h-[2em] shrink-0 px-2 gap-2 items-center rounded-md transition-colors";

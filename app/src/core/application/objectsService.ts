@@ -30,7 +30,6 @@ export class ObjectsService implements ObjetServiceContract {
     if (!isAnyContainer(parent)) {
       return [];
     }
-    console.log("\n aaaaaaaaa \n", parent, "\n aaaaaaaaa \n");
     const links: MountedContainerObjectEntity[] = [];
     const objectsMap = parent.content.inlineObjects;
 
@@ -174,7 +173,6 @@ export class ObjectsService implements ObjetServiceContract {
     const parent = await this.objectsStorageRepository.get(parentId ?? "-1"); // TODO: Fix hardcoded workspace ID. Rebase it to current workspace meta.
     if (isAnyContainer(object) && parent && isAnyContainer(parent)) {
       const obj = this.createContainerLink(object.id);
-      console.log(obj);
       await this.objectsStorageRepository.create(parentId, obj);
     }
     return res;
@@ -202,8 +200,6 @@ export class ObjectsService implements ObjetServiceContract {
 
     const initialProps: Record<string, any> = {};
     const schemaProps = Object.values(typeSchema.props);
-
-    //console.log(typeSchema);
 
     for (let i = 0; i < schemaProps.length; i++) {
       const propDef = schemaProps[i];
@@ -244,7 +240,6 @@ export class ObjectsService implements ObjetServiceContract {
     const targetParentId = parentId ?? ("-1" as EpObjectId); // TODO: Fix hardcoded workspace ID. Rebase it to current workspace meta.
     const parent = await this.objectsStorageRepository.get(targetParentId);
 
-    //console.log(newObject);
     const res = await this.objectsStorageRepository.create(
       targetParentId,
       newObject,
@@ -252,7 +247,6 @@ export class ObjectsService implements ObjetServiceContract {
 
     if (isContainer && parent && isAnyContainer(parent)) {
       const obj = this.createContainerLink(res.id);
-      // console.log(obj);
       await this.objectsStorageRepository.create(targetParentId, obj);
     }
 
@@ -263,7 +257,6 @@ export class ObjectsService implements ObjetServiceContract {
     id: EpObjectId,
     newData: EpObjectEntity,
   ): Promise<EpObjectEntity> {
-    console.log("UPDATE!\n", newData, "\nUPDATE");
     return await this.objectsStorageRepository.update(id, newData);
   }
   async delete(id: EpObjectId): Promise<boolean> {
@@ -271,7 +264,6 @@ export class ObjectsService implements ObjetServiceContract {
   }
   async getFileTree(): Promise<TreeNode> {
     const result = await this.objectsStorageRepository.getTreeHierarchy();
-    console.log(result);
     const convertor = async (
       rawRoot: ObjectHierarchyNode,
       cache: Map<EpTypeId, TreeNode> = new Map(),

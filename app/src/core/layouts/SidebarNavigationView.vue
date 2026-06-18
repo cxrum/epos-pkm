@@ -49,9 +49,7 @@ const treeItemsGroup: TreeMenuGroup = [
         type: "button",
         label: "Remove",
         icon: markRaw(DocumentIcon),
-        action(context) {
-          console.log(context);
-        },
+        action(context) {},
       },
       {
         type: "button",

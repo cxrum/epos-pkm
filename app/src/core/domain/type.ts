@@ -144,7 +144,7 @@ export interface BaseEpObjectEntity<
 export interface PageContent {
   title: string;
   order: EpObjectId[];
-  inlineObjects: Record<EpObjectId, any>;
+  inlineObjects: Record<EpObjectId, EpInlineObjectEntity>;
 }
 
 // MOUNTED CONTAINER LINK --------------------------------------------------
@@ -200,7 +200,7 @@ export type WorkspacePropertiesMap = Omit<
 
 export interface WorkspaceEntity extends BaseEpObjectEntity<
   "sys:workspace",
-  PageContent,
+  Record<string, any>,
   WorkspacePropertiesMap
 > {}
 
@@ -310,7 +310,6 @@ export interface CustomContainerEntity extends BaseEpObjectEntity<
 export function isAnyContainer(
   entity: EpObjectEntity,
 ): entity is SystemContainerEntity | CustomContainerEntity | WorkspaceEntity {
-  // console.log(entity, "\n---\n", entity.props.isContainer.value);
   return entity.props.isContainer.value === true;
 }
 // CUSTOM CONTAINER --------------------------------------------------------

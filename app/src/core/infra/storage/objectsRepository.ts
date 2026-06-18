@@ -6,6 +6,8 @@ import {
   isMountedPage,
   isWorkspaceEntity,
   type AllPropertiesMap,
+  type EpContainerObjectEntity,
+  type EpInlineObjectEntity,
   type EpObjectEntity,
   type ObjectHierarchyNode,
 } from "@/core/domain/type";
@@ -16,6 +18,7 @@ import {
   type RawObjectFilterOptions,
   type RawContainerObject,
   isRawContainer,
+  type RawEpObject,
 } from "./type";
 import { type Edge } from "../utils";
 
@@ -187,8 +190,6 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     this.fileTreeCache = await this.loadFileCache(flattenData);
     this.objectTreeEdges = this.buildObjectEdges(flattenData);
     this.fileTreeStructure = await this.loadTree(flattenData);
-
-    console.log(this.fileTreeStructure);
   }
 
   private getAncestorPath(id: EpObjectId): ObjectPath {
@@ -209,6 +210,48 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     return ancestorsPath;
   }
 
+  private inlineToDomain(raw: RawEpObject): EpInlineObjectEntity {
+    return {
+      id: raw.id,
+      typeId: raw.typeId,
+      props: raw.properties as AllPropertiesMap,
+      content: raw.content,
+      physicalRelativePath: this.objectPathCache.get(raw.id) ?? "unknown",
+      objectPath: this.getAncestorPath(raw.id),
+    } as EpInlineObjectEntity;
+  }
+
+  private batchInlineToDomain(
+    rawContent: Record<string, RawEpObject>,
+  ): Record<string, EpInlineObjectEntity> {
+    const result: Record<string, EpInlineObjectEntity> = {};
+
+    for (const [id, rawItem] of Object.entries(rawContent)) {
+      result[id] = this.inlineToDomain(rawItem);
+    }
+
+    return result;
+  }
+
+  private containerToDomain(raw: RawContainerObject): EpContainerObjectEntity {
+    const inline = this.batchInlineToDomain(raw.content);
+
+    const res: EpContainerObjectEntity = {
+      id: raw.id,
+      typeId: raw.typeId as EpTypeId,
+      props: raw.properties as AllPropertiesMap,
+      content: {
+        title: raw.title,
+        order: raw.order,
+        inlineObjects: inline,
+      },
+      physicalRelativePath: this.objectPathCache.get(raw.id) ?? "unknown",
+      objectPath: this.getAncestorPath(raw.id),
+    } as EpContainerObjectEntity;
+
+    return res;
+  }
+
   async get(id: EpObjectId): Promise<EpObjectEntity | undefined> {
     const result = this.fileTreeCache.get(id);
 
@@ -217,28 +260,10 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     }
 
     if (isRawContainer(result)) {
-      return {
-        id: result.id,
-        typeId: result.typeId,
-        props: result.properties as AllPropertiesMap,
-        content: {
-          title: result.title,
-          order: result.order,
-          inlineObjects: result.content,
-        },
-        physicalRelativePath: this.objectPathCache.get(result.id) ?? "unknown",
-        objectPath: this.getAncestorPath(id),
-      } as EpObjectEntity;
+      return this.containerToDomain(result) as EpObjectEntity;
     }
 
-    return {
-      id: result.id,
-      typeId: result.typeId,
-      props: result.properties as AllPropertiesMap,
-      content: result.content,
-      physicalRelativePath: this.objectPathCache.get(result.id) ?? "unknown",
-      objectPath: this.getAncestorPath(id),
-    } as EpObjectEntity;
+    return this.inlineToDomain(result) as EpObjectEntity;
   }
 
   async rename(id: EpObjectId, newTitle: string): Promise<boolean> {

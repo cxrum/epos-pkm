@@ -157,7 +157,6 @@ export function useTreeController(
       destinationNode.node.children = [];
     }
     destinationNode.node.children.push(movedNode.node);
-    console.log(id, toId, movedNode.parent?.id);
     moveCallBack.value(id, toId, movedNode.parent?.id, "inside");
     index();
   };

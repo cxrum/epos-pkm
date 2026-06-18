@@ -1,25 +1,35 @@
 <script setup lang="ts">
-import { ref, watch } from "vue";
+import { ref, watch, nextTick, toRaw } from "vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
 import { useGlobalPageStore } from "../../../core/store/globalPageStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
 import { useGlobalNavigation } from "@/core/store/navigationStore.ts";
-import type { EpObjectEntity } from "@/core/domain/type.ts";
+import {
+  isAnyContainer,
+  type EpContainerObjectEntity,
+} from "@/core/domain/type.ts";
+import { useBaseEditorController } from "../components/editor/baseEditorController.ts";
+import { useGlobalObjectStore } from "@/core/store/globalObjectStore.ts";
+import type { EpObjectId } from "@/core/types.ts";
 
 const props = defineProps();
 const pageStore = useGlobalPageStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
+const globalObjectStore = useGlobalObjectStore();
 
-const currentPageEntity = ref<EpObjectEntity>();
-const firstOpen = ref<boolean>(true);
+const editorController = useBaseEditorController();
+
+const currentPageEntity = ref<EpContainerObjectEntity>();
+const title = ref<string>();
+const selectedObjectId = ref<EpObjectId>();
+let isProgrammaticUpdate = false;
 
 watch(
   () => globalNavigationStore.activePage,
   (activePage) => {
     if (activePage != null) {
       pageStore.get(activePage.id);
-      workSpaceStore.setLoadingStatus(true);
     } else {
       pageStore.clearActiveObject();
     }
@@ -29,13 +39,24 @@ watch(
 
 watch(
   () => pageStore.pageData,
-  (newData) => {
-    if (newData) {
+  (_newData) => {
+    const newData = toRaw(_newData);
+    if (newData && isAnyContainer(newData)) {
+      isProgrammaticUpdate = true;
+
       globalNavigationStore.setCurrentPath(pageStore.paths[newData.id]);
       currentPageEntity.value = newData;
+
+      title.value = newData.content.title;
       workSpaceStore.setLoadingStatus(false);
+      nextTick(() => {
+        setTimeout(() => {
+          isProgrammaticUpdate = false;
+        }, 50);
+      });
     } else {
       globalNavigationStore.clearCurrentPath();
+      currentPageEntity.value = undefined;
     }
   },
 );
@@ -44,21 +65,28 @@ watch(
   currentPageEntity,
   (newData) => {
     if (!newData) return;
-    if (firstOpen.value) {
-      firstOpen.value = false;
+    if (isProgrammaticUpdate) {
       return;
     }
-
     pageStore.update(newData);
   },
   { deep: true },
 );
-</script>
 
+watch(editorController.selectedObjectId, (id) => {
+  if (id !== selectedObjectId.value) {
+    selectedObjectId.value = id;
+    if (id) {
+      globalObjectStore.setSelectedObject(id);
+    }
+  }
+});
+</script>
 <template>
   <div v-if="pageStore.pageData" class="flex flex-col gap-2 w-full h-full page">
-    <h1>{{ pageStore.pageData.content.title }}</h1>
+    <h1>{{ title }}</h1>
     <BaseEditor
+      :controller="editorController"
       v-if="currentPageEntity"
       v-model="currentPageEntity"
     ></BaseEditor>

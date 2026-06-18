@@ -1,11 +1,8 @@
 import type { JSONContent } from "@tiptap/core";
 import {
   isHeadingInlineEntity,
-  type BasePropertySchemeEntry,
-  type DynamicPropertiesMap,
+  type EpInlineObjectEntity,
   type EpObjectEntity,
-  type HeadingObjectPropertiesMap,
-  type NumberValuedPropertyEntry,
 } from "../../../../core/domain/type";
 import type { EpObjectId } from "@/core/types";
 
@@ -15,7 +12,7 @@ export interface MappedArray {
 }
 
 export const entitiesToTiptapDoc = (
-  entitiesRecord: Record<EpObjectId, EpObjectEntity>,
+  entitiesRecord: Record<EpObjectId, EpInlineObjectEntity>,
   order: EpObjectId[],
 ): JSONContent => {
   const sorted: EpObjectEntity[] = [];
@@ -45,7 +42,7 @@ export const entitiesToTiptapDoc = (
       };
 
       if (tiptapType === "heading" && isHeadingInlineEntity(entity)) {
-        node.attrs!.level = entity.props?.level?.value || 1;
+        node.attrs!.level = entity.props.level.value;
       }
 
       if (isCustomBlock) {
@@ -79,7 +76,6 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
 
   const order: EpObjectId[] = [];
   const entities = tiptapDoc.content.map((node) => {
-    console.log(node);
     const isNewNode = !node.attrs?.id;
     let resolvedTypeId = node.attrs?.typeId;
     const id = isNewNode ? crypto.randomUUID() : node.attrs?.id;

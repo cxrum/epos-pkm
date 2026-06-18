@@ -28,6 +28,7 @@ import {
   tiptapDocToEntities,
 } from "../mappers";
 import { EpBlockExtension } from "../nodes/EpBlockExtension";
+import type { EditorControllerContract } from "../contract";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },
@@ -35,6 +36,10 @@ const NESTED_CONFIG_LTR = {
 const NESTED_CONFIG_RTL = {
   edgeDetection: { threshold: -16, edges: ["right" as const] },
 };
+
+const props = defineProps<{
+  controller: EditorControllerContract;
+}>();
 
 const model = defineModel<EpContainerObjectEntity>({});
 
@@ -115,6 +120,16 @@ const editor = useEditor({
 
     if (!maxWaitTimer) {
       maxWaitTimer = setInterval(performSave, 5000);
+    }
+  },
+  onSelectionUpdate({ editor }) {
+    const { $anchor } = editor.state.selection;
+    const currentNode = $anchor.parent;
+
+    if (currentNode && currentNode.attrs.id) {
+      props.controller.setObjectId(currentNode.attrs.id);
+    } else {
+      props.controller.clearSelection();
     }
   },
 });

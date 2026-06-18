@@ -1,6 +1,9 @@
+import type { EpObjectId } from "@/core/types";
 import type { Ref } from "vue";
 
 export interface EditorControllerContract {
-  content: Ref<Record<string, any>>
-  
+  selectedObjectId: Ref<EpObjectId | undefined>;
+
+  setObjectId(id: EpObjectId): void;
+  clearSelection(): void;
 }
