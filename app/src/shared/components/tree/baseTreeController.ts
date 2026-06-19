@@ -1,6 +1,5 @@
 import { ref, isRef, type Ref } from "vue";
 import type { TreeControllerContract, TreeNode } from "./contract";
-import type { MenuGroup } from "../popUpMenu/type";
 import type { TreeMenuGroup } from "./type";
 
 export function useTreeController(
@@ -8,6 +7,7 @@ export function useTreeController(
 ): TreeControllerContract<string> {
   const rootNode = isRef(initialNodes) ? initialNodes : ref(initialNodes);
   const indexedNodes = ref<Record<string, string[]>>({});
+  const isDraggable = ref(true);
 
   const selectedId = ref<string | null>(null);
   const expandedIds = ref<Set<string>>(new Set());
@@ -17,6 +17,10 @@ export function useTreeController(
   const menuItemsGroup = ref();
 
   const moveCallBack = ref();
+
+  const setIsDraggable = (value: boolean) => {
+    isDraggable.value = value;
+  };
 
   const isSelected = (id: string): boolean => {
     return selectedId.value === id;
@@ -201,12 +205,14 @@ export function useTreeController(
   };
 
   return {
+    isDraggable,
     rootNode,
     selectedId,
     renameCallBack,
     updateStructureCallBack,
     menuItemsGroup,
 
+    setIsDraggable,
     setMenuItems,
     setRootNode,
     isSelected,

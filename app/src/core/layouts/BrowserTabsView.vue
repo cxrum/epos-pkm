@@ -3,7 +3,12 @@ import { computed, ref, watch } from "vue";
 import Tab from "@/core/components/Tab.vue";
 import { useGlobalTabsStore } from "@/core/store/browserTabsStore";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
-import { isObjectPageMeta, isSystemPageMeta, type MetaId } from "../types";
+import {
+  isObjectPageMeta,
+  isSystemPageMeta,
+  isTypePageMeta,
+  type MetaId,
+} from "../types";
 import { useGlobalNavigation } from "../store/navigationStore";
 
 const globalNavigationStore = useGlobalNavigation();
@@ -42,6 +47,8 @@ watch(
         globalNavigationStore.openSystemPage(tab.id);
       } else if (isObjectPageMeta(tab)) {
         globalNavigationStore.openPage(tab.id);
+      } else if (isTypePageMeta(tab)) {
+        globalNavigationStore.openType(tab.id);
       }
     } else {
       globalNavigationStore.clearPageSelection();

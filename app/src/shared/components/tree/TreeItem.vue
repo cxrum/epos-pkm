@@ -116,7 +116,7 @@ const saveEditedTitle = (id: EpObjectId) => {
   editingId.value = undefined;
 };
 
-const cancelEditTitle = (id: EpObjectId) => {
+const cancelEditTitle = () => {
   editingId.value = undefined;
 };
 </script>
@@ -153,7 +153,7 @@ const cancelEditTitle = (id: EpObjectId) => {
       </BaseIcon>
       <div
         v-if="!editingId"
-        draggable="true"
+        :draggable="controller.isDraggable.value"
         @dragstart="onDragStart($event, node.id.toString())"
         @dragover="onDragOver($event)"
         @dragleave="onDragLeave"
@@ -162,7 +162,7 @@ const cancelEditTitle = (id: EpObjectId) => {
         @dblclick="editTitle(node.id)"
         :class="[`drop-${dropState} w-full`]"
       >
-        <DynamicIcon :icon="node.type?.icon" class="base-icon" />
+        <DynamicIcon :icon="node.icon" class="base-icon" />
         {{ node.title }}
       </div>
       <BaseInput
@@ -171,7 +171,7 @@ const cancelEditTitle = (id: EpObjectId) => {
         v-model="localTitle"
         :placeholder="node.title"
         @keydown.enter="saveEditedTitle(node.id)"
-        @blur="cancelEditTitle(node.id)"
+        @blur="cancelEditTitle()"
         type="text"
       />
     </span>

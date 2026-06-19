@@ -196,9 +196,19 @@ const handleOnChainClick = (value: Path) => {
           </Teleport>
 
           <div class="flex-1 overflow-y-auto auto-hide-scroll">
-            <router-view v-slot="{ Component }">
+            <router-view
+              v-if="globalNavigationStore.activePage"
+              v-slot="{ Component }"
+            >
               <component :is="Component" class="min-h-full" />
             </router-view>
+            <div
+              v-else
+              class="flex flex-col flex-1 items-center place-content-center w-full h-full"
+            >
+              <p>Create a new note (shortcut placeholder)</p>
+              <p>Select page from tree or browser tab</p>
+            </div>
           </div>
 
           <router-view name="modal"></router-view>

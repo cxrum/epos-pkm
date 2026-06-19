@@ -3,7 +3,7 @@ import { createRouter, createWebHistory } from "vue-router";
 const routes = [
   {
     path: "/",
-    redirect: "/workspace/page",
+    redirect: "/workspace",
   },
   {
     path: "/workspace",
@@ -16,14 +16,18 @@ const routes = [
       },
       {
         path: "type",
-        component: () => import("@/modules/typeEditor/layers/TypedEditor.vue"),
-
+        redirect: "type-graph",
         children: [
           {
             name: "type-editor",
-            path: "editor",
+            path: "editor/:id",
             component: () =>
               import("@/modules/typeEditor/layers/TypedEditor.vue"),
+          },
+          {
+            name: "type-graph",
+            path: "graph",
+            component: () => import("@/modules/typeEditor/layers/TypeList.vue"),
           },
         ],
       },

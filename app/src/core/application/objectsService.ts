@@ -260,11 +260,12 @@ export class ObjectsService implements ObjetServiceContract {
   async delete(id: EpObjectId): Promise<boolean> {
     return await this.objectsStorageRepository.delete(id);
   }
+
   async getFileTree(): Promise<TreeNode> {
     const result = await this.objectsStorageRepository.getTreeHierarchy();
     const convertor = async (
       rawRoot: ObjectHierarchyNode,
-      cache: Map<EpTypeId, TreeNode> = new Map(),
+      cache: Map<EpObjectId, TreeNode> = new Map(),
     ): Promise<TreeNode> => {
       if (cache.has(rawRoot.id)) {
         return cache.get(rawRoot.id)!;
@@ -283,7 +284,7 @@ export class ObjectsService implements ObjetServiceContract {
 
       const newNode: TreeNode = {
         id: rawRoot.id,
-        type: type,
+        icon: type?.icon,
         title: title,
         children: [],
       };
@@ -311,7 +312,7 @@ export class ObjectsService implements ObjetServiceContract {
         const obj = await this.objectsStorageRepository.get(it);
         return {
           id: it,
-          title: obj?.content.title ?? "unknown",
+          title: obj?.content?.title ?? "unknown",
         };
       }),
     );

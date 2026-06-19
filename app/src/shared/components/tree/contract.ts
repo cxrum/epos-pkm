@@ -1,18 +1,18 @@
-import type { EpTypeEntity } from "@/core/domain/type";
-import type { EpObjectId, MetaId } from "@/core/types";
+import type { EpObjectId, Icon, MetaId } from "@/core/types";
 import type { Ref } from "vue";
 import type { MenuGroup } from "../popUpMenu/type";
 
 export interface TreeNode {
   id: EpObjectId;
   title: string;
-  type?: EpTypeEntity;
+  icon?: Icon;
   children: TreeNode[];
 }
 
 export interface TreeControllerContract<TId extends MetaId> {
   rootNode: Ref<TreeNode>;
   selectedId: Ref<TId | null>;
+  isDraggable: Ref<boolean>;
 
   renameCallBack: Ref<Function | undefined>;
   updateStructureCallBack: Ref<Function | undefined>;
@@ -24,6 +24,8 @@ export interface TreeControllerContract<TId extends MetaId> {
   setRootNode(root: TreeNode): void;
   clearSelection(): void;
   toggleExpand(id: TId): void;
+
+  setIsDraggable(value: boolean): void;
 
   moveIn(id: TId, toId: TId): void;
   moveAbove(id: TId, toId: TId): void;

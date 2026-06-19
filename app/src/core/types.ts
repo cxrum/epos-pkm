@@ -65,7 +65,7 @@ export type SystemPageId = "graph" | "aggregator" | "type-editor";
 
 export type MetaId = EpObjectId | SystemPageId;
 
-type _Kind = "system" | "page";
+type _Kind = "system" | "page" | "type";
 
 export interface BasePageMeta<
   TId extends MetaId = MetaId,
@@ -78,9 +78,10 @@ export interface BasePageMeta<
 }
 
 export interface ObjectMeta extends BasePageMeta<EpObjectId, "page"> {}
+export interface TypeMeta extends BasePageMeta<EpObjectId, "type"> {}
 export interface SystemPageMeta extends BasePageMeta<SystemPageId, "system"> {}
 
-export type PageMeta = ObjectMeta | SystemPageMeta;
+export type PageMeta = TypeMeta | ObjectMeta | SystemPageMeta;
 
 export const TypeEditorPageMeta: SystemPageMeta = {
   id: "type-editor",
@@ -94,6 +95,9 @@ export const TypeEditorPageMeta: SystemPageMeta = {
 
 export function isSystemPageMeta(meta: PageMeta): meta is SystemPageMeta {
   return meta.kind === "system";
+}
+export function isTypePageMeta(meta: PageMeta): meta is TypeMeta {
+  return meta.kind === "type";
 }
 export function isObjectPageMeta(meta: PageMeta): meta is ObjectMeta {
   return meta.kind === "page";

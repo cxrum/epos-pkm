@@ -1,28 +1,15 @@
 <script setup lang="ts">
-import { watch } from "vue";
-import { useGlobalPageStore } from "../../../core/store/globalPageStore.ts";
-import { useGlobalNavigation } from "@/core/store/navigationStore.ts";
-import { isSystemPageMeta } from "@/core/types.ts";
+import { computed } from "vue";
+import { useRoute } from "vue-router";
 
 const props = defineProps();
-const pageStore = useGlobalPageStore();
-const globalNavigationStore = useGlobalNavigation();
+const route = useRoute();
 
-watch(
-  () => globalNavigationStore.activePage,
-  (activePage) => {
-    if (activePage && isSystemPageMeta(activePage)) {
-      pageStore.get(activePage.id);
-    } else {
-      pageStore.clearActiveObject();
-    }
-  },
-  { deep: true },
-);
+const typeId = computed(() => route.params.id);
 </script>
 
 <template>
-  <p>STUB</p>
+  <div class="page">{{ typeId }}</div>
 </template>
 
 <style lang="css" scoped>

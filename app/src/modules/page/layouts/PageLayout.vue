@@ -10,11 +10,7 @@ import {
 } from "@/core/domain/type.ts";
 import { useBaseEditorController } from "../components/editor/baseEditorController.ts";
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore.ts";
-import {
-  isObjectPageMeta,
-  isSystemPageMeta,
-  type EpObjectId,
-} from "@/core/types.ts";
+import { isObjectPageMeta, type EpObjectId } from "@/core/types.ts";
 
 const props = defineProps();
 const pageStore = useGlobalPageStore();
@@ -106,13 +102,6 @@ watch(editorController.selectedObjectId, (id) => {
       v-model="currentPageEntity"
     ></BaseEditor>
     <div class="h-80 shrink-0"></div>
-  </div>
-  <div
-    v-else
-    class="flex flex-col justify-center items-center gap-2 w-full h-full page"
-  >
-    <p>Create a new note (shortcut placeholder)</p>
-    <p>Select page from tree or browser tab</p>
   </div>
 </template>
 

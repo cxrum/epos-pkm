@@ -8,15 +8,21 @@ import type { MenuGroup } from "@/shared/components/popUpMenu/type";
 import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
 import AddDocument from "@/assets/icons/AddDocument.vue";
 import { useWorkspaceStore } from "../store/workspaceStore";
-import { computed, markRaw, ref, watch } from "vue";
+import { computed, markRaw, watch } from "vue";
 import Tree from "@/shared/components/tree/Tree.vue";
 import { useTreeController } from "@/shared/components/tree/baseTreeController";
 import { useGlobalPageStore } from "../store/globalPageStore";
 import LoadingSpinner from "@/shared/components/LoadingSpinner.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
 import type { TreeMenuGroup } from "@/shared/components/tree/type";
-import { isObjectPageMeta, isSystemPageMeta, type EpObjectId } from "../types";
+import {
+  isObjectPageMeta,
+  isSystemPageMeta,
+  isTypePageMeta,
+  type EpObjectId,
+} from "../types";
 import { useRoute, useRouter } from "vue-router";
+import { useGlobalTypeStore } from "../store/globalTypeStore";
 
 const router = useRouter();
 const route = useRoute();
@@ -33,9 +39,15 @@ const stubMenuGroup: MenuGroup[] = [
 ];
 
 const globalPageStore = useGlobalPageStore();
-const treeController = useTreeController(globalPageStore.treeStructure);
+const globalTypeStore = useGlobalTypeStore();
+
+const objectTreeController = useTreeController(globalPageStore.treeStructure);
+const typeTreeController = useTreeController(globalTypeStore.treeStructure);
+typeTreeController.setIsDraggable(false);
+
 const globalNavigationStore = useGlobalNavigation();
 const workSpaceStore = useWorkspaceStore();
+
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
 
 const createEmptyPageInside = (parentId: EpObjectId) => {
@@ -53,7 +65,7 @@ const treeItemsGroup: TreeMenuGroup = [
         type: "button",
         label: "Remove",
         icon: markRaw(DocumentIcon),
-        action(context) {},
+        action() {},
       },
       {
         type: "button",
@@ -67,15 +79,13 @@ const treeItemsGroup: TreeMenuGroup = [
   },
 ];
 
-treeController.setMenuItems(treeItemsGroup);
+objectTreeController.setMenuItems(treeItemsGroup);
 
-globalPageStore.refreshTreeStructure();
-
-treeController.setRenameCallBack((id, newTitle) => {
+objectTreeController.setRenameCallBack((id, newTitle) => {
   globalPageStore.rename(id, newTitle);
 });
 
-treeController.setMoveCallBack((id, newParentId, oldParentId, type) => {
+objectTreeController.setMoveCallBack((id, newParentId, oldParentId, _type) => {
   globalPageStore.move(id, newParentId, oldParentId);
 });
 
@@ -88,14 +98,21 @@ watch(
         if (pageMeta.id === "type-editor") {
           router.push({ name: "type-editor" });
         }
-
-        treeController.clearSelection();
+        objectTreeController.clearSelection();
       } else if (isObjectPageMeta(pageMeta)) {
-        treeController.selectNode(pageMeta.id);
+        objectTreeController.selectNode(pageMeta.id);
         onPageClick();
+      } else if (isTypePageMeta(pageMeta)) {
+        router.push({
+          name: "type-editor",
+          params: {
+            id: pageMeta.id,
+          },
+        });
       }
     } else {
-      treeController.clearSelection();
+      objectTreeController.clearSelection();
+      typeTreeController.clearSelection();
     }
   },
 );
@@ -104,16 +121,34 @@ watch(
   () => globalPageStore.treeStructure,
   (root) => {
     if (root) {
-      treeController.setRootNode(root);
+      objectTreeController.setRootNode(root);
     }
   },
 );
 
 watch(
-  () => treeController.selectedId.value,
+  () => globalTypeStore.treeStructure,
+  (root) => {
+    if (root) {
+      typeTreeController.setRootNode(root);
+    }
+  },
+);
+
+watch(
+  () => objectTreeController.selectedId.value,
   (pageId) => {
     if (pageId) {
       globalNavigationStore.openPage(pageId);
+    }
+  },
+);
+
+watch(
+  () => typeTreeController.selectedId.value,
+  (typeId) => {
+    if (typeId) {
+      globalNavigationStore.openType(typeId);
     }
   },
 );
@@ -143,6 +178,9 @@ const onTypeEditorClicked = () => {
     globalNavigationStore.openSystemPage("type-editor");
   }
 };
+
+globalPageStore.refreshTreeStructure();
+globalTypeStore.refreshTreeStructure();
 </script>
 
 <template>
@@ -221,10 +259,18 @@ const onTypeEditorClicked = () => {
         </BaseButton>
       </Accordion>
 
-      <Accordion label="Tree" :menu-data="treeHierarchyMenu">
+      <Accordion label="Types" :menu-data="treeHierarchyMenu">
+        <Tree
+          v-if="!globalTypeStore.isTreeStructureLoading"
+          :controller="typeTreeController"
+        />
+        <LoadingSpinner v-else class="w-full h-5.5 algin-self-center" />
+      </Accordion>
+
+      <Accordion label="Objects" :menu-data="treeHierarchyMenu">
         <Tree
           v-if="!globalPageStore.isTreeStructureLoading"
-          :controller="treeController"
+          :controller="objectTreeController"
         />
         <LoadingSpinner v-else class="w-full h-5.5 algin-self-center" />
       </Accordion>

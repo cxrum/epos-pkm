@@ -1,8 +1,8 @@
 import { defineStore } from "pinia";
-import type { EpObjectId, Icon, ObjectPath } from "../types";
+import type { EpObjectId, Icon } from "../types";
 import { globalObjectsService, globalTypingService } from "../di/global";
 import { ref, type Ref } from "vue";
-import { isAnyContainer, type EpObjectEntity } from "../domain/type";
+import { isAnyContainer } from "../domain/type";
 
 export interface ObjectMetaInfo {
   icon?: Icon;

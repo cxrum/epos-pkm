@@ -1,4 +1,4 @@
-import type { EpObjectId, EpTypeId, ObjectPath } from "@/core/types";
+import type { EpObjectId } from "@/core/types";
 import type { EpObjectEntity, ObjectHierarchyNode } from "../type";
 import type { RawObjectFilterOptions } from "@/core/infra/storage/type";
 

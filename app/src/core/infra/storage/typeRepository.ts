@@ -7,7 +7,7 @@ import type {
   BasePropertiesScheme,
 } from "@/core/domain/type";
 import type { DefaultTypeId, EpTypeId, SystemTypeId } from "@/core/types";
-import { deepTraversal, extractTreeEdges, findNode, type Edge } from "../utils";
+import { deepTraversal, extractTreeEdges, type Edge } from "../utils";
 import type { FileSystemApi } from "../../../../fileSystemApiContract";
 import type { RawEptTypeHierarchyNode, RawEpType } from "./type";
 
@@ -46,6 +46,10 @@ const ROOT: RawEptTypeHierarchyNode = {
       id: "def:text",
       type: {
         id: "def:text",
+        icon: {
+          type: "default",
+          name: "type",
+        },
         title: "Text",
         kind: "default",
       },
@@ -114,6 +118,10 @@ export class TypingRepository implements TypingRepositoryContract {
 
   constructor(userStorageApi: FileSystemApi<RawEptTypeHierarchyNode>) {
     this.typesStorageApi = userStorageApi;
+  }
+
+  getEdges(): Edge<EpTypeId>[] {
+    return this.typeTreeEdges;
   }
 
   async init(): Promise<void> {

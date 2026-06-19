@@ -1,10 +1,13 @@
 import type { EpTypeEntity } from "@/core/domain/type";
+import type { Edge } from "@/core/infra/utils";
 import type { EpTypeId, SystemTypeId } from "@/core/types";
+import type { TreeNode } from "@/shared/components/tree/contract";
 
 export interface TypingServiceContract {
   get(id: EpTypeId): Promise<EpTypeEntity | undefined>;
   getAllTypes(): Promise<EpTypeEntity[]>;
-
+  getEdges(): Edge<EpTypeId>[];
+  getTree(): Promise<TreeNode>;
   createType(type: EpTypeEntity): Promise<EpTypeEntity>;
   updateType(
     id: Exclude<EpTypeId, SystemTypeId>,

@@ -1,7 +1,13 @@
 import type { TypingRepositoryContract } from "@/core/domain/repositories/typesRepositoryContract";
 import type { EpTypeId, SystemTypeId } from "@/core/types";
 import type { TypingServiceContract } from "../store/services/typingEngineContract";
-import { createCompanionEpTypeEntity, type EpTypeEntity } from "../domain/type";
+import {
+  createCompanionEpTypeEntity,
+  type EpTypeEntity,
+  type TypeHierarchyNode,
+} from "../domain/type";
+import type { Edge } from "../infra/utils";
+import type { TreeNode } from "@/shared/components/tree/contract";
 
 export class TypingService implements TypingServiceContract {
   private readonly typingRepository: TypingRepositoryContract;
@@ -16,6 +22,44 @@ export class TypingService implements TypingServiceContract {
 
   async getAllTypes(): Promise<EpTypeEntity[]> {
     return await this.typingRepository.getAll();
+  }
+
+  getEdges(): Edge<EpTypeId>[] {
+    return this.typingRepository.getEdges();
+  }
+
+  async getTree(): Promise<TreeNode> {
+    const rawTree = await this.typingRepository.getTree();
+    const convertor = async (
+      rawRoot: TypeHierarchyNode,
+      cache: Map<EpTypeId, TreeNode> = new Map(),
+    ): Promise<TreeNode> => {
+      if (cache.has(rawRoot.id)) {
+        return cache.get(rawRoot.id)!;
+      }
+
+      const type = await this.typingRepository.get(rawRoot.id);
+      const newNode: TreeNode = {
+        id: rawRoot.id,
+        icon: type?.icon,
+        title: type?.title ?? "Unknown",
+        children: [],
+      };
+
+      cache.set(newNode.id, newNode);
+
+      if (rawRoot.children && rawRoot.children.length > 0) {
+        for (let i = 0; i < rawRoot.children.length; i++) {
+          const rawChild = rawRoot.children[i];
+          const convertedChild = await convertor(rawChild, cache);
+          newNode.children.push(convertedChild);
+        }
+      }
+
+      return newNode;
+    };
+
+    return await convertor(rawTree);
   }
 
   async createType(type: EpTypeEntity): Promise<EpTypeEntity> {

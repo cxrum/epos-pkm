@@ -3,6 +3,7 @@ import { ref } from "vue";
 import {
   TypeEditorPageMeta,
   type EpObjectId,
+  type EpTypeId,
   type Icon,
   type ObjectMeta,
   type PageMeta,
@@ -13,7 +14,7 @@ import { globalObjectsService, globalTypingService } from "../di/global";
 import { resolveTitle } from "../domain/type";
 
 export const useGlobalNavigation = defineStore("navigation", () => {
-  const activePage = ref<PageMeta>();
+  const active = ref<PageMeta>();
   const cachedPageMeta = ref<Map<EpObjectId, ObjectMeta>>(new Map());
   const currentPath = ref<Path[]>([]);
 
@@ -66,10 +67,24 @@ export const useGlobalNavigation = defineStore("navigation", () => {
 
   const openSystemPage = (page: SystemPageId) => {
     if (page === "type-editor") {
-      activePage.value = TypeEditorPageMeta;
+      active.value = TypeEditorPageMeta;
     } else {
-      activePage.value = undefined;
+      active.value = undefined;
     }
+  };
+
+  const openType = async (typeId: EpTypeId) => {
+    const type = await globalTypingService.get(typeId);
+    if (!type) {
+      return;
+    }
+
+    active.value = {
+      id: type.id,
+      title: type.title,
+      icon: type.icon,
+      kind: "type",
+    };
   };
 
   const openPage = async (pageId: EpObjectId) => {
@@ -80,18 +95,18 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     }
 
     if (meta !== undefined) {
-      activePage.value = meta;
+      active.value = meta;
     }
   };
 
   const closePage = (pageId: EpObjectId) => {
-    if (pageId === activePage.value?.id) {
-      activePage.value = undefined;
+    if (pageId === active.value?.id) {
+      active.value = undefined;
     }
   };
 
   const clearPageSelection = () => {
-    activePage.value = undefined;
+    active.value = undefined;
   };
 
   const clearCurrentPath = () => {
@@ -99,7 +114,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
   };
 
   return {
-    activePage,
+    activePage: active,
     currentPath,
 
     setCurrentPath,
@@ -108,6 +123,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     getMetaInfo,
     preloadPageMeta,
     openPage,
+    openType,
     openSystemPage,
     closePage,
   };

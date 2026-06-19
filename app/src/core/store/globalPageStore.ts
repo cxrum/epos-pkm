@@ -6,7 +6,7 @@ import type { EpObjectId, ObjectPath } from "../types";
 import { globalObjectsService } from "../di/global";
 
 export const useGlobalPageStore = defineStore("page", () => {
-  const treeStructure = ref<TreeNode>({ id: "root", title: "a", children: [] });
+  const treeStructure = ref<TreeNode>({ id: "-1", title: "-1", children: [] });
   const currentObject = ref<EpObjectEntity>();
   const paths = ref<Record<EpObjectId, ObjectPath>>({});
   const isOjectSaving = ref(false);

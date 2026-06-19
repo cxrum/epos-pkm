@@ -5,6 +5,7 @@ import type {
   TypeHierarchyNode,
   UserTypeEntity,
 } from "../type";
+import type { Edge } from "@/core/infra/utils";
 
 export interface TypingRepositoryContract {
   init(): Promise<void>;
@@ -24,6 +25,7 @@ export interface TypingRepositoryContract {
   getFullPropsScheme(id: EpTypeId): BasePropertiesScheme;
   index(): void;
   getTree(): Promise<TypeHierarchyNode>;
+  getEdges(): Edge<EpTypeId>[];
   getAncestors(id: EpTypeId): EpTypeId[];
   getDescendants(id: EpTypeId): EpTypeId[];
   getAllDescendants(): Map<EpTypeId, EpTypeId[]>;

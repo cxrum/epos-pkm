@@ -23,7 +23,16 @@ export interface ObjectIcon extends BaseDefaultIcon {
   name: "object";
 }
 
-export type DefaultIcon = TableIcon | PageIcon | ObjectIcon | ErrorIcon;
+export interface TypeIcon extends BaseDefaultIcon {
+  name: "type";
+}
+
+export type DefaultIcon =
+  | TableIcon
+  | PageIcon
+  | ObjectIcon
+  | ErrorIcon
+  | TypeIcon;
 
 export interface LinkIcon extends BaseIcon {
   type: "link";
