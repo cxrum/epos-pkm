@@ -22,7 +22,7 @@ export const useGlobalObjectStore = defineStore("objects", () => {
   const getMetaInfo = async (id: EpObjectId): Promise<ObjectMetaInfo> => {
     isObjectLoading.value.set(id, true);
     const res = await globalObjectsService.get(id);
-    const typeRes = await globalTypingService.getType(id);
+    const typeRes = await globalTypingService.get(id);
     isObjectLoading.value.set(id, false);
 
     let title = undefined;
@@ -37,6 +37,7 @@ export const useGlobalObjectStore = defineStore("objects", () => {
       path: res?.objectPath.join("/"),
     };
   };
+
   return {
     selectedObject,
     isObjectLoading,

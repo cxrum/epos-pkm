@@ -1,11 +1,19 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { EpObjectId, Icon, ObjectMeta, Path } from "../types";
+import {
+  TypeEditorPageMeta,
+  type EpObjectId,
+  type Icon,
+  type ObjectMeta,
+  type PageMeta,
+  type Path,
+  type SystemPageId,
+} from "../types";
 import { globalObjectsService, globalTypingService } from "../di/global";
-import { isContainerEntity, resolveTitle } from "../domain/type";
+import { resolveTitle } from "../domain/type";
 
 export const useGlobalNavigation = defineStore("navigation", () => {
-  const activePage = ref<ObjectMeta>();
+  const activePage = ref<PageMeta>();
   const cachedPageMeta = ref<Map<EpObjectId, ObjectMeta>>(new Map());
   const currentPath = ref<Path[]>([]);
 
@@ -30,7 +38,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
       return undefined;
     }
 
-    const type = await globalTypingService.getType(result.typeId);
+    const type = await globalTypingService.get(result.typeId);
 
     let icon: Icon = { type: "emoji", emoji: "U" };
     let title: string = resolveTitle(result);
@@ -44,6 +52,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
       typeId: result.typeId,
       title: title,
       icon: icon,
+      kind: "page",
     } as ObjectMeta;
 
     cachedPageMeta.value.set(objId, meta);
@@ -53,6 +62,14 @@ export const useGlobalNavigation = defineStore("navigation", () => {
 
   const getMetaInfo = (pageId: EpObjectId): ObjectMeta | undefined => {
     return cachedPageMeta.value.get(pageId);
+  };
+
+  const openSystemPage = (page: SystemPageId) => {
+    if (page === "type-editor") {
+      activePage.value = TypeEditorPageMeta;
+    } else {
+      activePage.value = undefined;
+    }
   };
 
   const openPage = async (pageId: EpObjectId) => {
@@ -91,6 +108,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     getMetaInfo,
     preloadPageMeta,
     openPage,
+    openSystemPage,
     closePage,
   };
 });

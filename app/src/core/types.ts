@@ -61,19 +61,40 @@ export interface SettingsCategory {
   settingEntries: SettingEntry[];
 }
 
-export type SystemPageId = "graph" | "aggregator";
+export type SystemPageId = "graph" | "aggregator" | "type-editor";
+
 export type MetaId = EpObjectId | SystemPageId;
 
-export interface BasePageMeta<TId extends MetaId = MetaId> {
+type _Kind = "system" | "page";
+
+export interface BasePageMeta<
+  TId extends MetaId = MetaId,
+  TKind extends _Kind = "system",
+> {
   id: TId;
   title: string;
   icon: Icon;
+  kind: TKind;
 }
 
-export interface ObjectMeta extends BasePageMeta<EpObjectId> {
-  typeId: EpTypeId;
-}
-
-export interface SystemPageMeta extends BasePageMeta<SystemPageId> {}
+export interface ObjectMeta extends BasePageMeta<EpObjectId, "page"> {}
+export interface SystemPageMeta extends BasePageMeta<SystemPageId, "system"> {}
 
 export type PageMeta = ObjectMeta | SystemPageMeta;
+
+export const TypeEditorPageMeta: SystemPageMeta = {
+  id: "type-editor",
+  title: "Type Editor",
+  icon: {
+    name: "object",
+    type: "default",
+  },
+  kind: "system",
+};
+
+export function isSystemPageMeta(meta: PageMeta): meta is SystemPageMeta {
+  return meta.kind === "system";
+}
+export function isObjectPageMeta(meta: PageMeta): meta is ObjectMeta {
+  return meta.kind === "page";
+}

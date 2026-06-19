@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, toRaw } from "vue";
+import { ref, watch, nextTick, toRaw, onMounted } from "vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
 import { useGlobalPageStore } from "../../../core/store/globalPageStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
@@ -10,7 +10,11 @@ import {
 } from "@/core/domain/type.ts";
 import { useBaseEditorController } from "../components/editor/baseEditorController.ts";
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore.ts";
-import type { EpObjectId } from "@/core/types.ts";
+import {
+  isObjectPageMeta,
+  isSystemPageMeta,
+  type EpObjectId,
+} from "@/core/types.ts";
 
 const props = defineProps();
 const pageStore = useGlobalPageStore();
@@ -25,10 +29,21 @@ const title = ref<string>();
 const selectedObjectId = ref<EpObjectId>();
 let isProgrammaticUpdate = false;
 
+onMounted(() => {
+  if (
+    globalNavigationStore.activePage &&
+    isObjectPageMeta(globalNavigationStore.activePage)
+  ) {
+    pageStore.get(globalNavigationStore.activePage.id);
+  } else {
+    pageStore.clearActiveObject();
+  }
+});
+
 watch(
   () => globalNavigationStore.activePage,
   (activePage) => {
-    if (activePage != null) {
+    if (activePage && isObjectPageMeta(activePage)) {
       pageStore.get(activePage.id);
     } else {
       pageStore.clearActiveObject();

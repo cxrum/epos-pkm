@@ -10,7 +10,7 @@ export class TypingService implements TypingServiceContract {
     this.typingRepository = typingRepository;
   }
 
-  async getType(id: EpTypeId): Promise<EpTypeEntity | undefined> {
+  async get(id: EpTypeId): Promise<EpTypeEntity | undefined> {
     return await this.typingRepository.get(id);
   }
 

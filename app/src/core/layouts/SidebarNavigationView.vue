@@ -15,7 +15,11 @@ import { useGlobalPageStore } from "../store/globalPageStore";
 import LoadingSpinner from "@/shared/components/LoadingSpinner.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
 import type { TreeMenuGroup } from "@/shared/components/tree/type";
-import type { EpObjectId } from "../types";
+import { isObjectPageMeta, isSystemPageMeta, type EpObjectId } from "../types";
+import { useRoute, useRouter } from "vue-router";
+
+const router = useRouter();
+const route = useRoute();
 
 const stubMenuGroup: MenuGroup[] = [
   {
@@ -79,7 +83,17 @@ watch(
   () => globalNavigationStore.activePage,
   (pageMeta) => {
     if (pageMeta) {
-      treeController.selectNode(pageMeta.id);
+      if (isSystemPageMeta(pageMeta)) {
+        globalNavigationStore.openSystemPage(pageMeta.id);
+        if (pageMeta.id === "type-editor") {
+          router.push({ name: "type-editor" });
+        }
+
+        treeController.clearSelection();
+      } else if (isObjectPageMeta(pageMeta)) {
+        treeController.selectNode(pageMeta.id);
+        onPageClick();
+      }
     } else {
       treeController.clearSelection();
     }
@@ -117,6 +131,18 @@ const treeHierarchyMenu: MenuGroup[] = [
     ],
   },
 ];
+
+const onPageClick = () => {
+  if (route.name !== "default-workspace") {
+    router.push({ name: "default-workspace" });
+  }
+};
+
+const onTypeEditorClicked = () => {
+  if (route.name !== "type-editor") {
+    globalNavigationStore.openSystemPage("type-editor");
+  }
+};
 </script>
 
 <template>
@@ -134,6 +160,7 @@ const treeHierarchyMenu: MenuGroup[] = [
       class="w-full"
       :is-content-visible="isSidebarOpen"
       :icon="TypeDictionary"
+      @click="onTypeEditorClicked"
     >
       Type
     </BaseButton>

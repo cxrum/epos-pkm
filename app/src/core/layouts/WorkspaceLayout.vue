@@ -22,14 +22,14 @@ import { useGlobalNavigation } from "../store/navigationStore";
 import type { Path } from "../types";
 
 const workSpaceStore = useWorkspaceStore();
-
 const isTypeEditorOpen = computed(() => workSpaceStore.isTypeEditorOpen);
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
 const isOmniSearchOpen = computed(() => workSpaceStore.isOmniSearchOpen);
+
 const isPopUpMenuOpen = ref<boolean>(false);
 const globalNavigationStore = useGlobalNavigation();
 
-const handleStateButonClick = () => {
+const handleStateButtonClick = () => {
   workSpaceStore.toggleSidebar();
 };
 
@@ -112,7 +112,7 @@ const handleOnChainClick = (value: Path) => {
         size="32px"
         class="text-(--icon-color) m-2"
         interactive
-        @click="handleStateButonClick"
+        @click="handleStateButtonClick"
       >
         <SidebarState :status="isSidebarOpen ? 'closed' : 'opened'" />
       </BaseIcon>
@@ -197,9 +197,7 @@ const handleOnChainClick = (value: Path) => {
 
           <div class="flex-1 overflow-y-auto auto-hide-scroll">
             <router-view v-slot="{ Component }">
-              <transition name="fade" mode="out-in">
-                <component :is="Component" class="min-h-full" />
-              </transition>
+              <component :is="Component" class="min-h-full" />
             </router-view>
           </div>
 

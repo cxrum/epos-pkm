@@ -2,7 +2,7 @@ import type { EpTypeEntity } from "@/core/domain/type";
 import type { EpTypeId, SystemTypeId } from "@/core/types";
 
 export interface TypingServiceContract {
-  getType(id: EpTypeId): Promise<EpTypeEntity | undefined>;
+  get(id: EpTypeId): Promise<EpTypeEntity | undefined>;
   getAllTypes(): Promise<EpTypeEntity[]>;
 
   createType(type: EpTypeEntity): Promise<EpTypeEntity>;

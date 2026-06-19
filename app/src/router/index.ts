@@ -1,32 +1,45 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
   {
-    path: '/',
-    redirect: '/workspace'
+    path: "/",
+    redirect: "/workspace/page",
   },
   {
-    path: '/workspace',
-    component: () => import('@/core/layouts/WorkspaceLayout.vue'),
+    path: "/workspace",
+    component: () => import("@/core/layouts/WorkspaceLayout.vue"),
     children: [
       {
-          path: '',
-          component: () => import('@/modules/page/layouts/PageLayout.vue')
+        name: "default-workspace",
+        path: "page",
+        component: () => import("@/modules/page/layouts/PageLayout.vue"),
       },
       {
-        path: 'settings',
+        path: "type",
+        component: () => import("@/modules/typeEditor/layers/TypedEditor.vue"),
+
+        children: [
+          {
+            name: "type-editor",
+            path: "editor",
+            component: () =>
+              import("@/modules/typeEditor/layers/TypedEditor.vue"),
+          },
+        ],
+      },
+      {
+        path: "settings",
         components: {
-          default: () => import('@/modules/page/layouts/PageLayout.vue'),
-          modal: () => import('@/modules/settings/layouts/SettingsLayout.vue')
-        }
-      }
-    ]
-  }
-]
+          modal: () => import("@/modules/settings/layouts/SettingsLayout.vue"),
+        },
+      },
+    ],
+  },
+];
 
 const router = createRouter({
   history: createWebHistory(),
-  routes
-})
+  routes,
+});
 
-export default router
+export default router;
