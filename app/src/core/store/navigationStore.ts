@@ -66,7 +66,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
   };
 
   const openSystemPage = (page: SystemPageId) => {
-    if (page === "type-editor") {
+    if (page === "type-graph") {
       active.value = TypeEditorPageMeta;
     } else {
       active.value = undefined;

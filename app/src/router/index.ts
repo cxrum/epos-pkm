@@ -6,12 +6,13 @@ const routes = [
     redirect: "/workspace",
   },
   {
+    name: "workspace",
     path: "/workspace",
     component: () => import("@/core/layouts/WorkspaceLayout.vue"),
     children: [
       {
-        name: "default-workspace",
-        path: "page",
+        name: "page-editor",
+        path: "page/:id",
         component: () => import("@/modules/page/layouts/PageLayout.vue"),
       },
       {

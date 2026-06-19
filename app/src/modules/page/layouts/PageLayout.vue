@@ -1,21 +1,26 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, toRaw, onMounted } from "vue";
+import { ref, watch, nextTick, toRaw, onMounted, computed } from "vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
 import { useGlobalPageStore } from "../../../core/store/globalPageStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
-import { useGlobalNavigation } from "@/core/store/navigationStore.ts";
 import {
   isAnyContainer,
   type EpContainerObjectEntity,
 } from "@/core/domain/type.ts";
 import { useBaseEditorController } from "../components/editor/baseEditorController.ts";
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore.ts";
-import { isObjectPageMeta, type EpObjectId } from "@/core/types.ts";
+import { type EpObjectId } from "@/core/types.ts";
+import { useRoute } from "vue-router";
+import { useGlobalNavigation } from "@/core/store/navigationStore.ts";
+
+const route = useRoute();
+const pageId = ref<EpObjectId>();
 
 const props = defineProps();
 const pageStore = useGlobalPageStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
+
 const globalObjectStore = useGlobalObjectStore();
 
 const editorController = useBaseEditorController();
@@ -26,26 +31,23 @@ const selectedObjectId = ref<EpObjectId>();
 let isProgrammaticUpdate = false;
 
 onMounted(() => {
-  if (
-    globalNavigationStore.activePage &&
-    isObjectPageMeta(globalNavigationStore.activePage)
-  ) {
-    pageStore.get(globalNavigationStore.activePage.id);
-  } else {
-    pageStore.clearActiveObject();
-  }
+  pageId.value = route.params.id as EpObjectId;
 });
 
 watch(
-  () => globalNavigationStore.activePage,
-  (activePage) => {
-    if (activePage && isObjectPageMeta(activePage)) {
-      pageStore.get(activePage.id);
-    } else {
-      pageStore.clearActiveObject();
+  () => route.params.id,
+  (id) => {
+    pageId.value = id as EpObjectId;
+  },
+);
+
+watch(
+  () => pageId.value,
+  (id) => {
+    if (id) {
+      pageStore.get(id);
     }
   },
-  { deep: true },
 );
 
 watch(
@@ -94,7 +96,7 @@ watch(editorController.selectedObjectId, (id) => {
 });
 </script>
 <template>
-  <div v-if="pageStore.pageData" class="flex flex-col gap-2 w-full h-full page">
+  <div v-if="pageId" class="flex flex-col gap-2 w-full h-full page">
     <h1>{{ title }}</h1>
     <BaseEditor
       :controller="editorController"
@@ -102,6 +104,12 @@ watch(editorController.selectedObjectId, (id) => {
       v-model="currentPageEntity"
     ></BaseEditor>
     <div class="h-80 shrink-0"></div>
+  </div>
+  <div
+    v-else
+    class="flex flex-col gap-2 w-full h-full page justify-center place-content-center"
+  >
+    <p>Page with id {{ pageId }} doesnt exit</p>
   </div>
 </template>
 

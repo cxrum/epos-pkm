@@ -90,18 +90,25 @@ objectTreeController.setMoveCallBack((id, newParentId, oldParentId, _type) => {
 });
 
 watch(
+  () => route.fullPath,
+  (path) => {
+    console.log(path);
+  },
+);
+
+watch(
   () => globalNavigationStore.activePage,
   (pageMeta) => {
     if (pageMeta) {
       if (isSystemPageMeta(pageMeta)) {
         globalNavigationStore.openSystemPage(pageMeta.id);
-        if (pageMeta.id === "type-editor") {
-          router.push({ name: "type-editor" });
+        if (pageMeta.id === "type-graph") {
+          router.push({ name: "type-graph" });
         }
         objectTreeController.clearSelection();
       } else if (isObjectPageMeta(pageMeta)) {
         objectTreeController.selectNode(pageMeta.id);
-        onPageClick();
+        router.push({ name: "page-editor", params: { id: pageMeta.id } });
       } else if (isTypePageMeta(pageMeta)) {
         router.push({
           name: "type-editor",
@@ -113,6 +120,7 @@ watch(
     } else {
       objectTreeController.clearSelection();
       typeTreeController.clearSelection();
+      router.push({ name: "workspace" });
     }
   },
 );
@@ -167,15 +175,9 @@ const treeHierarchyMenu: MenuGroup[] = [
   },
 ];
 
-const onPageClick = () => {
-  if (route.name !== "default-workspace") {
-    router.push({ name: "default-workspace" });
-  }
-};
-
 const onTypeEditorClicked = () => {
-  if (route.name !== "type-editor") {
-    globalNavigationStore.openSystemPage("type-editor");
+  if (route.name !== "type-graph") {
+    globalNavigationStore.openSystemPage("type-graph");
   }
 };
 

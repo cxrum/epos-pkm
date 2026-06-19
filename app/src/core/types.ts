@@ -61,7 +61,7 @@ export interface SettingsCategory {
   settingEntries: SettingEntry[];
 }
 
-export type SystemPageId = "graph" | "aggregator" | "type-editor";
+export type SystemPageId = "graph" | "aggregator" | "type-graph";
 
 export type MetaId = EpObjectId | SystemPageId;
 
@@ -84,11 +84,11 @@ export interface SystemPageMeta extends BasePageMeta<SystemPageId, "system"> {}
 export type PageMeta = TypeMeta | ObjectMeta | SystemPageMeta;
 
 export const TypeEditorPageMeta: SystemPageMeta = {
-  id: "type-editor",
-  title: "Type Editor",
+  id: "type-graph",
+  title: "Type Graph",
   icon: {
-    name: "object",
-    type: "default",
+    type: "emoji",
+    emoji: "T",
   },
   kind: "system",
 };
