@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, vi } from "vitest";
 import type { UserTypeEntity } from "@/core/domain/type";
 import { MockFileSystem } from "./mockFileSystem";
 import type { RawEptTypeHierarchyNode } from "@/core/infra/storage/type";
@@ -8,9 +8,19 @@ describe("TypingRepository", () => {
   let mockFs: MockFileSystem<RawEptTypeHierarchyNode>;
   let repository: TypingRepository;
 
+  const ROOT: RawEptTypeHierarchyNode = {
+    id: "sys:root",
+    type: {
+      id: "sys:root",
+      title: "root",
+      kind: "system",
+    },
+    children: [],
+  };
+
   beforeEach(async () => {
     mockFs = new MockFileSystem();
-    repository = new TypingRepository(mockFs);
+    repository = new TypingRepository(mockFs, ROOT);
     await repository.init();
   });
 
@@ -155,6 +165,139 @@ describe("TypingRepository", () => {
 
       const descendantsP1 = repository.getDescendants("usr:p1");
       expect(descendantsP1).not.toContain("usr:c1");
+    });
+  });
+
+  describe("getFullPropsScheme", () => {
+    it("should return empty scheme if type and ancestors have no properties", async () => {
+      await repository.create(
+        {
+          id: "usr:ancestor-1",
+          title: "Ancestor",
+          icon: { type: "default", name: "test" },
+          propertiesScheme: { order: [], props: {} },
+        },
+        "sys:root",
+      );
+
+      await repository.create(
+        {
+          id: "usr:type-1",
+          title: "Type",
+          icon: { type: "default", name: "test" },
+          propertiesScheme: { order: [], props: {} },
+        },
+        "usr:ancestor-1",
+      );
+
+      const result = repository.getFullPropsScheme("usr:type-1");
+
+      expect(result).toEqual({ order: [], props: {} });
+    });
+
+    it("should return only own properties if there are no ancestors", async () => {
+      await repository.create(
+        {
+          id: "usr:type-1",
+          title: "Type",
+          icon: { type: "default", name: "test" },
+          propertiesScheme: {
+            order: ["propA"],
+            props: { propA: { id: "propA", type: "string" } as any },
+          },
+        },
+        "sys:root",
+      );
+
+      const result = repository.getFullPropsScheme("usr:type-1");
+
+      expect(result).toEqual({
+        order: ["propA"],
+        props: { propA: { id: "propA", type: "string" } },
+      });
+    });
+
+    it("should merge properties from ancestors and the current type", async () => {
+      await repository.create(
+        {
+          id: "usr:ancestor-1",
+          title: "Ancestor",
+          icon: { type: "default", name: "test" },
+          propertiesScheme: {
+            order: ["propA"],
+            props: { propA: { id: "propA", type: "string" } as any },
+          },
+        },
+        "sys:root",
+      );
+
+      await repository.create(
+        {
+          id: "usr:type-1",
+          title: "Type",
+          icon: { type: "default", name: "test" },
+          propertiesScheme: {
+            order: ["propB"],
+            props: { propB: { id: "propB", type: "number" } as any },
+          },
+        },
+        "usr:ancestor-1",
+      );
+
+      const result = repository.getFullPropsScheme("usr:type-1");
+
+      expect(result).toEqual({
+        order: ["propA", "propB"],
+        props: {
+          propA: { id: "propA", type: "string" },
+          propB: { id: "propB", type: "number" },
+        },
+      });
+    });
+
+    it("should deduplicate order and override props if keys conflict", async () => {
+      await repository.create(
+        {
+          id: "usr:ancestor-1",
+          title: "Ancestor",
+          icon: { type: "default", name: "test" },
+          propertiesScheme: {
+            order: ["propA", "propB"],
+            props: {
+              propA: { id: "propA", type: "string" } as any,
+              propB: { id: "propB", type: "number", default: 0 } as any,
+            },
+          },
+        },
+        "sys:root",
+      );
+
+      await repository.create(
+        {
+          id: "usr:type-1",
+          title: "Type",
+          icon: { type: "default", name: "test" },
+          propertiesScheme: {
+            order: ["propB", "propC"],
+            props: {
+              propB: { id: "propB", type: "number", default: 42 } as any,
+              propC: { id: "propC", type: "boolean" } as any,
+            },
+          },
+        },
+        "usr:ancestor-1",
+      );
+
+      const result = repository.getFullPropsScheme("usr:type-1");
+
+      expect(result).toEqual({
+        order: ["propA", "propB", "propC"],
+        props: {
+          propA: { id: "propA", type: "string" },
+          propB: { id: "propB", type: "number", default: 42 },
+          propC: { id: "propC", type: "boolean" },
+        },
+      });
     });
   });
 });

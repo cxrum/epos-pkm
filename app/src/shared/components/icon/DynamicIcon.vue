@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent } from "vue";
+import { computed, defineAsyncComponent, ref, watch } from "vue";
 import type { Component } from "vue";
 import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
 import type { Icon } from "@/core/types";
@@ -16,6 +16,34 @@ const iconMap: Record<string, Component> = {
   table: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
   error: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
 };
+
+const hasLinkLoadError = ref(false);
+
+watch(
+  () => props.icon,
+  () => {
+    hasLinkLoadError.value = false;
+  },
+  { immediate: true },
+);
+
+const emojiIcon = computed(() => {
+  return props.icon?.type === "emoji" ? props.icon : null;
+});
+
+const linkIcon = computed(() => {
+  if (
+    props.icon?.type !== "link" ||
+    !props.icon.link ||
+    hasLinkLoadError.value
+  ) {
+    return null;
+  }
+
+  return props.icon;
+});
+
+const imageAlt = computed(() => props.icon?.type ?? "icon");
 
 const computedIcon = computed<Component>(() => {
   if (props.icon === undefined) {
@@ -34,8 +62,34 @@ const computedIcon = computed<Component>(() => {
 </script>
 
 <template>
-  <span v-if="props.icon?.type === 'emoji'">
-    {{ props.icon.emoji }}
+  <span v-if="emojiIcon" class="dynamic-icon-emoji">
+    {{ emojiIcon.emoji }}
   </span>
-  <component v-else :is="computedIcon" />
+  <img
+    v-else-if="linkIcon"
+    :src="linkIcon.link"
+    :alt="imageAlt"
+    class="dynamic-icon-image"
+  />
+  <component v-else-if="props.icon?.type === 'default'" :is="computedIcon" />
+  <DocumentIcon v-else />
 </template>
+
+<style scoped>
+.dynamic-icon-emoji {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  font-size: 0.85em;
+  line-height: 1;
+}
+
+.dynamic-icon-image {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+</style>

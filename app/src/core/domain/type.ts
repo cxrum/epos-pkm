@@ -11,6 +11,7 @@ import type {
 } from "../types";
 
 export type _TypeKind = "default" | "system" | "user";
+export type _PropertyKind = "system" | "user";
 
 export interface BasePropertySchemeEntry<
   TProperty extends EpPropertyId = EpPropertyId,
@@ -19,6 +20,7 @@ export interface BasePropertySchemeEntry<
   id: TProperty;
   title: string;
   type: TPropertyType;
+  kind: _PropertyKind;
 }
 
 export interface ValuedPropertyEntry<
@@ -59,8 +61,12 @@ export type AnyValidPropertyEntry =
   | SelectValuedPropertyEntry<string>
   | TextValuedPropertyEntry<string>;
 
+type IsContainerProperty = BooleanValuedPropertyEntry<"isContainer"> & {
+  kind: "system";
+};
+
 export type SystemPropertiesMap = {
-  isContainer: BooleanValuedPropertyEntry<"isContainer">;
+  isContainer: IsContainerProperty;
 };
 
 export type DynamicPropertiesMap = {
@@ -72,6 +78,10 @@ export type AllPropertiesMap = SystemPropertiesMap & DynamicPropertiesMap;
 export interface BasePropertiesScheme {
   order: EpPropertyId[];
   props: Record<string, BasePropertySchemeEntry>;
+}
+
+export function isSystemProperty(property: BasePropertySchemeEntry): boolean {
+  return property.kind === "system";
 }
 
 interface BaseTypeEntity<
@@ -247,6 +257,7 @@ export type HeadingObjectPropertiesMap = Omit<
   };
   level: Omit<NumberValuedPropertyEntry<"level">, "value"> & {
     value: 1 | 2 | 3 | 4 | 5 | 6;
+    kind: "system";
   };
 };
 

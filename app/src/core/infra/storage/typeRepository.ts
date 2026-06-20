@@ -11,113 +11,22 @@ import { deepTraversal, extractTreeEdges, type Edge } from "../utils";
 import type { FileSystemApi } from "../../../../fileSystemApiContract";
 import type { RawEptTypeHierarchyNode, RawEpType } from "./type";
 
-const ROOT: RawEptTypeHierarchyNode = {
-  id: "sys:root",
-  type: {
-    id: "sys:root",
-    title: "root",
-    kind: "system",
-    propertiesScheme: {
-      order: ["isContainer"],
-      props: {
-        isContainer: {
-          id: "isContainer",
-          title: "isContainer",
-          type: "boolean",
-        },
-      },
-    },
-  },
-  children: [
-    {
-      id: "sys:container",
-      type: {
-        id: "sys:container",
-        title: "Page",
-        icon: {
-          type: "default",
-          name: "page",
-        },
-        kind: "system",
-      },
-      children: [],
-    },
-    {
-      id: "def:text",
-      type: {
-        id: "def:text",
-        icon: {
-          type: "default",
-          name: "type",
-        },
-        title: "Text",
-        kind: "default",
-      },
-      children: [
-        {
-          id: "def:latex",
-          type: {
-            id: "def:latex",
-            title: "LaTeX",
-            kind: "default",
-          },
-          children: [],
-        },
-        {
-          id: "def:code",
-          type: {
-            id: "def:code",
-            title: "Code",
-            kind: "default",
-            propertiesScheme: {
-              order: ["codeLanguage"],
-              props: {
-                isContainer: {
-                  id: "codeLanguage",
-                  title: "codeLanguage",
-                  type: "text",
-                },
-              },
-            },
-          },
-          children: [],
-        },
-      ],
-    },
-    {
-      id: "def:heading",
-      type: {
-        id: "def:heading",
-        title: "Heading",
-        kind: "default",
-        propertiesScheme: {
-          order: ["level"],
-          props: {
-            isContainer: {
-              id: "level",
-              title: "level",
-              type: "number",
-            },
-          },
-        },
-      },
-      children: [],
-    },
-  ],
-};
-
 export class TypingRepository implements TypingRepositoryContract {
   private readonly typesStorageApi: FileSystemApi<RawEptTypeHierarchyNode>;
   private readonly MAIN_TYPES_OBJECT_PATH = "./types.json";
 
-  private typeTree: RawEptTypeHierarchyNode = ROOT;
+  private typeTree: RawEptTypeHierarchyNode;
 
   private flattenTree: Map<string, RawEpType> = new Map(); // FIXME
   private typeTreeEdges: Edge<EpTypeId>[] = [];
   private descendants: Map<string, EpTypeId[]> = new Map(); // FIXME
 
-  constructor(userStorageApi: FileSystemApi<RawEptTypeHierarchyNode>) {
+  constructor(
+    userStorageApi: FileSystemApi<RawEptTypeHierarchyNode>,
+    root: RawEptTypeHierarchyNode,
+  ) {
     this.typesStorageApi = userStorageApi;
+    this.typeTree = root;
   }
 
   getEdges(): Edge<EpTypeId>[] {
@@ -131,8 +40,11 @@ export class TypingRepository implements TypingRepositoryContract {
   private async loadTree(): Promise<RawEptTypeHierarchyNode> {
     const rawTree = await this.typesStorageApi.get(this.MAIN_TYPES_OBJECT_PATH);
     if (!rawTree) {
-      await this.typesStorageApi.save(this.MAIN_TYPES_OBJECT_PATH, ROOT);
-      return ROOT;
+      await this.typesStorageApi.save(
+        this.MAIN_TYPES_OBJECT_PATH,
+        this.typeTree,
+      );
+      return this.typeTree;
     }
 
     return rawTree;
@@ -382,9 +294,12 @@ export class TypingRepository implements TypingRepositoryContract {
 
     return true;
   }
-
   getFullPropsScheme(id: EpTypeId): BasePropertiesScheme {
     const ancestors = this.getAncestors(id);
+    const currentType = this.flattenTree.get(id);
+
+    console.log(currentType);
+
     const aggregatedPropertiesScheme: BasePropertiesScheme = {
       order: [],
       props: {},
@@ -393,21 +308,28 @@ export class TypingRepository implements TypingRepositoryContract {
     for (const ancestor of ancestors) {
       const type = this.flattenTree.get(ancestor);
 
-      if (!type?.propertiesScheme) {
-        continue;
-      }
+      if (!type?.propertiesScheme) continue;
 
-      aggregatedPropertiesScheme.order.concat(type.propertiesScheme.order);
-      for (const [id, dPropsSchemeEntry] of Object.entries(
-        type.propertiesScheme.props,
-      )) {
-        aggregatedPropertiesScheme.props[id] = dPropsSchemeEntry;
-        aggregatedPropertiesScheme.order.push(id);
-      }
+      const clonedProps = structuredClone(type.propertiesScheme.props);
+      Object.assign(aggregatedPropertiesScheme.props, clonedProps);
+
+      aggregatedPropertiesScheme.order.push(...type.propertiesScheme.order);
     }
-    return aggregatedPropertiesScheme;
-  }
 
+    if (currentType?.propertiesScheme) {
+      const clonedProps = structuredClone(currentType.propertiesScheme.props);
+      Object.assign(aggregatedPropertiesScheme.props, clonedProps);
+
+      aggregatedPropertiesScheme.order.push(
+        ...currentType.propertiesScheme.order,
+      );
+    }
+
+    return {
+      order: [...new Set(aggregatedPropertiesScheme.order)],
+      props: aggregatedPropertiesScheme.props,
+    };
+  }
   async inherit(
     parentId: EpTypeId,
     childId: Exclude<EpTypeId, SystemTypeId>,

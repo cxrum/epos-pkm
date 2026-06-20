@@ -1,4 +1,4 @@
-import type { EpTypeEntity } from "@/core/domain/type";
+import type { BasePropertiesScheme, EpTypeEntity } from "@/core/domain/type";
 import type { Edge } from "@/core/infra/utils";
 import type { EpTypeId, SystemTypeId } from "@/core/types";
 import type { TreeNode } from "@/shared/components/tree/contract";
@@ -29,4 +29,6 @@ export interface TypingServiceContract {
     childType: EpTypeId,
   ): Promise<boolean>;
   getDescendants(parentType: EpTypeId): Promise<EpTypeEntity[]>;
+  getAncestors(type: EpTypeId): Promise<EpTypeEntity[]>;
+  getFullPropsScheme(type: EpTypeId): Promise<BasePropertiesScheme>;
 }

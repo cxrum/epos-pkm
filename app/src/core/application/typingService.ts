@@ -3,6 +3,7 @@ import type { EpTypeId, SystemTypeId } from "@/core/types";
 import type { TypingServiceContract } from "../store/services/typingEngineContract";
 import {
   createCompanionEpTypeEntity,
+  type BasePropertiesScheme,
   type EpTypeEntity,
   type TypeHierarchyNode,
 } from "../domain/type";
@@ -161,5 +162,23 @@ export class TypingService implements TypingServiceContract {
     }
 
     return result;
+  }
+
+  async getAncestors(type: EpTypeId): Promise<EpTypeEntity[]> {
+    const descendants = await this.typingRepository.getAncestors(type);
+    const result: EpTypeEntity[] = [];
+
+    for (const val in descendants) {
+      const res = await this.typingRepository.get(val);
+      if (res) {
+        result.push(res);
+      }
+    }
+
+    return result;
+  }
+
+  async getFullPropsScheme(type: EpTypeId): Promise<BasePropertiesScheme> {
+    return await this.typingRepository.getFullPropsScheme(type);
   }
 }

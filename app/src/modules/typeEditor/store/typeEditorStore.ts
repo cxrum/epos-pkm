@@ -1,7 +1,16 @@
 import { ref, type Ref } from "vue";
 import { defineStore } from "pinia";
-import type { EpTypeId } from "@/core/types";
-import type { EpTypeEntity } from "@/core/domain/type";
+import type {
+  EpPropertyId,
+  EpPropertyTypes,
+  EpTypeId,
+  Icon,
+} from "@/core/types";
+import type {
+  BasePropertiesScheme,
+  BasePropertySchemeEntry,
+  EpTypeEntity,
+} from "@/core/domain/type";
 import { globalTypingService } from "@/core/di/global";
 
 export interface TypeTreeNodes {
@@ -16,17 +25,98 @@ export interface TypeTreeEdges {
   label?: string;
 }
 
+export interface PropertyEntry {
+  id: string;
+  title: string;
+  icon: Icon;
+  type: EpPropertyTypes;
+  isChangeable: boolean;
+  isSystem: boolean;
+}
+
 export const useTypeEditorStore = defineStore("types", () => {
   const isTypeLoading = ref<boolean>(false);
-  const selectedType: Ref<EpTypeEntity | undefined> = ref(undefined);
+  const type: Ref<EpTypeEntity | undefined> = ref(undefined);
+  const properties: Ref<PropertyEntry[]> = ref([]);
+  const propertiesOrder: Ref<EpPropertyId[]> = ref([]);
 
   const typeTreeNodes: Ref<TypeTreeNodes[]> = ref([]);
   const typeTreeEdges: Ref<TypeTreeEdges[]> = ref([]);
 
   const loadType = async (id: EpTypeId) => {
-    isTypeLoading.value = false;
-    selectedType.value = await globalTypingService.get(id);
     isTypeLoading.value = true;
+    type.value = await globalTypingService.get(id);
+    if (type.value) {
+      properties.value = await getPropsScheme(type.value);
+      propertiesOrder.value = properties.value.map((it) => it.id);
+    } else {
+      properties.value = [];
+    }
+    isTypeLoading.value = false;
+  };
+
+  const getPropsScheme = async (
+    type: EpTypeEntity,
+  ): Promise<PropertyEntry[]> => {
+    const rawScheme = await globalTypingService.getFullPropsScheme(type.id);
+    const res: PropertyEntry[] = [];
+    console.log(rawScheme);
+
+    for (const key of rawScheme.order) {
+      const entry = rawScheme.props[key];
+
+      if (entry) {
+        res.push({
+          id: entry.id,
+          title: entry.title,
+          type: entry.type,
+          icon: resolveIcon(entry.type),
+          isChangeable: true,
+          isSystem: false,
+        });
+      }
+    }
+
+    return res;
+  };
+  const resolveIcon = (type: EpPropertyTypes): Icon => {
+    if (type === "boolean") {
+      return {
+        type: "emoji",
+        emoji: "B",
+      };
+    } else if (type === "number") {
+      return {
+        type: "emoji",
+        emoji: "N",
+      };
+    } else if (type === "select") {
+      return {
+        type: "emoji",
+        emoji: "S",
+      };
+    } else if (type === "text") {
+      return {
+        type: "emoji",
+        emoji: "T",
+      };
+    } else {
+      return {
+        type: "emoji",
+        emoji: "U",
+      };
+    }
+  };
+
+  const updateOrder = async (newOrder: EpTypeId[]) => {
+    console.log(newOrder);
+  };
+
+  const updatePropertyType = async (
+    property: EpPropertyId,
+    type: EpPropertyTypes,
+  ) => {
+    console.log(property, type);
   };
 
   const loadTree = async () => {
@@ -60,10 +150,15 @@ export const useTypeEditorStore = defineStore("types", () => {
 
   return {
     isTypeLoading,
-    selectedType,
+    type,
+    propertiesOrder,
+    properties,
     typeTreeNodes,
+
     typeTreeEdges,
     loadType,
     loadTree,
+    updateOrder,
+    updatePropertyType,
   };
 });

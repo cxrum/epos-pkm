@@ -13,7 +13,102 @@ const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>(
 );
 const typesStorageApi = new IpcFileSystem<RawEptTypeHierarchyNode>("/types");
 
-const typingRepository = new TypingRepository(typesStorageApi);
+const ROOT: RawEptTypeHierarchyNode = {
+  id: "sys:root",
+  type: {
+    id: "sys:root",
+    title: "root",
+    kind: "system",
+    propertiesScheme: {
+      order: ["isContainer"],
+      props: {
+        isContainer: {
+          id: "isContainer",
+          title: "isContainer",
+          type: "boolean",
+        },
+      },
+    },
+  },
+  children: [
+    {
+      id: "sys:container",
+      type: {
+        id: "sys:container",
+        title: "Page",
+        icon: {
+          type: "default",
+          name: "page",
+        },
+        kind: "system",
+      },
+      children: [],
+    },
+    {
+      id: "def:text",
+      type: {
+        id: "def:text",
+        icon: {
+          type: "default",
+          name: "type",
+        },
+        title: "Text",
+        kind: "default",
+      },
+      children: [
+        {
+          id: "def:latex",
+          type: {
+            id: "def:latex",
+            title: "LaTeX",
+            kind: "default",
+          },
+          children: [],
+        },
+        {
+          id: "def:code",
+          type: {
+            id: "def:code",
+            title: "Code",
+            kind: "default",
+            propertiesScheme: {
+              order: ["codeLanguage"],
+              props: {
+                codeLanguage: {
+                  id: "codeLanguage",
+                  title: "codeLanguage",
+                  type: "text",
+                },
+              },
+            },
+          },
+          children: [],
+        },
+      ],
+    },
+    {
+      id: "def:heading",
+      type: {
+        id: "def:heading",
+        title: "Heading",
+        kind: "default",
+        propertiesScheme: {
+          order: ["level"],
+          props: {
+            level: {
+              id: "level",
+              title: "level",
+              type: "number",
+            },
+          },
+        },
+      },
+      children: [],
+    },
+  ],
+};
+
+const typingRepository = new TypingRepository(typesStorageApi, ROOT);
 await typingRepository.init();
 const objectRepository = new ObjectStorageRepository(containerObjectStorageApi);
 await objectRepository.init();
