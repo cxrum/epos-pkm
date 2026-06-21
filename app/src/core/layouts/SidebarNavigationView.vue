@@ -11,7 +11,6 @@ import { useWorkspaceStore } from "../store/workspaceStore";
 import { computed, markRaw, watch } from "vue";
 import Tree from "@/shared/components/tree/Tree.vue";
 import { useTreeController } from "@/shared/components/tree/baseTreeController";
-import { useGlobalPageStore } from "../store/globalPageStore";
 import LoadingSpinner from "@/shared/components/LoadingSpinner.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
 import type { TreeMenuGroup } from "@/shared/components/tree/type";
@@ -23,6 +22,7 @@ import {
 } from "../types";
 import { useRoute, useRouter } from "vue-router";
 import { useGlobalTypeStore } from "../store/globalTypeStore";
+import { useGlobalObjectStore } from "../store/globalObjectStore";
 
 const router = useRouter();
 const route = useRoute();
@@ -38,8 +38,8 @@ const stubMenuGroup: MenuGroup[] = [
   },
 ];
 
-const globalPageStore = useGlobalPageStore();
 const globalTypeStore = useGlobalTypeStore();
+const globalPageStore = useGlobalObjectStore();
 
 const objectTreeController = useTreeController(globalPageStore.treeStructure);
 const typeTreeController = useTreeController(globalTypeStore.treeStructure);

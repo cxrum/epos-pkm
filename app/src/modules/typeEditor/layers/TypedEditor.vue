@@ -52,36 +52,78 @@ const handleTypeChange = (
       </span>
 
       <div class="flex flex-col gap-1.5">
-        <span
-          v-for="entry in typeEditorStore.properties"
-          :key="entry.id"
-          :id="entry.id"
-          class="flex flex-row items-center"
+        <div
+          v-if="typeEditorStore.isSystemPropertiesVisible"
+          class="flex flex-col gap-2"
         >
-          <div
-            class="custom-drag-handle"
-            contenteditable="false"
-            data-drag-handle
-          ></div>
-          <BaseIcon size="24px">
-            <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
-          </BaseIcon>
-          <p class="flex flex-1">
-            {{ entry.title }}
-          </p>
-          <BaseSelect
-            :disabled="!entry.isChangeable || entry.isSystem"
-            :options="propertyTypesMenu"
-            :model-value="entry.type"
-            @update:model-value="handleTypeChange(entry.id, $event)"
-          />
-        </span>
+          <label>System properties:</label>
+          <span
+            v-for="entry in typeEditorStore.properties.filter(
+              (it) => it.isSystem,
+            )"
+            :key="entry.id"
+            :id="entry.id"
+            class="flex flex-row items-center"
+          >
+            <BaseIcon size="24px">
+              <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
+            </BaseIcon>
+            <p class="flex flex-1">
+              {{ entry.title }}
+            </p>
+            <BaseSelect
+              :disabled="entry.isSystem"
+              :options="propertyTypesMenu"
+              :model-value="entry.type"
+              @update:model-value="handleTypeChange(entry.id, $event)"
+            />
+          </span>
+        </div>
+
+        <div
+          class="flex flex-col gap-2"
+          v-if="
+            typeEditorStore.properties.filter((it) => !it.isSystem).length > 0
+          "
+        >
+          <label>Properties:</label>
+          <span
+            v-for="entry in typeEditorStore.properties.filter(
+              (it) => !it.isSystem,
+            )"
+            :key="entry.id"
+            :id="entry.id"
+            class="flex flex-row items-center"
+          >
+            <BaseIcon size="24px">
+              <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
+            </BaseIcon>
+            <p class="flex flex-1">
+              {{ entry.title }}
+            </p>
+            <BaseSelect
+              :disabled="entry.isSystem"
+              :options="propertyTypesMenu"
+              :model-value="entry.type"
+              @update:model-value="handleTypeChange(entry.id, $event)"
+            />
+          </span>
+        </div>
       </div>
+      <div class="hl"></div>
+      <p>
+        Example data, example data, example data, example data, example data,
+      </p>
     </div>
   </div>
 </template>
 
 <style lang="scss">
+.hl {
+  border-bottom: 1px solid var(--border);
+  width: 100%;
+}
+
 .page {
   padding-left: clamp(16px, 8vw, 128px);
   padding-right: clamp(16px, 8vw, 128px);

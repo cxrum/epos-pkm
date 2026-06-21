@@ -1,23 +1,34 @@
 <script setup lang="ts">
-import { ref, watch, nextTick, toRaw, onMounted, computed } from "vue";
+import {
+  ref,
+  watch,
+  nextTick,
+  toRaw,
+  onMounted,
+  computed,
+  onBeforeUnmount,
+} from "vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
-import { useGlobalPageStore } from "../../../core/store/globalPageStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
 import {
   isAnyContainer,
   type EpContainerObjectEntity,
+  type EpObjectEntity,
 } from "@/core/domain/type.ts";
 import { useBaseEditorController } from "../components/editor/baseEditorController.ts";
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore.ts";
 import { type EpObjectId } from "@/core/types.ts";
 import { useRoute } from "vue-router";
 import { useGlobalNavigation } from "@/core/store/navigationStore.ts";
+import { usePageEditorStore } from "../store/pageEditorStore.ts";
+import { tiptapDocToEntities } from "../components/editor/mappers.ts";
+import { mapObjectEntitiesToContent } from "../components/editor/helpers.ts";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
 
 const props = defineProps();
-const pageStore = useGlobalPageStore();
+const pageStore = usePageEditorStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
 
@@ -28,63 +39,106 @@ const editorController = useBaseEditorController();
 const currentPageEntity = ref<EpContainerObjectEntity>();
 const title = ref<string>();
 const selectedObjectId = ref<EpObjectId>();
-let isProgrammaticUpdate = false;
+let isFirst = true;
 
-onMounted(() => {
-  pageId.value = route.params.id as EpObjectId;
-});
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let maxWaitTimer: ReturnType<typeof setInterval> | null = null;
 
 watch(
   () => route.params.id,
   (id) => {
-    pageId.value = id as EpObjectId;
-  },
-);
-
-watch(
-  () => pageId.value,
-  (id) => {
     if (id) {
-      pageStore.get(id);
+      isFirst = true;
+      pageId.value = id as EpObjectId;
+      pageStore.get(pageId.value);
     }
   },
+  { immediate: true },
 );
 
 watch(
   () => pageStore.pageData,
   (_newData) => {
     const newData = toRaw(_newData);
+
     if (newData && isAnyContainer(newData)) {
-      isProgrammaticUpdate = true;
-
       globalNavigationStore.setCurrentPath(pageStore.paths[newData.id]);
-      currentPageEntity.value = newData;
-
-      title.value = newData.content.title;
       workSpaceStore.setLoadingStatus(false);
-      nextTick(() => {
-        setTimeout(() => {
-          isProgrammaticUpdate = false;
-        }, 50);
-      });
+
+      if (isFirst) {
+        currentPageEntity.value = { ...newData };
+        title.value = newData.content.title;
+
+        console.log("Встановлено початкові дані:", currentPageEntity.value);
+        editorController.setInitialData(currentPageEntity.value);
+
+        isFirst = false;
+      }
     } else {
       globalNavigationStore.clearCurrentPath();
-      currentPageEntity.value = undefined;
+      if (isFirst) {
+        currentPageEntity.value = undefined;
+      }
     }
   },
 );
 
+const performSave = () => {
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+    debounceTimer = null;
+  }
+  if (maxWaitTimer) {
+    clearTimeout(maxWaitTimer);
+    maxWaitTimer = null;
+  }
+
+  const value = editorController.draftData.value;
+  if (!value) return;
+
+  console.log("Performing save");
+
+  const data = tiptapDocToEntities(value);
+
+  if (currentPageEntity.value) {
+    const payloadToSave = {
+      ...currentPageEntity.value,
+      content: {
+        ...currentPageEntity.value.content,
+        inlineObjects: toRaw(mapObjectEntitiesToContent(data.content)),
+        order: toRaw(data.order),
+      },
+    };
+
+    pageStore.update(payloadToSave as EpObjectEntity);
+  }
+};
+
 watch(
-  currentPageEntity,
-  (newData) => {
-    if (!newData) return;
-    if (isProgrammaticUpdate) {
-      return;
+  editorController.draftData,
+  (_data) => {
+    console.log("Draft updated.");
+
+    if (debounceTimer) {
+      clearTimeout(debounceTimer);
     }
-    pageStore.update(newData);
+    debounceTimer = setTimeout(performSave, 800);
+
+    if (!maxWaitTimer) {
+      maxWaitTimer = setTimeout(performSave, 5000);
+    }
   },
   { deep: true },
 );
+
+onBeforeUnmount(() => {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  if (maxWaitTimer) clearInterval(maxWaitTimer);
+
+  if (editorController.draftData.value) {
+    performSave();
+  }
+});
 
 watch(editorController.selectedObjectId, (id) => {
   if (id !== selectedObjectId.value) {
@@ -96,12 +150,15 @@ watch(editorController.selectedObjectId, (id) => {
 });
 </script>
 <template>
-  <div v-if="pageId" class="flex flex-col gap-2 w-full h-full page">
+  <div
+    v-if="editorController.initialData.value"
+    class="flex flex-col gap-2 w-full h-full page"
+  >
     <h1>{{ title }}</h1>
     <BaseEditor
       :controller="editorController"
       v-if="currentPageEntity"
-      v-model="currentPageEntity"
+      :initial="editorController.initialData.value"
     ></BaseEditor>
     <div class="h-80 shrink-0"></div>
   </div>

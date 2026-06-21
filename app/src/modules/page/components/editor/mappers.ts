@@ -73,6 +73,7 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
   const entities = tiptapDoc.content.map((node) => {
     const isNewNode = !node.attrs?.id;
     let resolvedTypeId = node.attrs?.typeId;
+    console.log(tiptapDoc);
     const id = isNewNode ? crypto.randomUUID() : node.attrs?.id;
     order.push(id);
 

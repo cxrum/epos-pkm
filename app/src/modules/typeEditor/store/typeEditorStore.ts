@@ -6,11 +6,7 @@ import type {
   EpTypeId,
   Icon,
 } from "@/core/types";
-import type {
-  BasePropertiesScheme,
-  BasePropertySchemeEntry,
-  EpTypeEntity,
-} from "@/core/domain/type";
+import { isSystemProperty, type EpTypeEntity } from "@/core/domain/type";
 import { globalTypingService } from "@/core/di/global";
 
 export interface TypeTreeNodes {
@@ -37,7 +33,11 @@ export interface PropertyEntry {
 export const useTypeEditorStore = defineStore("types", () => {
   const isTypeLoading = ref<boolean>(false);
   const type: Ref<EpTypeEntity | undefined> = ref(undefined);
+
+  const isSystemPropertiesVisible = ref<boolean>(true);
+
   const properties: Ref<PropertyEntry[]> = ref([]);
+
   const propertiesOrder: Ref<EpPropertyId[]> = ref([]);
 
   const typeTreeNodes: Ref<TypeTreeNodes[]> = ref([]);
@@ -47,7 +47,8 @@ export const useTypeEditorStore = defineStore("types", () => {
     isTypeLoading.value = true;
     type.value = await globalTypingService.get(id);
     if (type.value) {
-      properties.value = await getPropsScheme(type.value);
+      const res = await getPropsScheme(type.value);
+      properties.value = res;
       propertiesOrder.value = properties.value.map((it) => it.id);
     } else {
       properties.value = [];
@@ -64,17 +65,15 @@ export const useTypeEditorStore = defineStore("types", () => {
 
     for (const key of rawScheme.order) {
       const entry = rawScheme.props[key];
-
-      if (entry) {
-        res.push({
-          id: entry.id,
-          title: entry.title,
-          type: entry.type,
-          icon: resolveIcon(entry.type),
-          isChangeable: true,
-          isSystem: false,
-        });
-      }
+      const _res = {
+        id: entry.id,
+        title: entry.title,
+        type: entry.type,
+        icon: resolveIcon(entry.type),
+        isChangeable: entry.isChangeable,
+        isSystem: isSystemProperty(entry),
+      };
+      res.push(_res);
     }
 
     return res;
@@ -153,6 +152,7 @@ export const useTypeEditorStore = defineStore("types", () => {
     type,
     propertiesOrder,
     properties,
+    isSystemPropertiesVisible,
     typeTreeNodes,
 
     typeTreeEdges,

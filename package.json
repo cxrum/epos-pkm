@@ -65,7 +65,7 @@
     "linux": {
       "icon": "linux/icons"
     },
-    "productName": "Epos",
+    "productName": "Epos Nightly",
     "appId": "com.official-epos.app"
   },
   "devDependencies": {

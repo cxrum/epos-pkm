@@ -26,6 +26,7 @@ import { entitiesToTiptapDoc, tiptapDocToEntities } from "../mappers";
 import { EpBlockExtension } from "../nodes/EpBlockExtension";
 import type { EditorControllerContract } from "../contract";
 import { mapObjectEntitiesToContent } from "../helpers";
+import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },
@@ -36,45 +37,12 @@ const NESTED_CONFIG_RTL = {
 
 const props = defineProps<{
   controller: EditorControllerContract;
+  initial: EpContainerObjectEntity;
 }>();
-
-const model = defineModel<EpContainerObjectEntity>({});
-
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let maxWaitTimer: ReturnType<typeof setInterval> | null = null;
-let pendingJsonData: any = null;
 
 const editable = ref(true);
 const nested = ref(true);
 const rtl = ref(false);
-
-let isInternalUpdate = false;
-
-const performSave = () => {
-  if (!pendingJsonData) return;
-
-  isInternalUpdate = true;
-
-  const mapped = tiptapDocToEntities(pendingJsonData);
-
-  if (model.value) {
-    model.value.content.inlineObjects = toRaw(
-      mapObjectEntitiesToContent(mapped.content),
-    );
-    model.value.content.order = toRaw(mapped.order);
-  }
-
-  pendingJsonData = null;
-
-  if (debounceTimer) {
-    clearTimeout(debounceTimer);
-    debounceTimer = null;
-  }
-  if (maxWaitTimer) {
-    clearInterval(maxWaitTimer);
-    maxWaitTimer = null;
-  }
-};
 
 const computePositionConfig = computed(() => {
   return {
@@ -92,14 +60,13 @@ const nestedOptions = computed(() => {
 
 const editor = useEditor({
   editable: editable.value,
-  content: model.value?.content?.inlineObjects
-    ? entitiesToTiptapDoc(
-        toRaw(model.value.content.inlineObjects),
-        toRaw(model.value.content.order),
-      )
-    : undefined,
+  content: entitiesToTiptapDoc(
+    toRaw(props.initial.content.inlineObjects),
+    toRaw(props.initial.content.order),
+  ),
   extensions: [
     StarterKit,
+    UniqueBlockIdExtension,
     EpObjectAttributesExtension,
     EpBlockExtension,
     Placeholder.configure({
@@ -110,14 +77,11 @@ const editor = useEditor({
     }),
   ],
   onUpdate: ({ editor: currentEditor }) => {
-    pendingJsonData = currentEditor.getJSON();
-
-    if (debounceTimer) clearTimeout(debounceTimer);
-    debounceTimer = setTimeout(performSave, 800);
-
-    if (!maxWaitTimer) {
-      maxWaitTimer = setInterval(performSave, 5000);
+    const res = currentEditor.getJSON();
+    if (res === undefined) {
+      return;
     }
+    props.controller.updateDraftContent(res);
   },
   onSelectionUpdate({ editor }) {
     const { $anchor } = editor.state.selection;
@@ -152,45 +116,6 @@ watch(rtl, (newValue) => {
 onMounted(() => {
   if (rtl.value && editor.value) {
     editor.value.view.dom.setAttribute("dir", "rtl");
-  }
-});
-
-watch(
-  () => model.value?.content?.inlineObjects,
-  (newInlineObjects) => {
-    if (!editor.value || !newInlineObjects || !model.value?.content?.order)
-      return;
-
-    if (isInternalUpdate) {
-      isInternalUpdate = false;
-      return;
-    }
-
-    const currentSelection = editor.value.state.selection;
-    const { from, to } = currentSelection;
-
-    editor.value.commands.setContent(
-      entitiesToTiptapDoc(
-        toRaw(newInlineObjects),
-        toRaw(model.value.content.order),
-      ),
-    );
-
-    try {
-      editor.value.commands.setTextSelection({ from, to });
-    } catch (e) {
-      editor.value.commands.focus("end");
-    }
-  },
-  { deep: true },
-);
-
-onBeforeUnmount(() => {
-  if (debounceTimer) clearTimeout(debounceTimer);
-  if (maxWaitTimer) clearInterval(maxWaitTimer);
-
-  if (pendingJsonData) {
-    performSave();
   }
 });
 </script>

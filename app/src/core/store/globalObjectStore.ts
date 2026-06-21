@@ -2,7 +2,8 @@ import { defineStore } from "pinia";
 import type { EpObjectId, Icon } from "../types";
 import { globalObjectsService, globalTypingService } from "../di/global";
 import { ref, type Ref } from "vue";
-import { isAnyContainer } from "../domain/type";
+import { isAnyContainer, isContainerEntity } from "../domain/type";
+import type { TreeNode } from "@/shared/components/tree/contract";
 
 export interface ObjectMetaInfo {
   icon?: Icon;
@@ -11,8 +12,11 @@ export interface ObjectMetaInfo {
 }
 
 export const useGlobalObjectStore = defineStore("objects", () => {
-  const isObjectLoading = ref(new Map<EpObjectId, boolean>());
+  const treeStructure = ref<TreeNode>({ id: "-1", title: "-1", children: [] });
+  const isOjectSaving = ref(false);
+  const isTreeStructureLoading = ref(false);
 
+  const isObjectLoading = ref(new Map<EpObjectId, boolean>());
   const selectedObject: Ref<EpObjectId | undefined> = ref(undefined);
 
   const setSelectedObject = async (id: EpObjectId) => {
@@ -38,11 +42,51 @@ export const useGlobalObjectStore = defineStore("objects", () => {
     };
   };
 
+  const rename = async (objId: EpObjectId, newTitle: string) => {
+    isOjectSaving.value = true;
+    const result = await globalObjectsService.get(objId);
+    if (result && isContainerEntity(result)) {
+      result.content.title = newTitle;
+      await globalObjectsService.update(objId, result);
+    }
+    isOjectSaving.value = false;
+  };
+
+  const createEmptyPage = async (parentId: EpObjectId | undefined) => {
+    isOjectSaving.value = true;
+    await globalObjectsService.createEmpty(parentId, "sys:container");
+    isOjectSaving.value = false;
+    await refreshTreeStructure();
+  };
+
+  const move = async (
+    movedId: EpObjectId,
+    newParentId: EpObjectId,
+    oldParentId: EpObjectId,
+  ) => {
+    isOjectSaving.value = true;
+    await globalObjectsService.move(movedId, newParentId, oldParentId);
+    isOjectSaving.value = false;
+  };
+
+  const refreshTreeStructure = async () => {
+    isTreeStructureLoading.value = true;
+    const result = await globalObjectsService.getFileTree();
+    treeStructure.value = result;
+    isTreeStructureLoading.value = false;
+  };
+
   return {
     selectedObject,
     isObjectLoading,
+    treeStructure,
+    isTreeStructureLoading,
 
+    refreshTreeStructure,
     setSelectedObject,
+    createEmptyPage,
     getMetaInfo,
+    move,
+    rename,
   };
 });

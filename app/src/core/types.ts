@@ -25,7 +25,10 @@ export type EpObjectId = string;
 
 export type _IsContainerPropertyId = "isContainer";
 export type SystemPropertyId = _IsContainerPropertyId;
-export type EpPropertyId = SystemPropertyId | "title" | (string & {});
+
+export type CustomPropertyId = string & {};
+
+export type EpPropertyId = SystemPropertyId | CustomPropertyId;
 
 export type EpPropertyTypes = "text" | "boolean" | "select" | "number";
 // | "object"

@@ -1,4 +1,4 @@
-import type { _TypeKind } from "@/core/domain/type";
+import type { _PropertyKind, _TypeKind } from "@/core/domain/type";
 import type {
   EpObjectId,
   EpPropertyId,
@@ -26,6 +26,8 @@ export type RawPropertiesSchemeEntry = {
   id: EpPropertyId;
   title: string;
   type: EpPropertyTypes;
+  kind: _PropertyKind;
+  isChangeable: boolean;
 };
 
 export type RawPropertiesScheme = {

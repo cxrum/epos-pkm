@@ -16,57 +16,105 @@ export type _PropertyKind = "system" | "user";
 export interface BasePropertySchemeEntry<
   TProperty extends EpPropertyId = EpPropertyId,
   TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TKind extends _PropertyKind = _PropertyKind,
+  TisChangeable extends boolean = boolean,
 > {
   id: TProperty;
   title: string;
   type: TPropertyType;
-  kind: _PropertyKind;
+  isChangeable: TisChangeable;
+  kind: TKind;
 }
 
-export interface ValuedPropertyEntry<
+export type PropertySchemeEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TisChangeable extends boolean = boolean,
+> = BasePropertySchemeEntry<TProperty, TPropertyType, "user", TisChangeable>;
+
+export type SystemPropertySchemeEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TisChangeable extends boolean = boolean,
+> = BasePropertySchemeEntry<TProperty, TPropertyType, "system", TisChangeable>;
+
+export type ValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
   TPropertyType extends EpPropertyTypes = EpPropertyTypes,
   TValue = unknown,
-> extends BasePropertySchemeEntry<TProperty, TPropertyType> {
+  TKind extends _PropertyKind = _PropertyKind,
+  TisChangeable extends boolean = boolean,
+> = BasePropertySchemeEntry<TProperty, TPropertyType, TKind, TisChangeable> & {
   value: TValue;
-}
+};
 
-export interface BooleanValuedPropertyEntry<
+export type UserValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-> extends ValuedPropertyEntry<TProperty, "boolean", boolean> {}
+  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TValue = unknown,
+> = ValuedPropertyEntry<TProperty, TPropertyType, TValue, "user">;
 
-export interface NumberValuedPropertyEntry<
+export type SystemValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-> extends ValuedPropertyEntry<TProperty, "number", number> {}
+  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TValue = unknown,
+  TisChangeable extends boolean = boolean,
+> = ValuedPropertyEntry<
+  TProperty,
+  TPropertyType,
+  TValue,
+  "system",
+  TisChangeable
+>;
 
-export interface SelectPropertySchemeEntry<
+export type BooleanValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-> extends BasePropertySchemeEntry<TProperty, "select"> {
+  TKind extends _PropertyKind = _PropertyKind,
+  TisChangeable extends boolean = boolean,
+> = ValuedPropertyEntry<TProperty, "boolean", boolean, TKind, TisChangeable>;
+
+export type NumberValuedPropertyEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+  TKind extends _PropertyKind = _PropertyKind,
+  TisChangeable extends boolean = boolean,
+> = ValuedPropertyEntry<TProperty, "number", number, TKind, TisChangeable>;
+
+export type TextValuedPropertyEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+  TKind extends _PropertyKind = _PropertyKind,
+  TisChangeable extends boolean = boolean,
+> = ValuedPropertyEntry<TProperty, "text", string, TKind, TisChangeable>;
+
+export type SelectPropertySchemeEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+  TKind extends _PropertyKind = _PropertyKind,
+  TisChangeable extends boolean = boolean,
+> = BasePropertySchemeEntry<TProperty, "select", TKind, TisChangeable> & {
   options: { id: string; title: string; color?: string }[];
-}
+};
 
-export interface SelectValuedPropertyEntry<
+export type SelectValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-> extends SelectPropertySchemeEntry<TProperty> {
+  TKind extends _PropertyKind = _PropertyKind,
+  TisChangeable extends boolean = boolean,
+> = SelectPropertySchemeEntry<TProperty, TKind, TisChangeable> & {
   value: string | string[];
-}
-
-export interface TextValuedPropertyEntry<
-  TProperty extends EpPropertyId = EpPropertyId,
-> extends ValuedPropertyEntry<TProperty, "text", string> {}
+};
 
 export type AnyValidPropertyEntry =
   | BooleanValuedPropertyEntry<string>
   | NumberValuedPropertyEntry<string>
-  | SelectValuedPropertyEntry<string>
-  | TextValuedPropertyEntry<string>;
+  | TextValuedPropertyEntry<string>
+  | SelectValuedPropertyEntry<string>;
 
-type IsContainerProperty = BooleanValuedPropertyEntry<"isContainer"> & {
-  kind: "system";
-};
+export type IsContainerValuedProperty = BooleanValuedPropertyEntry<
+  "isContainer",
+  "system",
+  false
+>;
 
 export type SystemPropertiesMap = {
-  isContainer: IsContainerProperty;
+  isContainer: IsContainerValuedProperty;
 };
 
 export type DynamicPropertiesMap = {
@@ -80,7 +128,9 @@ export interface BasePropertiesScheme {
   props: Record<string, BasePropertySchemeEntry>;
 }
 
-export function isSystemProperty(property: BasePropertySchemeEntry): boolean {
+export function isSystemProperty(
+  property: BasePropertySchemeEntry,
+): property is SystemPropertySchemeEntry {
   return property.kind === "system";
 }
 
@@ -157,25 +207,27 @@ export interface PageContent {
   inlineObjects: Record<EpObjectId, EpInlineObjectEntity>;
 }
 
-// MOUNTED CONTAINER LINK --------------------------------------------------
-export type MountedContainerPropertiesMap = Omit<
+type WithContainerFlag<T extends boolean> = Omit<
   SystemPropertiesMap,
   "isContainer"
 > & {
-  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
-    value: false;
+  isContainer: BooleanValuedPropertyEntry<"isContainer", "system"> & {
+    value: T;
   };
 };
+
+// MOUNTED CONTAINER LINK --------------------------------------------------
+export type MountedContainerPropertiesMap = WithContainerFlag<false>;
 
 export interface MountedContainerObjectContent {
   toId: EpObjectId;
 }
 
-export interface MountedContainerObjectEntity extends BaseEpObjectEntity<
+export type MountedContainerObjectEntity = BaseEpObjectEntity<
   "sys:hard-page-link",
   MountedContainerObjectContent,
   MountedContainerPropertiesMap
-> {}
+>;
 
 export function isMountedContainerEntity(
   entity: EpObjectEntity,
@@ -185,11 +237,11 @@ export function isMountedContainerEntity(
 // MOUNTED CONTAINER LINK --------------------------------------------------
 
 // SYSTEM CONTAINER --------------------------------------------------------
-export interface SystemContainerEntity extends BaseEpObjectEntity<
+export type SystemContainerEntity = BaseEpObjectEntity<
   "sys:container",
   PageContent,
   AllPropertiesMap
-> {}
+>;
 
 export function isContainerEntity(
   entity: EpObjectEntity,
@@ -199,20 +251,13 @@ export function isContainerEntity(
 // SYSTEM CONTAINER --------------------------------------------------------
 
 // WORKSPACE CONTAINER -----------------------------------------------------
-export type WorkspacePropertiesMap = Omit<
-  SystemPropertiesMap,
-  "isContainer"
-> & {
-  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
-    value: true;
-  };
-};
+export type WorkspacePropertiesMap = WithContainerFlag<true>;
 
-export interface WorkspaceEntity extends BaseEpObjectEntity<
+export type WorkspaceEntity = BaseEpObjectEntity<
   "sys:workspace",
   Record<string, any>,
   WorkspacePropertiesMap
-> {}
+>;
 
 export function isWorkspaceEntity(
   entity: EpObjectEntity,
@@ -222,20 +267,13 @@ export function isWorkspaceEntity(
 // WORKSPACE CONTAINER --------------------------------------------------------
 
 // STANDARD INLINE OBJECT  -------------------------------------------------
-export type SystemInlinePropertiesMap = Omit<
-  SystemPropertiesMap,
-  "isContainer"
-> & {
-  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
-    value: false;
-  };
-};
+export type SystemInlinePropertiesMap = WithContainerFlag<false>;
 
-export interface StandardInlineEntity extends BaseEpObjectEntity<
+export type StandardInlineEntity = BaseEpObjectEntity<
   SystemTypeId,
   Record<string, any>,
   SystemInlinePropertiesMap
-> {}
+>;
 
 export function isSystemInlineEntity(
   entity: EpObjectEntity,
@@ -248,24 +286,17 @@ export function isSystemInlineEntity(
 // STANDARD INLINE OBJECT  -------------------------------------------------
 
 // HEADING INLINE OBJECT  -----------------------------------------------------
-export type HeadingObjectPropertiesMap = Omit<
-  SystemPropertiesMap,
-  "isContainer"
-> & {
-  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
-    value: false;
-  };
-  level: Omit<NumberValuedPropertyEntry<"level">, "value"> & {
+export type HeadingObjectPropertiesMap = WithContainerFlag<false> & {
+  level: NumberValuedPropertyEntry<"level", "system", true> & {
     value: 1 | 2 | 3 | 4 | 5 | 6;
-    kind: "system";
   };
 };
 
-export interface HeadingObjectEntity extends BaseEpObjectEntity<
+export type HeadingObjectEntity = BaseEpObjectEntity<
   DefaultTypeId,
   Record<string, any>,
   HeadingObjectPropertiesMap
-> {}
+>;
 
 export function isHeadingInlineEntity(
   entity: EpObjectEntity,
@@ -275,32 +306,27 @@ export function isHeadingInlineEntity(
 // HEADING INLINE OBJECT  --------------------------------------------------
 
 // TEXT INLINE OBJECT  -----------------------------------------------------
-export interface TextObjectEntity extends BaseEpObjectEntity<
+export type TextObjectEntity = BaseEpObjectEntity<
   DefaultTypeId,
   Record<string, any>,
-  HeadingObjectPropertiesMap
-> {}
+  SystemInlinePropertiesMap
+>;
 
-export function isAnyText(entity: EpObjectEntity): entity is TextObjectEntity {
+export function isAnyText(
+  entity: EpObjectEntity,
+): entity is TextObjectEntity | HeadingObjectEntity {
   return entity.typeId === "def:text" || entity.typeId === "def:heading";
 }
 // TEXT INLINE OBJECT  -----------------------------------------------------
 
 // USER INLINE OBJECT  -----------------------------------------------------
-export type CustomInlinePropertiesMap = Omit<
-  SystemPropertiesMap,
-  "isContainer"
-> & {
-  isContainer: Omit<BooleanValuedPropertyEntry<"isContainer">, "value"> & {
-    value: false;
-  };
-};
+export type CustomInlinePropertiesMap = WithContainerFlag<false>;
 
-export interface CustomInlineEntity extends BaseEpObjectEntity<
+export type CustomInlineEntity = BaseEpObjectEntity<
   UserTypeId,
   Record<string, any>,
   CustomInlinePropertiesMap
-> {}
+>;
 
 export function isAnyInlineEntity(
   entity: EpObjectEntity,
@@ -313,15 +339,16 @@ export function isAnyInlineEntity(
 // USER INLINE OBJECT  -----------------------------------------------------
 
 // CUSTOM CONTAINER --------------------------------------------------------
-export interface CustomContainerEntity extends BaseEpObjectEntity<
+export type CustomContainerEntity = BaseEpObjectEntity<
   UserTypeId,
   PageContent,
   AllPropertiesMap
-> {}
+>;
+
 export function isAnyContainer(
   entity: EpObjectEntity,
 ): entity is SystemContainerEntity | CustomContainerEntity | WorkspaceEntity {
-  return entity.props.isContainer.value === true;
+  return entity.props?.isContainer?.value === true;
 }
 // CUSTOM CONTAINER --------------------------------------------------------
 
@@ -334,7 +361,8 @@ export type EpInlineObjectEntity =
   | MountedContainerObjectEntity
   | StandardInlineEntity
   | CustomInlineEntity
-  | HeadingObjectEntity;
+  | HeadingObjectEntity
+  | TextObjectEntity;
 
 export type EpObjectEntity = EpContainerObjectEntity | EpInlineObjectEntity;
 
