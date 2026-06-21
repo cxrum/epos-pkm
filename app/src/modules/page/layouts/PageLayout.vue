@@ -1,13 +1,5 @@
 <script setup lang="ts">
-import {
-  ref,
-  watch,
-  nextTick,
-  toRaw,
-  onMounted,
-  computed,
-  onBeforeUnmount,
-} from "vue";
+import { ref, watch, toRaw, onBeforeUnmount } from "vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
 import {

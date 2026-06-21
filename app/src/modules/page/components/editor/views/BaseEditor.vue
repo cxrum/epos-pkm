@@ -22,10 +22,9 @@ import { useEditor, EditorContent } from "@tiptap/vue-3";
 import { Placeholder } from "@tiptap/extensions";
 import { EpObjectAttributesExtension } from "../extension/customObjectExtension";
 import type { EpContainerObjectEntity } from "@/core/domain/type";
-import { entitiesToTiptapDoc, tiptapDocToEntities } from "../mappers";
+import { entitiesToTiptapDoc } from "../mappers";
 import { EpBlockExtension } from "../nodes/EpBlockExtension";
 import type { EditorControllerContract } from "../contract";
-import { mapObjectEntitiesToContent } from "../helpers";
 import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
 
 const NESTED_CONFIG_LTR = {

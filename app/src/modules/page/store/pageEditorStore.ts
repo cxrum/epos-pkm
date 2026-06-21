@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, toRaw } from "vue";
+import { ref } from "vue";
 import type { EpObjectId, ObjectPath } from "@/core/types";
 import { globalObjectsService } from "@/core/di/global";
 import { isContainerEntity, type EpObjectEntity } from "@/core/domain/type";

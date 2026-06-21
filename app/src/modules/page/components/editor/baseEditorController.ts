@@ -1,4 +1,4 @@
-import { ref, toRaw, type Ref } from "vue";
+import { ref, type Ref } from "vue";
 import type { EditorControllerContract } from "./contract";
 import type { EpObjectId } from "@/core/types";
 import type { EpContainerObjectEntity } from "@/core/domain/type";

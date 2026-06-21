@@ -5,7 +5,7 @@ import {
   type EpInlineObjectEntity,
   type EpObjectEntity,
 } from "@/core/domain/type";
-import { mapObjectEntitiesToContent, mapEpTypeToTiptapType } from "./helpers";
+import { mapEpTypeToTiptapType } from "./helpers";
 
 export interface MappedArray {
   order: EpObjectId[];
