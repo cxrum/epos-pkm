@@ -1,22 +1,25 @@
 {
-  "name": "electron-vue",
+  "name": "epos",
   "version": "1.0.0",
-  "main": "./dist/main.js",
+  "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
-    "watch": "nodemon --exec npm run serve:electron",
-    "start": "concurrently -k \"npm run serve:front\" \"npm run watch\"",
-    "front:setup": "cd app && npm install",
-    "electron:setup": "npm install",
-    "setup": "npm run front:setup && npm run electron:setup",
-    "serve:front": "cd app && npm run dev",
-    "front:test": "cd app && npm run test",
-    "serve:electron": "npm run build && wait-on tcp:3000 && electron .",
-    "build:front": "cd app && npm run build",
-    "electron:build": "npm run build",
+    "watch": "nodemon --exec yarn serve:electron",
+    "start": "yarn nightly:rename && concurrently -k \"yarn serve:front\" \"yarn watch\"",
+    "front:setup": "cd app && yarn",
+    "electron:setup": "yarn",
+    "setup": "yarn front:setup && yarn electron:setup",
+    "serve:front": "cd app && yarn dev",
+    "serve:electron": "set APP_IS_NIGHTLY=yes && set APP_IS_DEV=yes && yarn build && wait-on tcp:3000 && electron .",
+    "build:front": "cd app && yarn build",
+    "electron:build": "yarn build",
     "electron:builder": "electron-builder",
-    "app:build": "npm run prod:rename && npm run build:front && npm run electron:build && npm run electron:builder",
+    "app:build": "yarn prod:rename && yarn build:front && yarn electron:build && yarn electron:builder",
+    "app:build:nightly": "set APP_IS_NIGHTLY=yes && set APP_IS_DEV=no && yarn nightly:rename && yarn build:front && yarn electron:build && yarn electron:builder",
+    "nightly:rename": "json -I -f package.json -e \"this.name='epos'\" && json -I -f package.json -e \"this.build.productName='Epos Nightly'\" && json -I -f package.json -e \"this.build.appId='com.official-epos.app'\"",
+    "prod:rename": "json -I -f package.json -e \"this.name='epos'\" && json -I -f package.json -e \"this.build.productName='Epos'\" && json -I -f package.json -e \"this.build.appId='com.official-epos.app'\"",
     "electron-rebuild": "./node_modules/.bin/electron-rebuild",
+    "sqlite-rebuild": "cd node_modules/better-sqlite3 && yarnbuild-release",
     "postinstall": "electron-builder install-app-deps",
     "up:win": "up_using_window.cmd"
   },
@@ -24,7 +27,7 @@
     "type": "git",
     "url": "git+ssh://git@github.com/cxrum/epistemic-oop.git"
   },
-  "author": "Denis Kostiuk",
+  "author": "cxrum",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/cxrum/epistemic-oop/issues"
@@ -32,8 +35,20 @@
   "homepage": "https://github.com/cxrum/epistemic-oop#readme",
   "description": "",
   "build": {
+    "nsis": {
+      "oneClick": true,
+      "allowToChangeInstallationDirectory": false,
+      "deleteAppDataOnUninstall": true
+    },
+    "files": [
+      "package.json",
+      "dist/**/*",
+      "app/dist/**/*"
+    ],
     "directories": {
-      "buildResources": "electron/icons"
+      "app": ".",
+      "buildResources": "electron/icons",
+      "output": "build/release"
     },
     "extraResources": [
       {
@@ -49,7 +64,9 @@
     },
     "linux": {
       "icon": "linux/icons"
-    }
+    },
+    "productName": "Epos",
+    "appId": "com.official-epos.app"
   },
   "devDependencies": {
     "autoprefixer": "^10.5.0",

@@ -11,7 +11,8 @@ pids
 *.seed
 *.pid.lock
 
-build/Release
+build/release
+
 
 dist/
 node_modules/
@@ -36,5 +37,5 @@ vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
 
-package-lock.json
-app/package-lock.json
+yarn.lock
+app/yarn.lock
