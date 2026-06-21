@@ -61,7 +61,6 @@ watch(
         currentPageEntity.value = { ...newData };
         title.value = newData.content.title;
 
-        console.log("Встановлено початкові дані:", currentPageEntity.value);
         editorController.setInitialData(currentPageEntity.value);
 
         isFirst = false;
@@ -88,9 +87,8 @@ const performSave = () => {
   const value = editorController.draftData.value;
   if (!value) return;
 
-  console.log("Performing save");
-
-  const data = tiptapDocToEntities(value);
+  const pureTiptapData = structuredClone(toRaw(value));
+  const data = tiptapDocToEntities(pureTiptapData);
 
   if (currentPageEntity.value) {
     const payloadToSave = {
@@ -109,8 +107,6 @@ const performSave = () => {
 watch(
   editorController.draftData,
   (_data) => {
-    console.log("Draft updated.");
-
     if (debounceTimer) {
       clearTimeout(debounceTimer);
     }
@@ -125,7 +121,7 @@ watch(
 
 onBeforeUnmount(() => {
   if (debounceTimer) clearTimeout(debounceTimer);
-  if (maxWaitTimer) clearInterval(maxWaitTimer);
+  if (maxWaitTimer) clearTimeout(maxWaitTimer);
 
   if (editorController.draftData.value) {
     performSave();

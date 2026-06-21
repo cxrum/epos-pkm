@@ -34,7 +34,6 @@ export const usePageEditorStore = defineStore("page", () => {
   const update = async (newEntity: EpObjectEntity) => {
     if (currentObject.value !== undefined) {
       const res = newEntity;
-      console.log(res);
       await globalObjectsService.update(currentObject.value.id, res);
     }
   };
