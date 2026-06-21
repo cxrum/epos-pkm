@@ -94,6 +94,20 @@ const editor = useEditor({
   },
 });
 
+watch(
+  () => props.controller.initialData.value,
+  (it) => {
+    if (editor.value && it) {
+      editor.value?.commands.setContent(
+        entitiesToTiptapDoc(
+          toRaw(it.content.inlineObjects),
+          toRaw(it.content.order),
+        ),
+      );
+    }
+  },
+);
+
 watch(editable, (newValue) => {
   if (editor.value) {
     editor.value.setEditable(newValue);

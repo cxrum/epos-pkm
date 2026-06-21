@@ -41,6 +41,7 @@ export const usePageEditorStore = defineStore("page", () => {
   const get = async (id: EpObjectId) => {
     isObjectLoading.value = true;
     const result = await globalObjectsService.get(id);
+    console.log(result);
     if (result) {
       currentObject.value = result;
     }

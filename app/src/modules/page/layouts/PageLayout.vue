@@ -62,7 +62,7 @@ watch(
         title.value = newData.content.title;
 
         editorController.setInitialData(currentPageEntity.value);
-
+        console.log(_newData);
         isFirst = false;
       }
     } else {
