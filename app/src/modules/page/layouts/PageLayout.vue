@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch, toRaw, onBeforeUnmount } from "vue";
+import { ref, watch, toRaw, onBeforeUnmount, computed } from "vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
 import {
@@ -9,12 +9,20 @@ import {
 } from "@/core/domain/type.ts";
 import { useBaseEditorController } from "../components/editor/baseEditorController.ts";
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore.ts";
-import { type EpObjectId } from "@/core/types.ts";
+import { type EpObjectId, type Path } from "@/core/types.ts";
 import { useRoute } from "vue-router";
 import { useGlobalNavigation } from "@/core/store/navigationStore.ts";
 import { usePageEditorStore } from "../store/pageEditorStore.ts";
 import { tiptapDocToEntities } from "../components/editor/mappers.ts";
 import { mapObjectEntitiesToContent } from "../components/editor/helpers.ts";
+import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
+import type { MenuGroup } from "@/shared/components/popUpMenu/type.ts";
+import Breadcrumbs from "@/core/components/Breadcrumbs.vue";
+import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
+import TypeIcon from "@/assets/icons/TypeIcon.vue";
+import DotsMenu from "@/assets/icons/DotsMenu.vue";
+import TypeEditorLayout from "@/core/layouts/TypeEditorLayout.vue";
+import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -23,9 +31,7 @@ const props = defineProps();
 const pageStore = usePageEditorStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
-
 const globalObjectStore = useGlobalObjectStore();
-
 const editorController = useBaseEditorController();
 
 const currentPageEntity = ref<EpContainerObjectEntity>();
@@ -49,7 +55,7 @@ watch(
 );
 
 watch(
-  () => pageStore.pageData,
+  () => pageStore.currentObject,
   (_newData) => {
     const newData = toRaw(_newData);
 
@@ -136,25 +142,87 @@ watch(editorController.selectedObjectId, (id) => {
     }
   }
 });
+
+const pageMenuData: MenuGroup[] = [
+  {
+    title: "Page",
+    items: [
+      { type: "button", label: "Wtf", icon: DocumentIcon },
+      { type: "divider" },
+      { type: "button", label: "Wtf", icon: DocumentIcon },
+    ],
+  },
+];
+
+const isTypeEditorOpen = computed(() => workSpaceStore.isTypeEditorOpen);
+
+const computedPath = computed(() => {
+  return pageStore.pagePath ?? [];
+});
+
+const handleOnChainClick = (value: Path) => {
+  globalNavigationStore.openPage(value.id);
+};
 </script>
 <template>
-  <div
-    v-if="editorController.initialData.value"
-    class="flex flex-col gap-2 w-full h-full page"
-  >
-    <h1>{{ title }}</h1>
-    <BaseEditor
-      :controller="editorController"
-      v-if="currentPageEntity"
-      :initial="editorController.initialData.value"
-    ></BaseEditor>
-    <div class="h-80 shrink-0"></div>
-  </div>
-  <div
-    v-else
-    class="flex flex-col gap-2 w-full h-full page justify-center place-content-center"
-  >
-    <p>Page with id {{ pageId }} doesnt exit</p>
+  <div class="flex w-full h-full flex-row">
+    <div class="flex flex-1 flex-col min-w-0">
+      <nav class="flex w-full flex-col shrink-0 bg-(--bg-canvas) p-1">
+        <div class="flex w-full shrink-0 items-center">
+          <Breadcrumbs :path="computedPath" @chain-click="handleOnChainClick" />
+
+          <BaseIcon
+            size="28px"
+            interactive
+            @click="workSpaceStore.toggleTypeEditor()"
+            class="text-(--icon-color) shrink-0"
+            :class="isTypeEditorOpen ? 'bg-(--hover)' : ''"
+          >
+            <TypeIcon />
+          </BaseIcon>
+
+          <FloatingPopUpMenu :menu-data="pageMenuData" placement="bottom-end">
+            <template #trigger="{ referenceRef, toggleMenu }">
+              <BaseIcon
+                :ref="referenceRef"
+                size="28px"
+                interactive
+                class="text-(--icon-color)"
+                @click="toggleMenu"
+              >
+                <DotsMenu />
+              </BaseIcon>
+            </template>
+          </FloatingPopUpMenu>
+        </div>
+      </nav>
+
+      <div
+        v-if="editorController.initialData.value"
+        class="flex flex-col gap-2 w-full h-full page overflow-y-auto auto-hide-scroll"
+      >
+        <h1>{{ title }}</h1>
+        <BaseEditor
+          :controller="editorController"
+          v-if="currentPageEntity"
+          :initial="editorController.initialData.value"
+        ></BaseEditor>
+        <div class="h-80 shrink-0"></div>
+      </div>
+      <div
+        v-else
+        class="flex flex-col gap-2 w-full h-full page justify-center place-content-center"
+      >
+        <p>Page with id {{ pageId }} doesnt exit</p>
+      </div>
+    </div>
+
+    <div
+      class="h-full w-64 p-2 border-l border-(--border) bg-(--bg-sidebar) overflow-y-auto auto-hide-scroll shrink-0"
+      v-if="isTypeEditorOpen"
+    >
+      <TypeEditorLayout />
+    </div>
   </div>
 </template>
 

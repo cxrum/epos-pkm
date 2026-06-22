@@ -158,6 +158,8 @@ export class ObjectsService implements ObjetServiceContract {
           title: "Is Container",
           type: "boolean",
           value: false,
+          kind: "system",
+          isChangeable: false,
         },
       },
     };
@@ -223,7 +225,10 @@ export class ObjectsService implements ObjetServiceContract {
       : {};
 
     const objectPath = parentId
-      ? [...(await this.getObjectPath(parentId)), newObjectId as EpObjectId]
+      ? [
+          ...(await this.getObjectAncestors(parentId)),
+          newObjectId as EpObjectId,
+        ]
       : ["-1" as EpObjectId, newObjectId as EpObjectId];
 
     const newObject: EpObjectEntity = {
@@ -305,17 +310,22 @@ export class ObjectsService implements ObjetServiceContract {
     return await convertor(result);
   }
 
-  async getObjectPath(id: EpObjectId): Promise<ObjectPath> {
+  async getObjectAncestors(id: EpObjectId): Promise<ObjectPath> {
+    const res: ObjectPath = [];
     const ancestors = await this.objectsStorageRepository.getAncestors(id);
-    return await Promise.all(
-      ancestors.map(async (it) => {
-        const obj = await this.objectsStorageRepository.get(it);
-        return {
-          id: it,
-          title: obj?.content?.title ?? "unknown",
-        };
-      }),
-    );
+
+    for (const ancestor of ancestors) {
+      const obj = await this.objectsStorageRepository.get(ancestor);
+
+      if (obj && isAnyContainer(obj)) {
+        res.push({
+          id: obj.id,
+          title: obj.content.title,
+        });
+      }
+    }
+
+    return res;
   }
 
   async getPaths(): Promise<Record<EpObjectId, ObjectPath>> {

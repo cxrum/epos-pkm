@@ -15,6 +15,9 @@ export interface RawBaseEpObject<TContent> {
 }
 
 export interface RawEpObject extends RawBaseEpObject<Record<EpObjectId, any>> {}
+export interface RawEpMountedContainer extends RawBaseEpObject<{
+  toId: EpObjectId;
+}> {}
 export interface RawContainerObject extends RawBaseEpObject<
   Record<EpObjectId, RawEpObject>
 > {
@@ -54,7 +57,21 @@ export type RawObjectFilterOptions = {
   text?: string;
 };
 
-export type AllRawEpObject = RawEpObject | RawContainerObject;
+export type AllRawEpObject =
+  | RawEpMountedContainer
+  | RawEpObject
+  | RawContainerObject;
+
+export const isRawMountedContainer = (
+  obj: any,
+): obj is RawEpMountedContainer => {
+  return (
+    obj !== null &&
+    typeof obj === "object" &&
+    "content" in obj &&
+    "toId" in obj.content
+  );
+};
 
 export const isRawContainer = (obj: any): obj is RawContainerObject => {
   return obj !== null && typeof obj === "object" && "title" in obj;

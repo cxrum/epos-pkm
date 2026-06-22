@@ -154,7 +154,7 @@ export class TypingService implements TypingServiceContract {
     const descendants = await this.typingRepository.getDescendants(parentType);
     const result: EpTypeEntity[] = [];
 
-    for (const val in descendants) {
+    for (const val of descendants) {
       const res = await this.typingRepository.get(val);
       if (res) {
         result.push(res);
@@ -168,7 +168,7 @@ export class TypingService implements TypingServiceContract {
     const descendants = await this.typingRepository.getAncestors(type);
     const result: EpTypeEntity[] = [];
 
-    for (const val in descendants) {
+    for (const val of descendants) {
       const res = await this.typingRepository.get(val);
       if (res) {
         result.push(res);

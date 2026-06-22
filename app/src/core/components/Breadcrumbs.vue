@@ -1,56 +1,53 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref } from "vue";
 
-const props = defineProps({
-    path: {
-        type: Array<import('../domain/type').Path>,
-        default: []
-    }
-})
+const props = defineProps<{
+  path: { id: string; title: string }[];
+}>();
 
-const emit = defineEmits(['chainClick'])
+const emit = defineEmits(["chainClick"]);
 
-const scrollContainer = ref<HTMLElement | null>(null)
+const scrollContainer = ref<HTMLElement | null>(null);
 
 const handleHorizontalScroll = (event: WheelEvent) => {
-  if (!scrollContainer.value) return
+  if (!scrollContainer.value) return;
 
   if (event.deltaY !== 0) {
-    event.preventDefault()
-    scrollContainer.value.scrollLeft += event.deltaY
+    event.preventDefault();
+    scrollContainer.value.scrollLeft += event.deltaY;
   }
-}
-
+};
 </script>
 
 <template>
-    <div
-        ref="scrollContainer"
-        @wheel="handleHorizontalScroll"
-        class="flex h-fit w-full justify-center-safe overflow-x-auto no-scrollbar"
+  <div
+    ref="scrollContainer"
+    @wheel="handleHorizontalScroll"
+    class="flex h-fit w-full justify-center-safe overflow-x-auto no-scrollbar"
+  >
+    <ul
+      class="flex flex-nowrap whitespace-nowrap w-max text-(--text-secondary-color)"
     >
-        <ul class="flex flex-nowrap whitespace-nowrap w-max text-(--text-secondary-color)">
-            <li 
-                v-for="value in path" 
-                :key="value.id"
-                @click="emit('chainClick', value)"
-                class="py-1 after:content-['>'] after:mx-2 last:after:content-none clickable shrink-0 prevent-select"
-            >
-            <span class="p-1">
-                {{ value.title }}
-            </span>
-            </li>
-            
-        </ul>
-    </div> 
+      <li
+        v-for="value in path"
+        :key="value.id"
+        @click="emit('chainClick', value)"
+        class="py-1 after:content-['>'] after:mx-2 last:after:content-none clickable shrink-0 prevent-select"
+      >
+        <span class="p-1">
+          {{ value.title }}
+        </span>
+      </li>
+    </ul>
+  </div>
 </template>
 
 <style lang="css" scoped>
-    li{
-        transition: color 0.1s ease;
-        border-radius: 8px;
-    }
-    li:hover{
-        color: color-mix(in oklch, var(--hover) 20%, var(--text-default-color));        
-    }
+li {
+  transition: color 0.1s ease;
+  border-radius: 8px;
+}
+li:hover {
+  color: color-mix(in oklch, var(--hover) 20%, var(--text-default-color));
+}
 </style>

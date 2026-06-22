@@ -22,28 +22,14 @@ import { useGlobalNavigation } from "../store/navigationStore";
 import type { Path } from "../types";
 
 const workSpaceStore = useWorkspaceStore();
-const isTypeEditorOpen = computed(() => workSpaceStore.isTypeEditorOpen);
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
 const isOmniSearchOpen = computed(() => workSpaceStore.isOmniSearchOpen);
 
-const isPopUpMenuOpen = ref<boolean>(false);
 const globalNavigationStore = useGlobalNavigation();
 
 const handleStateButtonClick = () => {
   workSpaceStore.toggleSidebar();
 };
-
-const pageMenuButtonRef = ref<HTMLElement | null>(null);
-const pageMenuRef = ref<HTMLElement | null>(null);
-const { floatingStyles: pageMenuStyles } = useFloating(
-  pageMenuButtonRef,
-  pageMenuRef,
-  {
-    placement: "bottom-end",
-    middleware: [offset(8)],
-    open: isPopUpMenuOpen,
-  },
-);
 
 const pageRef = ref<HTMLElement | null>(null);
 const omniSearchRef = ref<HTMLElement | null>(null);
@@ -61,18 +47,6 @@ const { floatingStyles: omniSearchStyle } = useFloating(
   },
 );
 
-const togglePopUpMenu = () => {
-  isPopUpMenuOpen.value = !isPopUpMenuOpen.value;
-};
-
-onClickOutside(
-  pageMenuRef,
-  () => {
-    isPopUpMenuOpen.value = false;
-  },
-  { ignore: [pageMenuButtonRef] },
-);
-
 onClickOutside(omniSearchRef, (event: Event) => {
   const target = event.target as HTMLElement;
 
@@ -81,25 +55,6 @@ onClickOutside(omniSearchRef, (event: Event) => {
   }
   workSpaceStore.closeOmniSearch();
 });
-
-const pageMenuData: MenuGroup[] = [
-  {
-    title: "Page",
-    items: [
-      { type: "button", label: "Wtf", icon: DocumentIcon },
-      { type: "divider" },
-      { type: "button", label: "Wtf", icon: DocumentIcon },
-    ],
-  },
-];
-
-const computedPath = computed(() => {
-  return globalNavigationStore.currentPath;
-});
-
-const handleOnChainClick = (value: Path) => {
-  globalNavigationStore.openPage(value.id);
-};
 </script>
 
 <template>
@@ -147,44 +102,6 @@ const handleOnChainClick = (value: Path) => {
 
       <div class="w-full flex-1 min-h-0 flex flex-row bg-(--bg-canvas)">
         <section ref="pageRef" class="flex-1 flex flex-col min-w-0">
-          <nav class="flex flex-col shrink-0 bg-(--bg-canvas) p-1">
-            <div class="flex shrink-0 items-center">
-              <Breadcrumbs
-                :path="computedPath"
-                @chain-click="handleOnChainClick"
-              />
-
-              <BaseIcon
-                size="28px"
-                interactive
-                @click="workSpaceStore.toggleTypeEditor()"
-                class="text-(--icon-color) shrink-0"
-                :class="isTypeEditorOpen ? 'bg-(--hover)' : ''"
-              >
-                <TypeIcon />
-              </BaseIcon>
-
-              <BaseIcon
-                size="28px"
-                interactive
-                @click="togglePopUpMenu"
-                ref="pageMenuButtonRef"
-                class="text-(--icon-color) shrink-0"
-              >
-                <DotsMenu />
-              </BaseIcon>
-
-              <transition name="fade">
-                <PopUpMenu
-                  ref="pageMenuRef"
-                  :groups="pageMenuData"
-                  :style="pageMenuStyles"
-                  v-if="isPopUpMenuOpen"
-                />
-              </transition>
-            </div>
-          </nav>
-
           <Teleport to="body">
             <transition name="fade">
               <OmniSearchView
@@ -195,12 +112,12 @@ const handleOnChainClick = (value: Path) => {
             </transition>
           </Teleport>
 
-          <div class="flex-1 overflow-y-auto auto-hide-scroll">
+          <div class="flex-1 min-h-full">
             <router-view
               v-if="globalNavigationStore.activePage"
               v-slot="{ Component }"
             >
-              <component :is="Component" class="min-h-full" />
+              <component :is="Component" />
             </router-view>
             <div
               v-else
@@ -213,13 +130,6 @@ const handleOnChainClick = (value: Path) => {
 
           <router-view name="modal"></router-view>
         </section>
-
-        <div
-          class="h-full w-64 p-2 border-l border-(--border) bg-(--bg-sidebar) overflow-y-auto auto-hide-scroll"
-          v-if="isTypeEditorOpen"
-        >
-          <TypeEditor />
-        </div>
       </div>
       <div v-if="workSpaceStore.isLoading">
         <LoadingBar />

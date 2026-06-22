@@ -109,6 +109,7 @@ watch(
       } else if (isObjectPageMeta(pageMeta)) {
         objectTreeController.selectNode(pageMeta.id);
         router.push({ name: "page-editor", params: { id: pageMeta.id } });
+        typeTreeController.clearSelection();
       } else if (isTypePageMeta(pageMeta)) {
         router.push({
           name: "type-editor",
@@ -116,6 +117,8 @@ watch(
             id: pageMeta.id,
           },
         });
+        typeTreeController.selectNode(pageMeta.id);
+        objectTreeController.clearSelection();
       }
     } else {
       objectTreeController.clearSelection();

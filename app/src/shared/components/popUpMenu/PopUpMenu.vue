@@ -1,5 +1,4 @@
 <script setup lang="ts" generic="T">
-import type { PropType, Teleport } from "vue";
 import type { MenuGroup } from "./type";
 
 const props = defineProps<{
@@ -18,7 +17,7 @@ const handleItemClick = (action?: (context: T) => void) => {
 
 <template>
   <div
-    class="fixed z-50 flex flex-col w-fit max-w-72 p-2 gap-1 bg-(--bg-context-menu) rounded-md border border-(--border)"
+    class="flex flex-col w-fit max-w-72 p-2 gap-1 bg-(--bg-context-menu) rounded-md border border-(--border)"
   >
     <div
       v-for="(group, groupIndex) in groups"

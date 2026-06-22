@@ -1,11 +1,13 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { EpObjectId, ObjectPath } from "@/core/types";
+import type { EpObjectId, ObjectPath, Path } from "@/core/types";
 import { globalObjectsService } from "@/core/di/global";
 import { isContainerEntity, type EpObjectEntity } from "@/core/domain/type";
 
 export const usePageEditorStore = defineStore("page", () => {
   const currentObject = ref<EpObjectEntity>();
+  const pagePath = ref<ObjectPath>();
+
   const paths = ref<Record<EpObjectId, ObjectPath>>({});
   const isOjectSaving = ref(false);
   const isObjectLoading = ref(false);
@@ -41,9 +43,10 @@ export const usePageEditorStore = defineStore("page", () => {
   const get = async (id: EpObjectId) => {
     isObjectLoading.value = true;
     const result = await globalObjectsService.get(id);
-    console.log(result);
     if (result) {
       currentObject.value = result;
+      console.log(result);
+      pagePath.value = await globalObjectsService.getObjectAncestors(result.id);
     }
     isObjectLoading.value = false;
   };
@@ -53,10 +56,11 @@ export const usePageEditorStore = defineStore("page", () => {
   };
 
   return {
-    isPageSaving: isOjectSaving,
-    isPageLoading: isObjectLoading,
-    pageData: currentObject,
+    isOjectSaving,
+    isObjectLoading,
+    currentObject,
     paths,
+    pagePath,
 
     clearActiveObject,
     update,

@@ -9,6 +9,7 @@ import {
   type EpContainerObjectEntity,
   type EpInlineObjectEntity,
   type EpObjectEntity,
+  type MountedContainerObjectEntity,
   type ObjectHierarchyNode,
 } from "@/core/domain/type";
 import type { EpObjectId, EpTypeId, ObjectPath, Path } from "@/core/types";
@@ -19,6 +20,7 @@ import {
   type RawContainerObject,
   isRawContainer,
   type RawEpObject,
+  isRawMountedContainer,
 } from "./type";
 import { type Edge } from "../utils";
 
@@ -29,7 +31,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
 
   private fileTreeStructure: ObjectHierarchyNode = {
     id: this.ROOT_ID,
-    typeId: "sys:root",
+    typeId: "sys:workspace",
     children: [],
   };
   private fileTreeCache: Map<EpObjectId, AllRawEpObject> = new Map();
@@ -149,6 +151,14 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
           source: rawContainer.id,
           target: childId as EpObjectId,
         });
+
+        const child = rawContainer.content[childId];
+        if (child && isRawMountedContainer(child)) {
+          edges.push({
+            source: rawContainer.id,
+            target: child.content.toId,
+          });
+        }
       }
     }
 
@@ -166,7 +176,6 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       result.push(edge.source);
       currentId = edge.source;
     }
-
     return result.reverse();
   }
 
@@ -178,6 +187,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
 
   private async index(): Promise<void> {
     const flattenData = await this.userStorageApi.getAllFlat("");
+    console.log(flattenData);
 
     this.objectPathCache.clear();
     for (const [filePath, container] of Object.entries(flattenData)) {
@@ -188,36 +198,45 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     }
 
     this.fileTreeCache = await this.loadFileCache(flattenData);
-    this.objectTreeEdges = this.buildObjectEdges(flattenData);
     this.fileTreeStructure = await this.loadTree(flattenData);
+    this.objectTreeEdges = this.buildObjectEdges(flattenData);
+    console.log(this.objectTreeEdges);
   }
 
   private getAncestorPath(id: EpObjectId): ObjectPath {
-    const ancestorsPath = this.getAncestors(id).map((it): Path => {
-      const res = this.fileTreeCache.get(it);
-      if (res && isRawContainer(res)) {
-        return {
-          id: res.id,
-          title: res.title,
-        };
-      } else {
-        return {
-          id: "unknown",
-          title: "unknown",
-        };
+    const ancestors = this.getAncestors(id);
+    const res: ObjectPath = [];
+
+    for (const id of ancestors) {
+      const item = this.fileTreeCache.get(id);
+
+      if (item) {
+        if (isRawContainer(item)) {
+          res.push({
+            id: item.id,
+            title: item.title,
+          });
+        } else {
+          res.push({
+            id: item.id,
+            title: "Unknown",
+          });
+        }
       }
-    });
-    return ancestorsPath;
+    }
+
+    return res;
   }
 
   private inlineToDomain(raw: RawEpObject): EpInlineObjectEntity {
+    const ancestors = this.getAncestorPath(raw.id);
     return {
       id: raw.id,
       typeId: raw.typeId,
       props: raw.properties as AllPropertiesMap,
       content: raw.content,
       physicalRelativePath: this.objectPathCache.get(raw.id) ?? "unknown",
-      objectPath: this.getAncestorPath(raw.id),
+      objectPath: ancestors,
     } as EpInlineObjectEntity;
   }
 

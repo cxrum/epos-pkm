@@ -30,6 +30,12 @@ export interface PropertyEntry {
   isSystem: boolean;
 }
 
+export interface Ancestor {
+  id: string;
+  title: string;
+  icon?: Icon;
+}
+
 export const useTypeEditorStore = defineStore("types", () => {
   const isTypeLoading = ref<boolean>(false);
   const type: Ref<EpTypeEntity | undefined> = ref(undefined);
@@ -43,6 +49,8 @@ export const useTypeEditorStore = defineStore("types", () => {
   const typeTreeNodes: Ref<TypeTreeNodes[]> = ref([]);
   const typeTreeEdges: Ref<TypeTreeEdges[]> = ref([]);
 
+  const breadCrumbs: Ref<Ancestor[]> = ref([]);
+
   const loadType = async (id: EpTypeId) => {
     isTypeLoading.value = true;
     type.value = await globalTypingService.get(id);
@@ -50,6 +58,20 @@ export const useTypeEditorStore = defineStore("types", () => {
       const res = await getPropsScheme(type.value);
       properties.value = res;
       propertiesOrder.value = properties.value.map((it) => it.id);
+      const _ancestors = await globalTypingService.getAncestors(id);
+      breadCrumbs.value = _ancestors.map((it) => {
+        return {
+          id: it.id,
+          icon: it.icon,
+          title: it.title,
+        };
+      });
+      breadCrumbs.value.push({
+        id: type.value.id,
+        title: type.value.title,
+        icon: type.value.icon,
+      });
+      console.log(_ancestors);
     } else {
       properties.value = [];
     }
@@ -154,8 +176,9 @@ export const useTypeEditorStore = defineStore("types", () => {
     properties,
     isSystemPropertiesVisible,
     typeTreeNodes,
-
+    breadCrumbs,
     typeTreeEdges,
+
     loadType,
     loadTree,
     updateOrder,

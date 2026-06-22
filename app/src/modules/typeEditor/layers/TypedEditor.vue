@@ -1,15 +1,25 @@
 <script setup lang="ts">
-import { watch } from "vue";
+import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useTypeEditorStore } from "../store/typeEditorStore";
-import type { EpPropertyTypes, EpTypeId } from "@/core/types";
+import type { EpPropertyTypes, EpTypeId, Path } from "@/core/types";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 import BaseSelect from "@/shared/components/BaseSelect.vue";
+import type { MenuGroup } from "@/shared/components/popUpMenu/type";
+import { useWorkspaceStore } from "@/core/store/workspaceStore";
+import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
+import Breadcrumbs from "@/core/components/Breadcrumbs.vue";
+import TypeIcon from "@/assets/icons/TypeIcon.vue";
+import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
+import DotsMenu from "@/assets/icons/DotsMenu.vue";
+import { useGlobalNavigation } from "@/core/store/navigationStore";
 
 const props = defineProps();
 const route = useRoute();
 const typeEditorStore = useTypeEditorStore();
+const workSpaceStore = useWorkspaceStore();
+const globalNavigationStore = useGlobalNavigation();
 
 const propertyTypesMenu = [
   { label: "Boolean", value: "boolean" },
@@ -36,9 +46,60 @@ const handleTypeChange = (
     typeEditorStore.updatePropertyType(propertyId, newValue as EpPropertyTypes);
   }
 };
+
+const pageMenuData: MenuGroup[] = [
+  {
+    title: "Page",
+    items: [
+      { type: "button", label: "Wtf", icon: DocumentIcon },
+      { type: "divider" },
+      { type: "button", label: "Wtf", icon: DocumentIcon },
+    ],
+  },
+];
+
+const isTypeEditorOpen = computed(() => workSpaceStore.isTypeEditorOpen);
+
+const computedPath = computed(() => {
+  return typeEditorStore.breadCrumbs;
+});
+
+const handleOnChainClick = (value: Path) => {
+  globalNavigationStore.openType(value.id);
+};
 </script>
 
 <template>
+  <nav class="flex w-full flex-col shrink-0 bg-(--bg-canvas) p-1">
+    <div class="flex w-full shrink-0 items-center">
+      <Breadcrumbs :path="computedPath" @chain-click="handleOnChainClick" />
+
+      <BaseIcon
+        size="28px"
+        interactive
+        @click="workSpaceStore.toggleTypeEditor()"
+        class="text-(--icon-color) shrink-0"
+        :class="isTypeEditorOpen ? 'bg-(--hover)' : ''"
+      >
+        <TypeIcon />
+      </BaseIcon>
+
+      <FloatingPopUpMenu :menu-data="pageMenuData" placement="bottom-end">
+        <template #trigger="{ referenceRef, toggleMenu }">
+          <BaseIcon
+            :ref="referenceRef"
+            size="28px"
+            interactive
+            class="text-(--icon-color)"
+            @click="toggleMenu"
+          >
+            <DotsMenu />
+          </BaseIcon>
+        </template>
+      </FloatingPopUpMenu>
+    </div>
+  </nav>
+
   <div v-if="!typeEditorStore.type"></div>
   <div v-else class="page">
     <div class="flex flex-col gap-4">
@@ -110,15 +171,22 @@ const handleTypeChange = (
           </span>
         </div>
       </div>
-      <div class="hl"></div>
-      <p>
-        Example data, example data, example data, example data, example data,
-      </p>
+      <div class="hl mb-4"></div>
+      <div class="stub"></div>
+      <div class="stub"></div>
+      <div class="stub"></div>
+      <div class="stub"></div>
+      <div class="stub w-1/2"></div>
     </div>
   </div>
 </template>
 
 <style lang="scss">
+.stub {
+  height: 8px;
+  background: var(--border);
+}
+
 .hl {
   border-bottom: 1px solid var(--border);
   width: 100%;

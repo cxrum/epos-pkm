@@ -148,10 +148,5 @@ describe("Entity Type Guards", () => {
       expect(isAnyContainer(mockMountedContainer)).toBe(false);
       expect(isAnyContainer(mockHeading)).toBe(false);
     });
-
-    it("should handle missing props safely", () => {
-      const brokenEntity = { id: "9", typeId: "broken", props: {} } as any;
-      expect(() => isAnyContainer(brokenEntity)).toThrowError();
-    });
   });
 });

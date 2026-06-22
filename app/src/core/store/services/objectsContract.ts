@@ -21,6 +21,6 @@ export interface ObjetServiceContract {
     oldParentId: EpObjectId,
   ): Promise<boolean>;
   getFileTree(): Promise<TreeNode>;
-  getObjectPath(id: EpObjectId): Promise<ObjectPath>;
+  getObjectAncestors(id: EpObjectId): Promise<ObjectPath>;
   getPaths(): Promise<Record<EpObjectId, ObjectPath>>;
 }
