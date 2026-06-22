@@ -1,11 +1,20 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { ref } from "vue";
+import { appStateRepository, bootstrapWorkspaceServices } from "../di/global";
+import type { Workspace } from "../../../appState";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
   const isSidebarOpen = ref<boolean>(true);
   const isTypeEditorOpen = ref<boolean>(false);
   const isOmniSearchOpen = ref<boolean>(false);
   const isLoading = ref<boolean>(false);
+
+  const selectedWorkspace = ref<Workspace>();
+
+  async function init() {
+    selectedWorkspace.value = await appStateRepository.getSelectedWorkspace();
+    await bootstrapWorkspaceServices();
+  }
 
   function toggleSidebar() {
     isSidebarOpen.value = !isSidebarOpen.value;
@@ -32,6 +41,8 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     isTypeEditorOpen,
     isOmniSearchOpen,
     isLoading,
+    init,
+    selectedWorkspace,
 
     setLoadingStatus,
     toggleSidebar,

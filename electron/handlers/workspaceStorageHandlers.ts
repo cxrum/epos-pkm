@@ -1,9 +1,10 @@
 import { ipcMain } from "electron";
-import { JsonNodeFileSystem } from "./fileSystemApi";
+import { JsonNodeFileSystem } from "../fileSystemApi";
+import { RawAppStateService } from "../AppStateService";
 
-const fsApi = new JsonNodeFileSystem("/home/chrum/projects/epos-pkm-storage/");
+export function setupWorkSpaceStorage(appState: RawAppStateService) {
+  const fsApi = new JsonNodeFileSystem(appState);
 
-export function setupIpcHandlers() {
   ipcMain.handle("fs:get", async (_, path) => await fsApi.get(path));
   ipcMain.handle(
     "fs:save",

@@ -3,11 +3,13 @@ import { createRouter, createWebHistory } from "vue-router";
 const routes = [
   {
     path: "/",
-    redirect: "/workspace",
+    name: "setup",
+    component: () => import("@/modules/setup/layout/InitialConfigLayout.vue"),
   },
   {
     name: "workspace",
     path: "/workspace",
+    meta: { requiresWorkspace: true },
     component: () => import("@/core/layouts/WorkspaceLayout.vue"),
     children: [
       {

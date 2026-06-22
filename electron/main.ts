@@ -8,10 +8,12 @@ import {
 import { APP_NAME, isDev } from "./config";
 import { appConfig } from "./electronStore/configuration";
 import AppUpdater from "./autoUpdate";
-import { setupIpcHandlers } from "./ipcHandlers";
+import { setupWorkSpaceStorage } from "./handlers/workspaceStorageHandlers";
 import { console } from "inspector";
 import path from "path";
 import * as fs from "fs/promises";
+import { RawAppStateService } from "./AppStateService";
+import { setupAppState } from "./handlers/configHanlders";
 
 function resolveWindowIcon() {
   if (app.isPackaged) {
@@ -98,11 +100,15 @@ app.whenReady().then(async () => {
     };
   });
 
-  setupIpcHandlers();
   createWindow();
   app.on("activate", function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
+
+  const appStateService = new RawAppStateService();
+
+  setupAppState(appStateService);
+  setupWorkSpaceStorage(appStateService);
 });
 
 app.on("window-all-closed", () => {

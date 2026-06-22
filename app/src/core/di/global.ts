@@ -7,6 +7,7 @@ import type {
   RawContainerObject,
   RawEptTypeHierarchyNode,
 } from "../infra/storage/type";
+import { AppStateRepository } from "../infra/stateRepository";
 
 const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>(
   "/workspace",
@@ -114,10 +115,14 @@ const ROOT: RawEptTypeHierarchyNode = {
   ],
 };
 
+export const appStateRepository = new AppStateRepository();
 const typingRepository = new TypingRepository(typesStorageApi, ROOT);
-await typingRepository.init();
 const objectRepository = new ObjectStorageRepository(containerObjectStorageApi);
-await objectRepository.init();
+
+export async function bootstrapWorkspaceServices() {
+  await typingRepository.init();
+  await objectRepository.init();
+}
 
 export const globalTypingService = new TypingService(typingRepository);
 export const globalObjectsService = new ObjectsService(

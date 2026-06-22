@@ -2,17 +2,14 @@ import type { ObjectStorageRepositoryContract } from "@/core/domain/repositories
 import {
   isAnyContainer,
   isAnyInlineEntity,
-  isContainerEntity,
   isMountedPage,
-  isWorkspaceEntity,
   type AllPropertiesMap,
   type EpContainerObjectEntity,
   type EpInlineObjectEntity,
   type EpObjectEntity,
-  type MountedContainerObjectEntity,
   type ObjectHierarchyNode,
 } from "@/core/domain/type";
-import type { EpObjectId, EpTypeId, ObjectPath, Path } from "@/core/types";
+import type { EpObjectId, EpTypeId, ObjectPath } from "@/core/types";
 import type { FileSystemApi } from "../../../../fileSystemApiContract";
 import {
   type AllRawEpObject,
@@ -46,7 +43,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     const workspaceRoot = {
       id: this.ROOT_ID,
       typeId: "sys:workspace",
-      title: "workspace",
+      title: "root",
       content: {},
       order: [],
       properties: {
@@ -59,9 +56,9 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       },
     } as RawContainerObject;
 
-    const root = await this.userStorageApi.get("./test-workspace.json");
+    const root = await this.userStorageApi.get("./root.json");
     if (!root) {
-      await this.userStorageApi.save("./test-workspace.json", workspaceRoot);
+      await this.userStorageApi.save("./root.json", workspaceRoot);
     }
 
     await this.index();

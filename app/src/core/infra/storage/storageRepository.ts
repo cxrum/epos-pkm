@@ -4,11 +4,6 @@ import type {
 } from "../../../../fileSystemApiContract";
 import type { Edge } from "../utils";
 
-declare global {
-  interface Window {
-    electronFs: FileSystemApi;
-  }
-}
 export class IpcFileSystem<T extends any> implements FileSystemApi<T> {
   private readonly basePath: string | undefined;
 

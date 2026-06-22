@@ -1,18 +1,27 @@
 import * as fs from "fs/promises";
 import * as path from "path";
 import type { FileInfo, FileSystemApi } from "../app/fileSystemApiContract";
+import { RawAppStateService } from "./AppStateService";
 
 export class JsonNodeFileSystem<
   T extends { id: string | number },
 > implements FileSystemApi<T> {
-  private basePath: string;
+  private appState: RawAppStateService;
 
-  constructor(basePath: string) {
-    this.basePath = basePath;
+  constructor(appStateService: RawAppStateService) {
+    this.appState = appStateService;
+  }
+
+  private getWorkspacePath(): string {
+    const workspacePath = this.appState.getSelectedWorkspacePath();
+    if (!workspacePath) {
+      throw Error();
+    }
+    return workspacePath;
   }
 
   private getFullPath(targetPath: string): string {
-    return path.join(this.basePath, targetPath);
+    return path.join(this.getWorkspacePath(), targetPath);
   }
 
   async get(targetPath: string): Promise<T | undefined> {
@@ -116,6 +125,7 @@ export class JsonNodeFileSystem<
 
   async tree(rootPath: string): Promise<{ source: string; target: string }[]> {
     const fullRootPath = this.getFullPath(rootPath);
+    const workspacePath = this.getWorkspacePath();
 
     const traverse = async (
       currentPath: string,
@@ -132,8 +142,8 @@ export class JsonNodeFileSystem<
           discovered.add(absolutePath);
 
           const isDir = el.isDirectory();
-          let relativeSource = path.relative(this.basePath, currentPath);
-          const relativeTarget = path.relative(this.basePath, absolutePath);
+          let relativeSource = path.relative(workspacePath, currentPath);
+          const relativeTarget = path.relative(workspacePath, absolutePath);
 
           if (relativeSource === "") {
             relativeSource = ".";

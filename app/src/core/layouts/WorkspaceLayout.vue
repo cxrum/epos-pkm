@@ -2,26 +2,41 @@
 import SidebarNavigationView from "@/core/layouts/SidebarNavigationView.vue";
 import BrowserTabsView from "@/core/layouts/BrowserTabsView.vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore";
-import Breadcrumbs from "@/core/components/Breadcrumbs.vue";
-import { computed, ref } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
-import DotsMenu from "@/assets/icons/DotsMenu.vue";
-import TypeIcon from "@/assets/icons/TypeIcon.vue";
 import { onClickOutside, transition } from "@vueuse/core";
 import SidebarState from "@/assets/icons/SidebarState.vue";
-import type { MenuGroup } from "@/shared/components/popUpMenu/type";
 import { offset, useFloating } from "@floating-ui/vue";
-import PopUpMenu from "@/shared/components/popUpMenu/PopUpMenu.vue";
-import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
-import TypeEditor from "@/core/layouts/TypeEditorLayout.vue";
 import OmniSearchView from "@/core/layouts/OmniSearchView.vue";
 import User from "@/assets/icons/User.vue";
 import Settings from "@/assets/icons/Settings.vue";
 import LoadingBar from "@/shared/components/LoadingBar.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
-import type { Path } from "../types";
+import router from "@/router";
 
 const workSpaceStore = useWorkspaceStore();
+
+watch(
+  () => workSpaceStore.selectedWorkspace,
+  (it) => {
+    if (!it) {
+      router.push("/");
+    }
+  },
+);
+
+const isWorkspaceReady = ref(false);
+const hasError = ref(false);
+
+onMounted(() => {
+  try {
+    isWorkspaceReady.value = true;
+    workSpaceStore.init();
+  } catch (error) {
+    hasError.value = true;
+  }
+});
+
 const isSidebarOpen = computed(() => workSpaceStore.isSidebarOpen);
 const isOmniSearchOpen = computed(() => workSpaceStore.isOmniSearchOpen);
 
