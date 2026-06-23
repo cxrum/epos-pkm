@@ -9,11 +9,18 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   const isOmniSearchOpen = ref<boolean>(false);
   const isLoading = ref<boolean>(false);
 
-  const selectedWorkspace = ref<Workspace>();
+  const isInitialized = ref<boolean>(false);
+  const selectedWorkspace = ref<Workspace | undefined>();
+
+  async function loadAppState() {
+    await appStateRepository.hotReload();
+    selectedWorkspace.value = await appStateRepository.getSelectedWorkspace();
+    isInitialized.value = false;
+  }
 
   async function init() {
-    selectedWorkspace.value = await appStateRepository.getSelectedWorkspace();
     await bootstrapWorkspaceServices();
+    isInitialized.value = true;
   }
 
   function toggleSidebar() {
@@ -41,9 +48,11 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     isTypeEditorOpen,
     isOmniSearchOpen,
     isLoading,
-    init,
     selectedWorkspace,
+    isInitialized,
 
+    init,
+    loadAppState,
     setLoadingStatus,
     toggleSidebar,
     toggleTypeEditor,

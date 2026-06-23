@@ -3,20 +3,15 @@ import * as path from "path";
 import * as fs from "fs/promises";
 import { existsSync } from "fs";
 import { AppConfig, Workspace } from "../app/appState";
-
-export interface RawTab {
-  id: string;
-}
-
-export interface RawAppStateConfig {
-  savedTabs: RawTab[];
-}
+import { randomUUID } from "crypto";
 
 export interface RawWorkspace {
   id: string;
-  title: string;
   absolutePath: string;
-  state: RawAppStateConfig;
+}
+
+export interface WorkspaceLocalConfig {
+  title: string;
 }
 
 export interface RawAppConfig {
@@ -31,11 +26,6 @@ export class RawAppStateService {
   constructor() {
     this.configPath = path.join(app.getPath("userData"), "config.json");
     console.log(this.configPath);
-  }
-
-  private toFrontendWorkspace(rawWorkspace: RawWorkspace): Workspace {
-    const { absolutePath, ...safeWorkspace } = rawWorkspace;
-    return safeWorkspace as Workspace;
   }
 
   private async loadConfig(): Promise<RawAppConfig> {
@@ -76,48 +66,110 @@ export class RawAppStateService {
     }
   }
 
-  public async getWorkspaces(): Promise<Workspace[]> {
+  private async readLocalConfig(
+    absolutePath: string,
+  ): Promise<WorkspaceLocalConfig | null> {
+    try {
+      const workspaceConfigPath = path.join(absolutePath, ".workspace");
+      const rawData = await fs.readFile(workspaceConfigPath, "utf-8");
+      return JSON.parse(rawData) as WorkspaceLocalConfig;
+    } catch {
+      return null;
+    }
+  }
+
+  private async saveWorkspaceLocalConfig(
+    absolutePath: string,
+    localConfig: WorkspaceLocalConfig,
+  ): Promise<void> {
+    const workspaceConfigPath = path.join(absolutePath, ".workspace");
+
+    try {
+      await fs.writeFile(
+        workspaceConfigPath,
+        JSON.stringify(localConfig, null, 2),
+        "utf-8",
+      );
+      console.log(
+        `[Success] Локальний конфіг воркспейсу збережено: ${workspaceConfigPath}`,
+      );
+    } catch (error) {
+      console.error(
+        `[Error] Помилка запису локального конфігу в ${workspaceConfigPath}:`,
+        error,
+      );
+      throw error;
+    }
+  }
+
+  private async syncWorkspaces(): Promise<Workspace[]> {
     if (!this.config) {
       this.config = await this.loadConfig();
     }
 
-    return this.config.workspaces.map((w) => this.toFrontendWorkspace(w));
+    const validWorkspaces: Workspace[] = [];
+    const rawWorkspaces: RawWorkspace[] = [];
+    let configChanged = false;
+
+    for (const raw of this.config.workspaces) {
+      const localConfig = await this.readLocalConfig(raw.absolutePath);
+
+      if (localConfig) {
+        validWorkspaces.push({
+          id: raw.id,
+          absolutePath: raw.absolutePath,
+          title: localConfig.title,
+        } as Workspace);
+        rawWorkspaces.push(raw);
+      } else {
+        configChanged = true;
+        if (this.config.selectedWorkspace === raw.id) {
+          this.config.selectedWorkspace = "";
+        }
+      }
+    }
+
+    if (configChanged) {
+      this.config.workspaces = rawWorkspaces;
+      await this.saveConfig(this.config);
+    }
+
+    return validWorkspaces;
+  }
+
+  public async getWorkspaces(): Promise<Workspace[]> {
+    return await this.syncWorkspaces();
   }
 
   public async selectWorkspace(id: string): Promise<Workspace> {
-    if (!this.config) this.config = await this.loadConfig();
+    const validWorkspaces = await this.syncWorkspaces();
+    const workspace = validWorkspaces.find((w) => w.id === id);
 
-    const workspace = this.config.workspaces.find((w) => w.id === id);
     if (!workspace) {
       throw new Error(`Workspace з id "${id}" не знайдено`);
     }
 
-    this.config.selectedWorkspace = id;
-    await this.saveConfig(this.config);
+    this.config!.selectedWorkspace = id;
+    await this.saveConfig(this.config!);
 
-    return this.toFrontendWorkspace(workspace);
+    return workspace;
   }
 
-  public getSelectedWorkspace(): Workspace | undefined {
-    if (!this.config) {
-      return undefined;
-    }
+  public async getSelectedWorkspace(): Promise<Workspace | undefined> {
+    const validWorkspaces = await this.syncWorkspaces();
 
-    const workspace = this.config.workspaces.find(
+    return validWorkspaces.find(
       (it) => it.id === this.config!.selectedWorkspace,
     );
-
-    return workspace ? this.toFrontendWorkspace(workspace) : undefined;
   }
 
   public async hotReload(): Promise<AppConfig> {
     this.config = await this.loadConfig();
+    const validWorkspaces = await this.syncWorkspaces();
 
     return {
-      selectedWorkspace: this.config.selectedWorkspace,
-      workspaces: this.config.workspaces.map((w) =>
-        this.toFrontendWorkspace(w),
-      ),
+      selectedWorkspace: this.config!.selectedWorkspace,
+      workspaces: validWorkspaces,
     };
   }
 
@@ -131,5 +183,75 @@ export class RawAppStateService {
     );
 
     return workspace?.absolutePath;
+  }
+
+  public async loadWorkspace(absolutePath: string): Promise<Workspace> {
+    const localConfig = await this.readLocalConfig(absolutePath);
+
+    if (!localConfig) {
+      throw new Error("INVALID_WORKSPACE");
+    }
+
+    if (!this.config) {
+      this.config = await this.loadConfig();
+    }
+
+    let rawWorkspace = this.config.workspaces.find(
+      (w) => w.absolutePath === absolutePath,
+    );
+
+    if (!rawWorkspace) {
+      rawWorkspace = {
+        id: randomUUID(),
+        absolutePath: absolutePath,
+      };
+      this.config.workspaces.push(rawWorkspace);
+    }
+
+    this.config.selectedWorkspace = rawWorkspace.id;
+    await this.saveConfig(this.config);
+
+    return {
+      id: rawWorkspace.id,
+      absolutePath: rawWorkspace.absolutePath,
+      title: localConfig.title,
+    } as Workspace;
+  }
+
+  public async createWorkspace(
+    title: string,
+    absolutePath: string,
+  ): Promise<Workspace> {
+    if (!this.config) {
+      this.config = await this.loadConfig();
+    }
+
+    const newWorkspace: RawWorkspace = {
+      id: randomUUID(),
+      absolutePath: absolutePath,
+    };
+
+    const localConfig: WorkspaceLocalConfig = {
+      title: title,
+    };
+
+    try {
+      await this.saveWorkspaceLocalConfig(
+        newWorkspace.absolutePath,
+        localConfig,
+      );
+
+      this.config.workspaces.push(newWorkspace);
+      this.config.selectedWorkspace = newWorkspace.id;
+      await this.saveConfig(this.config);
+
+      return {
+        id: newWorkspace.id,
+        absolutePath: newWorkspace.absolutePath,
+        title: localConfig.title,
+      } as Workspace;
+    } catch (error) {
+      throw new Error("Failed to create workspace");
+    }
   }
 }

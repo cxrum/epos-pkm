@@ -12,6 +12,15 @@ export function setupAppState(stateService: RawAppStateService) {
   ipcMain.handle("app-state:selectedWorkspace", () =>
     stateService.getSelectedWorkspace(),
   );
+  ipcMain.handle(
+    "app-state:createWorkspace",
+    (_, title: string, _path: string) => {
+      return stateService.createWorkspace(title, _path);
+    },
+  );
+  ipcMain.handle("app-state:loadWorkspace", (_, _path: string) => {
+    return stateService.loadWorkspace(_path);
+  });
 
   ipcMain.handle("dialog:openDirectory", async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

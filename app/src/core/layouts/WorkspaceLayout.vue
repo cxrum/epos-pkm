@@ -16,15 +16,6 @@ import router from "@/router";
 
 const workSpaceStore = useWorkspaceStore();
 
-watch(
-  () => workSpaceStore.selectedWorkspace,
-  (it) => {
-    if (!it) {
-      router.push("/");
-    }
-  },
-);
-
 const isWorkspaceReady = ref(false);
 const hasError = ref(false);
 
@@ -73,7 +64,7 @@ onClickOutside(omniSearchRef, (event: Event) => {
 </script>
 
 <template>
-  <div class="flex h-screen w-screen overflow-hidden text-(--fixel)">
+  <div class="flex h-screen w-screen overflow-hidden">
     <aside
       :class="isSidebarOpen ? 'w-64' : 'w-14'"
       class="flex flex-col h-full border-r border-(--border) bg-(--bg-sidebar) transition-all duration-150 ease-in-out"

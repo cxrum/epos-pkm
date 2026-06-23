@@ -1,6 +1,7 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { AppStateApi } from "../app/appState";
 import { FileSystemApi } from "../app/fileSystemApiContract";
+import { title } from "process";
 
 contextBridge.exposeInMainWorld("browserWindow", {
   versions: () => ipcRenderer.invoke("versions"),
@@ -26,6 +27,10 @@ const appStateApi: AppStateApi = {
     ipcRenderer.invoke("app-state:selectWorkspace", id),
   hotReload: () => ipcRenderer.invoke("app-state:hotReload"),
   getSelectedWorkspace: () => ipcRenderer.invoke("app-state:selectedWorkspace"),
+  createWorkspace: (title, _path) =>
+    ipcRenderer.invoke("app-state:createWorkspace", title, _path),
+  loadWorkspace: (_path) =>
+    ipcRenderer.invoke("app-state:loadWorkspace", _path),
 };
 
 contextBridge.exposeInMainWorld("electronFs", fileSystemApi);

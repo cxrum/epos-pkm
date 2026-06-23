@@ -19,13 +19,24 @@
   --bg-mid-layer: #36393a;
   --bg-bottom-layer: rgba(43, 44, 45, 1);
 
+  --bg-top-layer-contrast: var(--bg-bottom-layer);
+  --bg-mid-layer-contrast: var(--bg-bottom-layer);
+  --bg-bottom-layer-contrast: var(--bg-top-layer);
+
   --bg-btn: var(--bg-bottom-layer);
   --bg-btn-accent: var(--accent);
   --bg-select: var(--bg-bottom-layer);
 
   --bg-context-menu: var(--bg-top-layer);
+  --bg-context-menu-contrast: var(--bg-top-layer-contrast);
   --bg-sidebar: var(--bg-mid-layer);
-  --bg-settings: var(--bg-mid-layer);
+  --bg-sidebar-contrast: var(--bg-mid-layer-contrast);
+  --bg-settings: var(--bg-bottom-layer);
+  --bg-settings-contrast: var(--bg-bottom-layer-contrast);
+
+  --bg-btn: var(--bg-bottom-layer);
+  --bg-btn-accent: var(--accent);
+  --bg-select: var(--bg-bottom-layer);
 
   --bg-header: var(--bg-mid-layer);
   --bg-active-tab: color-mix(in oklch, var(--hover) 100%, var(--bg-header));
@@ -54,6 +65,9 @@
     var(--hover) 100%,
     var(--bg-bottom-layer)
   );
+
+  --surface-layer: var(--bg-mid-layer);
+  --surface-contrast-layer: var(--bg-mid-layer-contrast);
 
   --fixel: fixel;
   --heading: fixel;
@@ -135,19 +149,50 @@
     transition: background-color 0.2s ease;
   }
 
+  .base-button {
+    background-color: var(--button-bg, transparent);
+    color: var(--button-text-color, var(--text-default-color));
+  }
+
+  .base-button:hover {
+    background-color: var(
+      --button-hover-bg,
+      color-mix(in srgb, var(--hover) 100%, var(--surface-contrast-layer))
+    );
+  }
+
+  .base-button > .base-icon {
+    color: var(--button-icon-color, var(--icon-color));
+  }
+
+  .button-variant-default {
+    --button-bg: transparent;
+    --button-hover-bg: color-mix(in srgb, var(--hover) 80%, transparent);
+    --button-text-color: var(--text-default-color);
+  }
+
+  .button-variant-secondary {
+    --button-bg: var(--surface-contrast-layer);
+    --button-hover-bg: color-mix(
+      in srgb,
+      var(--hover) 100%,
+      var(--surface-contrast-layer)
+    );
+    --button-text-color: var(--text-default-color);
+  }
+
+  .button-variant-accent {
+    --button-bg: var(--bg-btn-accent);
+    --button-hover-bg: var(--accent-hover);
+    --button-text-color: var(--text-on-accent-color);
+    --button-icon-color: var(--text-on-accent-color);
+  }
+
   button,
   a,
   .clickable {
     transition: transform 0.1s ease;
     cursor: pointer;
-  }
-
-  button:hover {
-    background-color: color-mix(
-      in srgb,
-      var(--hover) 80%,
-      var(--bg-bottom-layer)
-    );
   }
 
   .clickable:hover {
@@ -179,6 +224,60 @@
 }
 
 @layer components {
+  .surface-top-layer {
+    background-color: var(--bg-top-layer);
+    --surface-layer: var(--bg-top-layer);
+    --surface-contrast-layer: var(--bg-top-layer-contrast);
+  }
+
+  .surface-mid-layer {
+    background-color: var(--bg-mid-layer);
+    --surface-layer: var(--bg-mid-layer);
+    --surface-contrast-layer: var(--bg-mid-layer-contrast);
+  }
+
+  .surface-bottom-layer {
+    background-color: var(--bg-bottom-layer);
+    --surface-layer: var(--bg-bottom-layer);
+    --surface-contrast-layer: var(--bg-bottom-layer-contrast);
+  }
+
+  .surface-sidebar {
+    background-color: var(--bg-sidebar);
+    --surface-layer: var(--bg-sidebar);
+    --surface-contrast-layer: var(--bg-sidebar-contrast);
+  }
+
+  .surface-settings {
+    background-color: var(--bg-settings);
+    --surface-layer: var(--bg-settings);
+    --surface-contrast-layer: var(--bg-settings-contrast);
+  }
+
+  .surface-canvas {
+    background-color: var(--bg-canvas);
+    --surface-layer: var(--bg-canvas);
+    --surface-contrast-layer: var(--bg-canvas-contrast);
+  }
+
+  .surface-header {
+    background-color: var(--bg-header);
+    --surface-layer: var(--bg-header);
+    --surface-contrast-layer: var(--bg-header-contrast);
+  }
+
+  .surface-context-menu {
+    background-color: var(--bg-context-menu);
+    --surface-layer: var(--bg-context-menu);
+    --surface-contrast-layer: var(--bg-context-menu-contrast);
+  }
+
+  .surface-modal {
+    background-color: var(--bg-settings);
+    --surface-layer: var(--bg-settings);
+    --surface-contrast-layer: var(--bg-settings-contrast);
+  }
+
   .accent {
     background-color: var(--accent);
   }
@@ -200,6 +299,11 @@
     -webkit-user-select: none; /* Safari */
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
+  }
+
+  .hl {
+    border-bottom: 1px solid var(--border);
+    width: 100%;
   }
 
   .float-shadow {

@@ -1,3 +1,4 @@
+import { useWorkspaceStore } from "@/core/store/workspaceStore";
 import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
@@ -47,6 +48,30 @@ const routes = [
 const router = createRouter({
   history: createWebHistory(),
   routes,
+});
+router.beforeEach(async (to, from, next) => {
+  const workspaceStore = useWorkspaceStore();
+
+  if (!workspaceStore.selectedWorkspace) {
+    await workspaceStore.loadAppState();
+  }
+
+  const hasWorkspace = workspaceStore.selectedWorkspace ? true : false;
+
+  if (hasWorkspace) {
+    if (!workspaceStore.isInitialized) {
+      await workspaceStore.init();
+      console.log("INIT");
+    }
+  }
+
+  if (to.meta.requiresWorkspace && !hasWorkspace) {
+    next({ name: "setup" });
+  } else if (to.name === "setup" && hasWorkspace) {
+    next({ name: "workspace" });
+  } else {
+    next();
+  }
 });
 
 export default router;

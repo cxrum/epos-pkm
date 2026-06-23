@@ -187,11 +187,6 @@ const handleOnChainClick = (value: Path) => {
   background: var(--border);
 }
 
-.hl {
-  border-bottom: 1px solid var(--border);
-  width: 100%;
-}
-
 .page {
   padding-left: clamp(16px, 8vw, 128px);
   padding-right: clamp(16px, 8vw, 128px);

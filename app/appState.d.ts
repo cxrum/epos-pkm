@@ -1,15 +1,6 @@
-export interface Tab {
-  id: string;
-}
-
-export interface AppStateConfig {
-  savedTabs: Tab[];
-}
-
 export interface Workspace {
   id: string;
   title: string;
-  state: AppStateConfig;
 }
 
 export interface AppConfig {
@@ -22,4 +13,7 @@ export interface AppStateApi {
   selectWorkspace(id: string): Promise<Workspace>;
   hotReload(): Promise<AppConfig>;
   getSelectedWorkspace(): Promise<Workspace>;
+
+  createWorkspace(title: string, _path: string): Promise<Workspace | undefined>;
+  loadWorkspace(_path: string): Promise<Workspace>;
 }

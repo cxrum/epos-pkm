@@ -1,6 +1,15 @@
 import type { AppStateApi, Workspace, AppConfig } from "../../../appState";
 
 export class AppStateRepository implements AppStateApi {
+  loadWorkspace(_path: string): Promise<Workspace> {
+    return window.appState.loadWorkspace(_path);
+  }
+  createWorkspace(
+    title: string,
+    _path: string,
+  ): Promise<Workspace | undefined> {
+    return window.appState.createWorkspace(title, _path);
+  }
   public async getWorkspaces(): Promise<Workspace[]> {
     return window.appState.getWorkspaces();
   }
