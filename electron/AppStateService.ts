@@ -208,7 +208,6 @@ export class RawAppStateService {
       this.config.workspaces.push(rawWorkspace);
     }
 
-    this.config.selectedWorkspace = rawWorkspace.id;
     await this.saveConfig(this.config);
 
     return {
@@ -242,7 +241,6 @@ export class RawAppStateService {
       );
 
       this.config.workspaces.push(newWorkspace);
-      this.config.selectedWorkspace = newWorkspace.id;
       await this.saveConfig(this.config);
 
       return {

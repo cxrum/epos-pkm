@@ -24,6 +24,7 @@
     "@tiptap/y-tiptap": "^3.0.3",
     "@vueuse/core": "14.3.0",
     "d3": "^7.9.0",
+    "mitt": "^3.0.1",
     "nodemon": "^3.1.14",
     "pinia": "^3.0.4",
     "tailwindcss": "^4.3.0",

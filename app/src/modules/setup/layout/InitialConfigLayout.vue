@@ -33,7 +33,7 @@ const openWorkspace = (id: string) => {
     class="flex h-screen w-full items-center justify-center px-4 surface-settings"
   >
     <div
-      class="flex w-full max-w-xl min-h-[50vh] flex-col gap-4 rounded-xl border border-solid border-(--border) p-4 shadow-2xl surface-context-menu overflow-hidden px-8"
+      class="flex w-full max-w-xl max-h-152 flex-col gap-4 rounded-xl border border-solid border-(--border) p-4 shadow-2xl surface-context-menu overflow-hidden px-8"
     >
       <div class="flex flex-col justify-center items-center gap-4">
         <span class="flex flex-col items-center">
@@ -74,12 +74,12 @@ const openWorkspace = (id: string) => {
 
       <div
         v-if="stateStore.workspaces.length > 0"
-        class="flex flex-col gap-2 min-w-0 overflow-y-auto"
+        class="flex flex-col flex-1 gap-2 min-w-0 overflow-y-auto scroll"
       >
         <span
           v-for="value of stateStore.workspaces"
           :key="value.id"
-          class="truncate text-ellipsis clickable p-2 rounded-md"
+          class="text-ellipsis clickable p-2 rounded-md"
           @click="openWorkspace(value.id)"
         >
           <p>

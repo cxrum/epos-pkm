@@ -1,6 +1,7 @@
 export interface Workspace {
   id: string;
   title: string;
+  absolutePath: string;
 }
 
 export interface AppConfig {
