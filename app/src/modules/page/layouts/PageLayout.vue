@@ -1,5 +1,13 @@
 <script setup lang="ts">
-import { ref, watch, toRaw, onBeforeUnmount, computed } from "vue";
+import {
+  ref,
+  watch,
+  toRaw,
+  onBeforeUnmount,
+  computed,
+  onMounted,
+  onUnmounted,
+} from "vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
 import {
@@ -23,6 +31,7 @@ import TypeIcon from "@/assets/icons/TypeIcon.vue";
 import DotsMenu from "@/assets/icons/DotsMenu.vue";
 import TypeEditorLayout from "@/core/layouts/TypeEditorLayout.vue";
 import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
+import { applicationBus } from "@/bus/application.ts";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -163,6 +172,22 @@ const computedPath = computed(() => {
 const handleOnChainClick = (value: Path) => {
   globalNavigationStore.openPage(value.id);
 };
+
+const handleObjectUpdate = async (it: { id: string }) => {
+  if (it && it.id == pageId.value) {
+    isFirst = true;
+    await pageStore.get(it.id);
+    isFirst = false;
+  }
+};
+
+onMounted(() => {
+  applicationBus.on("object:update", handleObjectUpdate);
+});
+
+onUnmounted(() => {
+  applicationBus.off("object:update", handleObjectUpdate);
+});
 </script>
 <template>
   <div class="flex w-full h-full flex-row">

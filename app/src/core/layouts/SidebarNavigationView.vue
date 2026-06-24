@@ -8,7 +8,7 @@ import type { MenuGroup } from "@/shared/components/popUpMenu/type";
 import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
 import AddDocument from "@/assets/icons/AddDocument.vue";
 import { useWorkspaceStore } from "../store/workspaceStore";
-import { computed, markRaw, watch } from "vue";
+import { computed, markRaw, onMounted, onUnmounted, watch } from "vue";
 import Tree from "@/shared/components/tree/Tree.vue";
 import { useTreeController } from "@/shared/components/tree/baseTreeController";
 import LoadingSpinner from "@/shared/components/LoadingSpinner.vue";
@@ -23,6 +23,7 @@ import {
 import { useRoute, useRouter } from "vue-router";
 import { useGlobalTypeStore } from "../store/globalTypeStore";
 import { useGlobalObjectStore } from "../store/globalObjectStore";
+import { applicationBus } from "@/bus/application";
 
 const router = useRouter();
 const route = useRoute();
@@ -184,8 +185,22 @@ const onTypeEditorClicked = () => {
   }
 };
 
-globalPageStore.refreshTreeStructure();
-globalTypeStore.refreshTreeStructure();
+const handleObjectUpdate = async (it: { id: string }) => {
+  if (it) {
+    globalPageStore.refreshTreeStructure();
+  }
+};
+
+onMounted(() => {
+  globalPageStore.refreshTreeStructure();
+  globalTypeStore.refreshTreeStructure();
+
+  applicationBus.on("object:update", handleObjectUpdate);
+});
+
+onUnmounted(() => {
+  applicationBus.off("object:update", handleObjectUpdate);
+});
 </script>
 
 <template>

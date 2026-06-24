@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import Tab from "@/core/components/Tab.vue";
 import { useGlobalTabsStore } from "@/core/store/browserTabsStore";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
@@ -7,12 +7,17 @@ import {
   isObjectPageMeta,
   isSystemPageMeta,
   isTypePageMeta,
+  type EpTypeId,
   type MetaId,
+  type PageMeta,
 } from "../types";
 import { useGlobalNavigation } from "../store/navigationStore";
+import { applicationBus } from "@/bus/application";
+import { useGlobalObjectStore } from "../store/globalObjectStore";
 
 const globalNavigationStore = useGlobalNavigation();
 const globalTabStore = useGlobalTabsStore();
+const globalObjectStore = useGlobalObjectStore();
 
 const activePageId = computed(() => {
   return globalTabStore.activeTab?.id;
@@ -70,6 +75,24 @@ watch(
     }
   },
 );
+
+const handleObjectUpdate = async (it: { id: string }) => {
+  if (it) {
+    const obj = await globalNavigationStore.updateMeta(it.id);
+    console.log(obj);
+    if (obj) {
+      globalTabStore.updateMeta(it.id, obj);
+    }
+  }
+};
+
+onMounted(() => {
+  applicationBus.on("object:update", handleObjectUpdate);
+});
+
+onUnmounted(() => {
+  applicationBus.off("object:update", handleObjectUpdate);
+});
 </script>
 
 <template>
@@ -79,7 +102,7 @@ watch(
     class="flex w-full h-full items-center mx-auto overflow-x-auto no-scrollbar"
   >
     <Tab
-      v-for="page in globalTabStore.openedTabs"
+      v-for="page in globalTabStore.openedTabs.values()"
       :id="page.id"
       :active="activePageId === page.id"
       @close="onClosePageClick"

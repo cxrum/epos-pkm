@@ -12,7 +12,6 @@ import User from "@/assets/icons/User.vue";
 import Settings from "@/assets/icons/Settings.vue";
 import LoadingBar from "@/shared/components/LoadingBar.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
-import router from "@/router";
 
 const workSpaceStore = useWorkspaceStore();
 

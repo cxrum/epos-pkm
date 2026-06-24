@@ -2,7 +2,12 @@ import { defineStore } from "pinia";
 import { ref } from "vue";
 import type { EpObjectId, ObjectPath, Path } from "@/core/types";
 import { globalObjectsService } from "@/core/di/global";
-import { isContainerEntity, type EpObjectEntity } from "@/core/domain/type";
+import {
+  isAnyContainer,
+  isContainerEntity,
+  type EpObjectEntity,
+} from "@/core/domain/type";
+import { applicationBus } from "@/bus/application";
 
 export const usePageEditorStore = defineStore("page", () => {
   const currentObject = ref<EpObjectEntity>();
@@ -19,6 +24,7 @@ export const usePageEditorStore = defineStore("page", () => {
     if (result && isContainerEntity(result)) {
       result.content.title = newTitle;
       await globalObjectsService.update(objId, result);
+      applicationBus.emit("object:update", { id: objId });
     }
     isObjectLoading.value = false;
     isOjectSaving.value = false;
@@ -45,8 +51,16 @@ export const usePageEditorStore = defineStore("page", () => {
     const result = await globalObjectsService.get(id);
     if (result) {
       currentObject.value = result;
-      console.log(result);
-      pagePath.value = await globalObjectsService.getObjectAncestors(result.id);
+      const _pagePath = await globalObjectsService.getObjectAncestors(
+        result.id,
+      );
+      if (isAnyContainer(result)) {
+        _pagePath.push({
+          id: result.id,
+          title: result.content.title,
+        });
+      }
+      pagePath.value = _pagePath;
     }
     isObjectLoading.value = false;
   };

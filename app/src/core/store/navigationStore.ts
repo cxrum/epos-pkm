@@ -26,13 +26,9 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     currentPath.value = els;
   }
 
-  const preloadPageMeta = async (
+  const pageToMeta = async (
     objId: EpObjectId,
   ): Promise<ObjectMeta | undefined> => {
-    if (cachedPageMeta.value.has(objId)) {
-      return cachedPageMeta.value.get(objId);
-    }
-
     const result = await globalObjectsService.get(objId);
 
     if (!result) {
@@ -56,13 +52,36 @@ export const useGlobalNavigation = defineStore("navigation", () => {
       kind: "page",
     } as ObjectMeta;
 
-    cachedPageMeta.value.set(objId, meta);
+    return meta;
+  };
+
+  const preloadPageMeta = async (
+    objId: EpObjectId,
+  ): Promise<ObjectMeta | undefined> => {
+    if (cachedPageMeta.value.has(objId)) {
+      return cachedPageMeta.value.get(objId);
+    }
+
+    const meta = await pageToMeta(objId);
+    if (meta) {
+      cachedPageMeta.value.set(objId, meta);
+    }
 
     return meta;
   };
 
   const getMetaInfo = (pageId: EpObjectId): ObjectMeta | undefined => {
     return cachedPageMeta.value.get(pageId);
+  };
+
+  const updateMeta = async (
+    pageId: EpObjectId,
+  ): Promise<ObjectMeta | undefined> => {
+    const meta = await pageToMeta(pageId);
+    if (meta) {
+      cachedPageMeta.value.set(pageId, meta);
+    }
+    return meta;
   };
 
   const openSystemPage = (page: SystemPageId) => {
@@ -117,6 +136,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     activePage: active,
     currentPath,
 
+    updateMeta,
     setCurrentPath,
     clearCurrentPath,
     clearPageSelection,

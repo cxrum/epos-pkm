@@ -4,6 +4,7 @@ import { globalObjectsService, globalTypingService } from "../di/global";
 import { ref, type Ref } from "vue";
 import { isAnyContainer, isContainerEntity } from "../domain/type";
 import type { TreeNode } from "@/shared/components/tree/contract";
+import { applicationBus } from "@/bus/application";
 
 export interface ObjectMetaInfo {
   icon?: Icon;
@@ -48,6 +49,7 @@ export const useGlobalObjectStore = defineStore("objects", () => {
     if (result && isContainerEntity(result)) {
       result.content.title = newTitle;
       await globalObjectsService.update(objId, result);
+      applicationBus.emit("object:update", { id: objId });
     }
     isOjectSaving.value = false;
   };

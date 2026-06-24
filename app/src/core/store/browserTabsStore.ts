@@ -1,9 +1,9 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { ref } from "vue";
-import type { MetaId, PageMeta } from "../types";
+import type { EpObjectId, MetaId, PageMeta } from "../types";
 
 export const useGlobalTabsStore = defineStore("tabs", () => {
-  const openedTabs = ref<PageMeta[]>([]);
+  const openedTabs = ref<Map<EpObjectId, PageMeta>>(new Map());
   const activeTab = ref<PageMeta>();
 
   const clearSelection = () => {
@@ -11,37 +11,38 @@ export const useGlobalTabsStore = defineStore("tabs", () => {
   };
 
   const closeTab = (id: MetaId) => {
-    const index = openedTabs.value.findIndex((tab) => tab.id === id);
-    if (index !== -1) {
-      openedTabs.value.splice(index, 1);
-    }
-
+    openedTabs.value.delete(id);
     if (id === activeTab.value?.id) {
       clearSelection();
     }
   };
 
   const openTab = (id: MetaId): boolean => {
-    const foundTab = openedTabs.value.find((tab) => tab.id === id);
-    if (foundTab) {
-      activeTab.value = foundTab;
+    if (openedTabs.value.has(id)) {
+      activeTab.value = openedTabs.value.get(id);
       return true;
     }
     return false;
   };
 
   const createTab = (tab: PageMeta) => {
-    const exists = openedTabs.value.some(
-      (existingTab) => existingTab.id === tab.id,
-    );
-    if (!exists) {
-      openedTabs.value.push(tab);
+    if (!openedTabs.value.has(tab.id)) {
+      openedTabs.value.set(tab.id, tab);
+    }
+  };
+
+  const updateMeta = (id: string, tab: PageMeta) => {
+    openedTabs.value.set(id, tab);
+    if (activeTab.value?.id === id) {
+      activeTab.value = tab;
     }
   };
 
   return {
     openedTabs,
     activeTab,
+
+    updateMeta,
     clearSelection,
     createTab,
     openTab,
