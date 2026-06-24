@@ -8,6 +8,10 @@ export function setupAppState(stateService: RawAppStateService) {
     return stateService.selectWorkspace(id);
   });
 
+  ipcMain.handle("app-state:getLocalWorkspace", (_, id: string) => {
+    return stateService.getLocalWorkspace(id);
+  });
+
   ipcMain.handle("app-state:hotReload", () => stateService.hotReload());
   ipcMain.handle("app-state:selectedWorkspace", () =>
     stateService.getSelectedWorkspace(),

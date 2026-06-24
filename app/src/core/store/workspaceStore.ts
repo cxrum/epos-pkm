@@ -1,7 +1,7 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { ref } from "vue";
 import { appStateRepository, bootstrapWorkspaceServices } from "../di/global";
-import type { Workspace } from "../../../appState";
+import type { WorkspaceConf } from "../../../appState";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
   const isSidebarOpen = ref<boolean>(true);
@@ -10,7 +10,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   const isLoading = ref<boolean>(false);
 
   const isInitialized = ref<boolean>(false);
-  const selectedWorkspace = ref<Workspace | undefined>();
+  const selectedWorkspace = ref<WorkspaceConf | undefined>();
 
   async function loadAppState() {
     await appStateRepository.hotReload();

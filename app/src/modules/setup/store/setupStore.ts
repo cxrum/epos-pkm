@@ -1,7 +1,13 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { Workspace } from "../../../../appState";
-import { appStateRepository, workspaceStateRepository } from "@/core/di/global";
+import type { WorkspaceEntry } from "../../../../appState";
+import { appStateRepository } from "@/core/di/global";
+
+interface Workspace {
+  id: string;
+  title: string;
+  absolutePath: string;
+}
 
 export const useSetupStore = defineStore("setup", () => {
   const workspaces = ref<Workspace[]>([]);
@@ -10,7 +16,21 @@ export const useSetupStore = defineStore("setup", () => {
 
   const loadWorkspaces = async () => {
     isLoading.value = true;
-    workspaces.value = await appStateRepository.getWorkspaces();
+    const _w = await appStateRepository.getWorkspaces();
+    const _res: Workspace[] = [];
+
+    for (const it of _w) {
+      const local = await appStateRepository.getLocalWorkspace(it.id);
+      if (local) {
+        _res.push({
+          id: local.id,
+          title: local.title,
+          absolutePath: it.absolutePath,
+        });
+      }
+    }
+
+    workspaces.value = _res;
     isLoading.value = false;
   };
 

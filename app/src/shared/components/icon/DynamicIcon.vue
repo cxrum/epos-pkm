@@ -15,6 +15,9 @@ const iconMap: Record<string, Component> = {
   object: defineAsyncComponent(() => import("@/assets/icons/TypeIcon.vue")),
   table: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
   error: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
+  typeDictionary: defineAsyncComponent(
+    () => import("@/assets/icons/TypeDictionary.vue"),
+  ),
 };
 
 const hasLinkLoadError = ref(false);

@@ -101,7 +101,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     active.value = {
       id: type.id,
       title: type.title,
-      icon: type.icon,
+      icon: type.icon ?? { type: "default", name: "object" },
       kind: "type",
     };
   };

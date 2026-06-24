@@ -1,9 +1,9 @@
-import type { Workspace } from "../../../appState";
+import type { WorkspaceConf } from "../../../appState";
 
-export interface Tab {
+export interface SavedTab {
   id: string;
 }
 
 export type WorkspaceLocalConfigEntity = {
-  savedTabs: Tab[];
-} & Workspace;
+  savedTabs: SavedTab[];
+} & WorkspaceConf;

@@ -22,6 +22,8 @@ const fileSystemApi: FileSystemApi = {
 };
 
 const appStateApi: AppStateApi = {
+  getLocalWorkspace: (id: string) =>
+    ipcRenderer.invoke("app-state:getLocalWorkspace", id),
   getWorkspaces: () => ipcRenderer.invoke("app-state:getWorkspaces"),
   selectWorkspace: (id: string) =>
     ipcRenderer.invoke("app-state:selectWorkspace", id),

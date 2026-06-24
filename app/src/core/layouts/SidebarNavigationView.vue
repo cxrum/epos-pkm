@@ -118,6 +118,7 @@ watch(
             id: pageMeta.id,
           },
         });
+
         typeTreeController.selectNode(pageMeta.id);
         objectTreeController.clearSelection();
       }
@@ -179,7 +180,7 @@ const treeHierarchyMenu: MenuGroup[] = [
   },
 ];
 
-const onTypeEditorClicked = () => {
+const onTypeGraphClick = () => {
   if (route.name !== "type-graph") {
     globalNavigationStore.openSystemPage("type-graph");
   }
@@ -218,9 +219,9 @@ onUnmounted(() => {
       class="w-full"
       :is-content-visible="isSidebarOpen"
       :icon="TypeDictionary"
-      @click="onTypeEditorClicked"
+      @click="onTypeGraphClick"
     >
-      Type
+      Type Graph
     </BaseButton>
     <BaseButton
       class="w-full"

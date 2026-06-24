@@ -1,20 +1,26 @@
-export interface Workspace {
+export interface WorkspaceConf {
   id: string;
   title: string;
+}
+
+export interface WorkspaceEntry {
+  id: string;
   absolutePath: string;
 }
 
 export interface AppConfig {
-  workspaces: Workspace[];
   selectedWorkspace: string;
 }
 
 export interface AppStateApi {
-  getWorkspaces(): Promise<Workspace[]>;
-  selectWorkspace(id: string): Promise<Workspace>;
+  getWorkspaces(): Promise<WorkspaceEntry[]>;
   hotReload(): Promise<AppConfig>;
-  getSelectedWorkspace(): Promise<Workspace>;
-
-  createWorkspace(title: string, _path: string): Promise<Workspace | undefined>;
-  loadWorkspace(_path: string): Promise<Workspace>;
+  selectWorkspace(id: string): Promise<WorkspaceConf>;
+  getSelectedWorkspace(): Promise<WorkspaceConf | undefined>;
+  createWorkspace(
+    title: string,
+    _path: string,
+  ): Promise<WorkspaceConf | undefined>;
+  loadWorkspace(_path: string): Promise<WorkspaceConf>;
+  getLocalWorkspace(id: string): Promise<WorkspaceConf | undefined>;
 }

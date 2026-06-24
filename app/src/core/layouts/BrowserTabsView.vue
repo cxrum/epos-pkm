@@ -7,17 +7,13 @@ import {
   isObjectPageMeta,
   isSystemPageMeta,
   isTypePageMeta,
-  type EpTypeId,
   type MetaId,
-  type PageMeta,
 } from "../types";
 import { useGlobalNavigation } from "../store/navigationStore";
 import { applicationBus } from "@/bus/application";
-import { useGlobalObjectStore } from "../store/globalObjectStore";
 
 const globalNavigationStore = useGlobalNavigation();
 const globalTabStore = useGlobalTabsStore();
-const globalObjectStore = useGlobalObjectStore();
 
 const activePageId = computed(() => {
   return globalTabStore.activeTab?.id;
@@ -114,7 +110,6 @@ onUnmounted(() => {
           class="w-5 h-5 shrink-0 text-(--icon-color)"
         />
       </template>
-
       {{ page.title }}
     </Tab>
   </div>

@@ -42,7 +42,7 @@ export class TypingService implements TypingServiceContract {
       const type = await this.typingRepository.get(rawRoot.id);
       const newNode: TreeNode = {
         id: rawRoot.id,
-        icon: type?.icon,
+        icon: type?.icon ?? { type: "default", name: "object" },
         title: type?.title ?? "Unknown",
         children: [],
       };

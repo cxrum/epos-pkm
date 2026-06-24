@@ -27,8 +27,13 @@ export interface TypeIcon extends BaseDefaultIcon {
   name: "type";
 }
 
+export interface TypeDictionary extends BaseDefaultIcon {
+  name: "typeDictionary";
+}
+
 export type DefaultIcon =
   | TableIcon
+  | TypeDictionary
   | PageIcon
   | ObjectIcon
   | ErrorIcon

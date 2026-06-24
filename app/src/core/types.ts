@@ -90,8 +90,8 @@ export const TypeEditorPageMeta: SystemPageMeta = {
   id: "type-graph",
   title: "Type Graph",
   icon: {
-    type: "emoji",
-    emoji: "T",
+    type: "default",
+    name: "typeDictionary",
   },
   kind: "system",
 };

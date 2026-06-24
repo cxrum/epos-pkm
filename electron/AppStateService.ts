@@ -2,30 +2,38 @@ import { app } from "electron";
 import * as path from "path";
 import * as fs from "fs/promises";
 import { existsSync } from "fs";
-import { AppConfig, Workspace } from "../app/appState";
+import {
+  AppConfig,
+  AppStateApi,
+  WorkspaceConf,
+  WorkspaceEntry,
+} from "../app/appState";
 import { randomUUID } from "crypto";
 
-export interface RawWorkspace {
+interface Workspace {
   id: string;
   absolutePath: string;
-}
-
-export interface WorkspaceLocalConfig {
   title: string;
 }
 
-export interface RawAppConfig {
-  workspaces: RawWorkspace[];
+interface RawAppConfig {
+  workspaces: WorkspaceEntry[];
   selectedWorkspace: string;
 }
 
-export class RawAppStateService {
+export class RawAppStateService implements AppStateApi {
   private configPath: string;
   private config: RawAppConfig | null = null;
 
   constructor() {
     this.configPath = path.join(app.getPath("userData"), "config.json");
     console.log(this.configPath);
+  }
+
+  private mapConfig(raw: RawAppConfig): AppConfig {
+    return {
+      selectedWorkspace: raw.selectedWorkspace,
+    };
   }
 
   private async loadConfig(): Promise<RawAppConfig> {
@@ -66,21 +74,29 @@ export class RawAppStateService {
     }
   }
 
+  async hotReload(): Promise<AppConfig> {
+    if (this.config) {
+      return this.mapConfig(this.config);
+    }
+    const conf = await this.loadConfig();
+    return this.mapConfig(conf);
+  }
+
   private async readLocalConfig(
     absolutePath: string,
-  ): Promise<WorkspaceLocalConfig | null> {
+  ): Promise<WorkspaceConf | null> {
     try {
       const workspaceConfigPath = path.join(absolutePath, ".workspace");
       const rawData = await fs.readFile(workspaceConfigPath, "utf-8");
-      return JSON.parse(rawData) as WorkspaceLocalConfig;
+      return JSON.parse(rawData) as WorkspaceConf;
     } catch {
       return null;
     }
   }
 
-  private async saveWorkspaceLocalConfig(
+  private async saveWorkspaceConf(
     absolutePath: string,
-    localConfig: WorkspaceLocalConfig,
+    localConfig: WorkspaceConf,
   ): Promise<void> {
     const workspaceConfigPath = path.join(absolutePath, ".workspace");
 
@@ -102,13 +118,35 @@ export class RawAppStateService {
     }
   }
 
+  private mapWorkspaceToLocal(w: Workspace): WorkspaceConf {
+    return {
+      id: w.id,
+      title: w.title,
+    };
+  }
+
+  private mapWorkspaceToLocalMap(w: Workspace[]): WorkspaceConf[] {
+    return w.map((it) => this.mapWorkspaceToLocal(it));
+  }
+
+  private mapWorkspaceToGlobal(w: Workspace): WorkspaceEntry {
+    return {
+      id: w.id,
+      absolutePath: w.absolutePath,
+    };
+  }
+
+  private mapWorkspaceToGlobalMap(w: Workspace[]): WorkspaceEntry[] {
+    return w.map((it) => this.mapWorkspaceToGlobal(it));
+  }
+
   private async syncWorkspaces(): Promise<Workspace[]> {
     if (!this.config) {
       this.config = await this.loadConfig();
     }
 
     const validWorkspaces: Workspace[] = [];
-    const rawWorkspaces: RawWorkspace[] = [];
+    const WorkspaceEntrys: WorkspaceEntry[] = [];
     let configChanged = false;
 
     for (const raw of this.config.workspaces) {
@@ -119,8 +157,8 @@ export class RawAppStateService {
           id: raw.id,
           absolutePath: raw.absolutePath,
           title: localConfig.title,
-        } as Workspace);
-        rawWorkspaces.push(raw);
+        });
+        WorkspaceEntrys.push(raw);
       } else {
         configChanged = true;
         if (this.config.selectedWorkspace === raw.id) {
@@ -130,18 +168,30 @@ export class RawAppStateService {
     }
 
     if (configChanged) {
-      this.config.workspaces = rawWorkspaces;
+      this.config.workspaces = WorkspaceEntrys;
       await this.saveConfig(this.config);
     }
 
     return validWorkspaces;
   }
 
-  public async getWorkspaces(): Promise<Workspace[]> {
-    return await this.syncWorkspaces();
+  public async getWorkspaces(): Promise<WorkspaceEntry[]> {
+    const res = await this.syncWorkspaces();
+    return this.mapWorkspaceToGlobalMap(res);
   }
 
-  public async selectWorkspace(id: string): Promise<Workspace> {
+  public async getLocalWorkspace(
+    id: string,
+  ): Promise<WorkspaceConf | undefined> {
+    const res = (await this.syncWorkspaces()).find((it) => it.id === id);
+    if (!res) {
+      return undefined;
+    }
+
+    return this.mapWorkspaceToLocal(res);
+  }
+
+  public async selectWorkspace(id: string): Promise<WorkspaceConf> {
     const validWorkspaces = await this.syncWorkspaces();
     const workspace = validWorkspaces.find((w) => w.id === id);
 
@@ -152,25 +202,18 @@ export class RawAppStateService {
     this.config!.selectedWorkspace = id;
     await this.saveConfig(this.config!);
 
-    return workspace;
+    return this.mapWorkspaceToLocal(workspace);
   }
 
-  public async getSelectedWorkspace(): Promise<Workspace | undefined> {
+  public async getSelectedWorkspace(): Promise<WorkspaceConf | undefined> {
     const validWorkspaces = await this.syncWorkspaces();
-
-    return validWorkspaces.find(
+    const res = validWorkspaces.find(
       (it) => it.id === this.config!.selectedWorkspace,
     );
-  }
-
-  public async hotReload(): Promise<AppConfig> {
-    this.config = await this.loadConfig();
-    const validWorkspaces = await this.syncWorkspaces();
-
-    return {
-      selectedWorkspace: this.config!.selectedWorkspace,
-      workspaces: validWorkspaces,
-    };
+    if (!res) {
+      return undefined;
+    }
+    return this.mapWorkspaceToLocal(res);
   }
 
   public getSelectedWorkspacePath(): string | undefined {
@@ -185,7 +228,7 @@ export class RawAppStateService {
     return workspace?.absolutePath;
   }
 
-  public async loadWorkspace(absolutePath: string): Promise<Workspace> {
+  public async loadWorkspace(absolutePath: string): Promise<WorkspaceConf> {
     const localConfig = await this.readLocalConfig(absolutePath);
 
     if (!localConfig) {
@@ -196,58 +239,54 @@ export class RawAppStateService {
       this.config = await this.loadConfig();
     }
 
-    let rawWorkspace = this.config.workspaces.find(
+    let WorkspaceEntry = this.config.workspaces.find(
       (w) => w.absolutePath === absolutePath,
     );
 
-    if (!rawWorkspace) {
-      rawWorkspace = {
+    if (!WorkspaceEntry) {
+      WorkspaceEntry = {
         id: randomUUID(),
         absolutePath: absolutePath,
       };
-      this.config.workspaces.push(rawWorkspace);
+      this.config.workspaces.push(WorkspaceEntry);
     }
 
     await this.saveConfig(this.config);
 
     return {
-      id: rawWorkspace.id,
-      absolutePath: rawWorkspace.absolutePath,
+      id: WorkspaceEntry.id,
       title: localConfig.title,
-    } as Workspace;
+    };
   }
 
   public async createWorkspace(
     title: string,
     absolutePath: string,
-  ): Promise<Workspace> {
+  ): Promise<WorkspaceConf> {
     if (!this.config) {
       this.config = await this.loadConfig();
     }
 
-    const newWorkspace: RawWorkspace = {
+    const newWorkspace: WorkspaceEntry = {
       id: randomUUID(),
       absolutePath: absolutePath,
     };
 
-    const localConfig: WorkspaceLocalConfig = {
+    const localConfig: WorkspaceConf = {
       title: title,
+      id: newWorkspace.id,
     };
 
     try {
-      await this.saveWorkspaceLocalConfig(
-        newWorkspace.absolutePath,
-        localConfig,
-      );
+      await this.saveWorkspaceConf(newWorkspace.absolutePath, localConfig);
 
       this.config.workspaces.push(newWorkspace);
       await this.saveConfig(this.config);
 
       return {
         id: newWorkspace.id,
-        absolutePath: newWorkspace.absolutePath,
         title: localConfig.title,
-      } as Workspace;
+      } as WorkspaceConf;
     } catch (error) {
       throw new Error("Failed to create workspace");
     }
