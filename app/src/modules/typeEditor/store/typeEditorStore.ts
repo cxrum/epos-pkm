@@ -9,11 +9,6 @@ import type {
 import { isSystemProperty, type EpTypeEntity } from "@/core/domain/type";
 import { globalTypingService } from "@/core/di/global";
 
-export interface TypeTreeNodes {
-  id: string;
-  label: string;
-}
-
 export interface TypeTreeEdges {
   id: string;
   sourceId: string;
@@ -34,6 +29,12 @@ export interface Ancestor {
   id: string;
   title: string;
   icon?: Icon;
+}
+
+export interface TypeTreeNodes {
+  id: string;
+  label: string;
+  properties: PropertyEntry[];
 }
 
 export const useTypeEditorStore = defineStore("types", () => {
@@ -149,9 +150,29 @@ export const useTypeEditorStore = defineStore("types", () => {
     const resEdges: TypeTreeEdges[] = [];
 
     for (const node of nodes) {
+      const resPropertyScheme: PropertyEntry[] = [];
+      const rawScheme = await globalTypingService.getFullPropsScheme(node.id);
+
+      if (rawScheme) {
+        for (const propId of rawScheme.order) {
+          const prop = rawScheme.props[propId];
+          if (prop) {
+            resPropertyScheme.push({
+              id: prop.id,
+              title: prop.title,
+              type: prop.type,
+              icon: resolveIcon(prop.type),
+              isChangeable: prop.isChangeable,
+              isSystem: isSystemProperty(prop),
+            });
+          }
+        }
+      }
+
       resNodes.push({
         id: node.id,
         label: node.title,
+        properties: resPropertyScheme,
       });
     }
 

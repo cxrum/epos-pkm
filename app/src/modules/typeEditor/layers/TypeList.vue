@@ -7,143 +7,292 @@
       ref="svgRef"
       v-if="!typeEditorStore.isTypeLoading"
     >
-      <g v-for="link in graphLinks" :key="link.id">
+      <g ref="containerRef">
         <path
-          :id="'path-' + link.id"
-          :d="linkPath(link)"
-          stroke="#999"
+          v-for="edge in graphEdges"
+          :key="edge.id"
+          :d="generatePath(edge)"
+          stroke="var(--hover)"
           stroke-width="2"
           fill="none"
         />
-        <text font-size="14" font-family="sans-serif" dy="-5">
-          <textPath
-            :href="'#path-' + link.id"
-            startOffset="50%"
-            text-anchor="middle"
-          >
-            {{ link.label }}
-          </textPath>
-        </text>
-      </g>
 
-      <g v-for="node in graphNodes" :key="node.id" class="node">
-        <circle :cx="node.x" :cy="node.y" r="25" fill="#42b883" />
-        <text
-          :x="node.x"
-          :y="node.y"
-          text-anchor="middle"
-          dy="5"
-          fill="white"
-          font-family="sans-serif"
-          font-weight="bold"
-          pointer-events="none"
+        <g
+          v-for="node in graphNodes"
+          :key="node.id"
+          :transform="`translate(${node.x}, ${node.y})`"
+          class="node"
         >
-          {{ node.label }}
-        </text>
+          <rect
+            :width="node.width"
+            :height="node.height"
+            fill="var(--bg-class)"
+            stroke="var(--border)"
+            stroke-width="2"
+            rx="4"
+          />
+          <rect
+            :width="node.width"
+            :height="node.header.height"
+            fill="var(--bg-class-label)"
+            rx="4"
+          />
+          <text
+            :x="node.header.label.x"
+            :y="node.header.label.y"
+            font-family="fixel"
+            font-weight="semi-bold"
+            font-size="18"
+            fill="var(--class-label)"
+          >
+            {{ node.label }}
+          </text>
+          <g
+            v-for="(it, index) in node.content.items"
+            :key="index"
+            :transform="`translate(${0}, ${node.header.height + node.content.height * index})`"
+          >
+            <text
+              font-family="fixel"
+              font-weight="semi-bold"
+              font-size="18"
+              :x="it.label.x"
+              :y="it.label.y"
+              fill="var(--property-label)"
+            >
+              {{ it.prop.title }}
+            </text>
+            <text
+              font-family="fixel"
+              font-weight="semi-bold"
+              font-size="18"
+              :x="it.type.x + it.type.width"
+              :y="it.type.y"
+              fill="var(--property-type-label)"
+              text-anchor="end"
+            >
+              {{ it.prop.type }}
+            </text>
+          </g>
+        </g>
       </g>
     </svg>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, watch } from "vue";
 import * as d3 from "d3";
-import { useTypeEditorStore } from "../store/typeEditorStore";
+import {
+  useTypeEditorStore,
+  type PropertyEntry,
+  type TypeTreeNodes,
+} from "../store/typeEditorStore";
+import ELK from "elkjs/lib/elk.bundled.js";
 
 const typeEditorStore = useTypeEditorStore();
 const svgRef = ref<SVGSVGElement | null>(null);
+const containerRef = ref<SVGGElement | null>(null);
 
-const graphNodes = ref<any[]>([]);
-const graphLinks = ref<any[]>([]);
+interface Node {
+  id: string;
+  width: number;
+  height: number;
+  label: string;
 
-let simulation: d3.Simulation<d3.SimulationNodeDatum, undefined> | null = null;
-
-const syncGraphData = () => {
-  const currentNodesMap = new Map(graphNodes.value.map((n) => [n.id, n]));
-
-  graphNodes.value = typeEditorStore.typeTreeNodes.map((storeNode) => {
-    const existingNode = currentNodesMap.get(storeNode.id);
-
-    return {
-      id: storeNode.id,
-      label: storeNode.label,
-      x: existingNode?.x ?? 500,
-      y: existingNode?.y ?? 500,
-      vx: existingNode?.vx ?? 0,
-      vy: existingNode?.vy ?? 0,
-      fx: existingNode?.fx,
-      fy: existingNode?.fy,
+  header: {
+    height: number;
+    label: {
+      width: number;
+      x: number;
+      y: number;
     };
-  });
+  };
+  content: {
+    height: number;
+    items: {
+      prop: PropertyEntry;
+      label: { x: number; y: number; width: number };
+      type: { x: number; y: number; width: number };
+    }[];
+  };
+  x?: number;
+  y?: number;
+}
 
-  graphLinks.value = typeEditorStore.typeTreeEdges.map((storeEdge) => ({
-    id: storeEdge.id,
-    source: storeEdge.sourceId,
-    target: storeEdge.target,
-    label: storeEdge.label,
-  }));
+interface Edge {
+  id: string;
+  sources: string[];
+  targets: string[];
+}
 
-  updateSimulation();
+const measureTextWidth = (text: string, font: string): number => {
+  const canvas = document.createElement("canvas");
+  const context = canvas.getContext("2d");
+  if (!context) return 0;
+  context.font = font;
+  return context.measureText(text).width;
 };
 
-const updateSimulation = () => {
-  if (!simulation) return;
+const elk = new ELK();
 
-  simulation.nodes(graphNodes.value);
+const graphNodes = ref<Node[]>([]);
+const graphEdges = ref<Edge[]>([]);
 
-  const linkForce = simulation.force<d3.ForceLink<any, any>>("link");
-  if (linkForce) {
-    linkForce.links(graphLinks.value);
+const generatePath = (edge: any) => {
+  if (!edge.sections || edge.sections.length === 0) return "";
+
+  const section = edge.sections[0];
+  let d = `M ${section.startPoint.x} ${section.startPoint.y}`;
+
+  if (section.bendPoints) {
+    section.bendPoints.forEach((pt: any) => {
+      d += ` L ${pt.x} ${pt.y}`;
+    });
   }
 
-  simulation.alpha(1).restart();
+  d += ` L ${section.endPoint.x} ${section.endPoint.y}`;
+  return d;
+};
+
+const calculateTableDimensions = (node: TypeTreeNodes) => {
+  const paddingX = 28;
+  const headerHeight = 32;
+  const rowHeight = 22;
+  const paddingYBottom = 8;
+  const fontSize = 16;
+  const minSpaceBetweenLabelType = 64;
+  const minWidth = 128;
+
+  let titleWidth = measureTextWidth(node.label, `bold ${fontSize}px fixel`);
+
+  let resultWidth = Math.max(titleWidth + paddingX, minWidth + paddingX);
+
+  for (let i = 0; i < node.properties.length; i++) {
+    const prop = node.properties[i];
+    let labelWidth = measureTextWidth(prop.title, `${fontSize}px fixel`);
+    let typeWidth = measureTextWidth(prop.type, `${fontSize}px fixel`);
+    let rowRequiredWidth =
+      labelWidth + typeWidth + minSpaceBetweenLabelType + paddingX;
+
+    if (rowRequiredWidth > resultWidth) {
+      resultWidth = rowRequiredWidth;
+    }
+  }
+
+  const content = [];
+
+  for (let i = 0; i < node.properties.length; i++) {
+    const prop = node.properties[i];
+    let labelWidth = measureTextWidth(prop.title, `${fontSize}px fixel`);
+    let typeWidth = measureTextWidth(prop.type, `${fontSize}px fixel`);
+
+    content.push({
+      prop: prop,
+      label: {
+        x: Math.ceil(paddingX / 2),
+        y: Math.ceil(rowHeight / 2 + fontSize / 2),
+        width: labelWidth,
+      },
+      type: {
+        x: Math.ceil(resultWidth - typeWidth - paddingX / 2),
+        y: Math.ceil(rowHeight / 2 + fontSize / 2),
+        width: typeWidth,
+      },
+    });
+  }
+
+  const resYPaddingBottom = node.properties.length > 0 ? paddingYBottom : 0;
+
+  return {
+    width: resultWidth,
+    height:
+      headerHeight + node.properties.length * rowHeight + resYPaddingBottom,
+    header: {
+      height: headerHeight,
+      label: {
+        width: titleWidth,
+        x: Math.ceil((resultWidth - titleWidth) / 2),
+        y: Math.ceil(headerHeight / 2 + fontSize / 3),
+      },
+    },
+    content: {
+      height: rowHeight,
+      x: Math.ceil(paddingX / 2),
+      y: Math.ceil(rowHeight / 2 + fontSize / 3),
+      items: content,
+    },
+  };
+};
+
+const calculateLayout = async () => {
+  if (!typeEditorStore.typeTreeNodes.length) return;
+
+  const children = (): Node[] => {
+    return typeEditorStore.typeTreeNodes.map((it): Node => {
+      const dimension = calculateTableDimensions(it);
+
+      return {
+        id: it.id,
+        label: it.label,
+        width: dimension.width,
+        height: dimension.height,
+        header: dimension.header,
+        content: dimension.content,
+      };
+    });
+  };
+
+  const currentGraph = {
+    id: "root",
+    layoutOptions: {
+      "elk.algorithm": "layered",
+      "elk.direction": "DOWN",
+      "elk.edgeRouting": "ORTHOGONAL",
+      "elk.spacing.nodeNode": "60",
+    },
+    children: children(),
+    edges: typeEditorStore.typeTreeEdges.map((it) => ({
+      id: it.id,
+      sources: [it.sourceId],
+      targets: [it.target],
+    })),
+  };
+
+  try {
+    const layoutedGraph = await elk.layout(currentGraph);
+    graphNodes.value = (layoutedGraph.children as Node[]) || [];
+    graphEdges.value = (layoutedGraph.edges as Edge[]) || [];
+
+    setTimeout(initZoom, 0);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+const initZoom = () => {
+  if (!svgRef.value || !containerRef.value) return;
+
+  const zoom = d3
+    .zoom<SVGSVGElement, unknown>()
+    .scaleExtent([0.1, 4])
+    .on("zoom", (event) => {
+      d3.select(containerRef.value!).attr("transform", event.transform);
+    });
+
+  d3.select(svgRef.value).call(zoom);
 };
 
 watch(
   () => [typeEditorStore.typeTreeNodes, typeEditorStore.typeTreeEdges],
   () => {
-    syncGraphData();
+    calculateLayout();
   },
   { deep: true },
 );
 
-const linkPath = (link: any) => {
-  const source =
-    typeof link.source === "object"
-      ? link.source
-      : graphNodes.value.find((n) => n.id === link.source);
-  const target =
-    typeof link.target === "object"
-      ? link.target
-      : graphNodes.value.find((n) => n.id === link.target);
-
-  if (!source || !target || source.x === undefined || target.x === undefined)
-    return "";
-
-  return `M${source.x},${source.y} L${target.x},${target.y}`;
-};
-
 onMounted(() => {
   typeEditorStore.loadTree();
-  syncGraphData();
-
-  simulation = d3
-    .forceSimulation(graphNodes.value)
-    .force(
-      "link",
-      d3
-        .forceLink(graphLinks.value)
-        .id((d: any) => d.id)
-        .distance(150),
-    )
-    .force("charge", d3.forceManyBody().strength(-200))
-    .force("center", d3.forceCenter(500, 500));
-});
-
-onUnmounted(() => {
-  if (simulation) {
-    simulation.stop();
-  }
 });
 </script>
 
@@ -156,9 +305,11 @@ onUnmounted(() => {
   overflow: hidden;
   width: 100%;
   height: 100%;
-}
 
-.node {
-  cursor: pointer;
+  --bg-class: transparent;
+  --bg-class-label: var(--bg-bottom-layer-contrast);
+  --class-label: var(--text-default-color);
+  --property-label: var(--text-default-color);
+  --property-type-label: var(--text-secondary-color);
 }
 </style>

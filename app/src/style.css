@@ -66,8 +66,8 @@
     var(--bg-bottom-layer)
   );
 
-  --surface-layer: var(--bg-mid-layer);
-  --surface-contrast-layer: var(--bg-mid-layer-contrast);
+  --surface-layer: var(--bg-background-layer);
+  --surface-contrast-layer: var(--bg-background-layer-contrast);
 
   --fixel: fixel;
   --heading: fixel;
@@ -76,7 +76,7 @@
   font: 16px var(--fixel);
   color-scheme: light dark;
   color: var(--text);
-  background: var(--bg-mid-layer);
+  background: var(--surface-layer);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
