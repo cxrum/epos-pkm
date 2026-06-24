@@ -1,8 +1,9 @@
 <template>
   <div class="graph-container">
     <svg
-      width="auto"
-      height="auto"
+      viewBox="0 0 1000 1000"
+      width="100%"
+      height="100%"
       ref="svgRef"
       v-if="!typeEditorStore.isTypeLoading"
     >
@@ -26,6 +27,7 @@
       </g>
 
       <g v-for="node in graphNodes" :key="node.id" class="node">
+        <circle :cx="node.x" :cy="node.y" r="25" fill="#42b883" />
         <text
           :x="node.x"
           :y="node.y"
@@ -65,8 +67,8 @@ const syncGraphData = () => {
     return {
       id: storeNode.id,
       label: storeNode.label,
-      x: existingNode?.x ?? 400,
-      y: existingNode?.y ?? 300,
+      x: existingNode?.x ?? 500,
+      y: existingNode?.y ?? 500,
       vx: existingNode?.vx ?? 0,
       vy: existingNode?.vy ?? 0,
       fx: existingNode?.fx,

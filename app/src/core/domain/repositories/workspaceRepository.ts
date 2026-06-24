@@ -1,7 +1,13 @@
-import type { WorkspaceLocalConfigEntity } from "../workspace";
+import type {
+  SavedTab,
+  WorkspaceLocalConfigEntity,
+  WorkspaceLocalState,
+} from "../workspace";
 
 export interface WorkspaceRepositoryContract {
   init(): Promise<void>;
   load(): Promise<WorkspaceLocalConfigEntity>;
-  save(data: WorkspaceLocalConfigEntity): Promise<void>;
+  saveState(data: WorkspaceLocalState): Promise<void>;
+  saveTabs(data: SavedTab[]): Promise<void>;
+  saveLastActiveTab(data: SavedTab): Promise<void>;
 }

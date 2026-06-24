@@ -2,7 +2,7 @@
 import SidebarNavigationView from "@/core/layouts/SidebarNavigationView.vue";
 import BrowserTabsView from "@/core/layouts/BrowserTabsView.vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore";
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import { onClickOutside, transition } from "@vueuse/core";
 import SidebarState from "@/assets/icons/SidebarState.vue";

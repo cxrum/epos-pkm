@@ -1,10 +1,16 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
 import { ref } from "vue";
-import { appStateRepository, bootstrapWorkspaceServices } from "../di/global";
+import {
+  appStateRepository,
+  bootstrapWorkspaceServices,
+  workspaceStateRepository,
+} from "../di/global";
 import type { WorkspaceConf } from "../../../appState";
+import type { SavedTab, WorkspaceLocalState } from "../domain/workspace";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
   const isSidebarOpen = ref<boolean>(true);
+
   const isTypeEditorOpen = ref<boolean>(false);
   const isOmniSearchOpen = ref<boolean>(false);
   const isLoading = ref<boolean>(false);
@@ -16,6 +22,22 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     await appStateRepository.hotReload();
     selectedWorkspace.value = await appStateRepository.getSelectedWorkspace();
     isInitialized.value = false;
+  }
+
+  async function saveWorkspaceState(state: WorkspaceLocalState) {
+    await workspaceStateRepository.saveState(state);
+  }
+
+  async function saveLastActiveTab(tab: SavedTab) {
+    await workspaceStateRepository.saveLastActiveTab(tab);
+  }
+
+  async function saveTabs(tabs: SavedTab[]) {
+    await workspaceStateRepository.saveTabs(tabs);
+  }
+
+  async function state(): Promise<WorkspaceLocalState> {
+    return (await workspaceStateRepository.get()).state;
   }
 
   async function init() {
@@ -52,6 +74,10 @@ export const useWorkspaceStore = defineStore("workspace", () => {
     isInitialized,
 
     init,
+    state,
+    saveWorkspaceState,
+    saveLastActiveTab,
+    saveTabs,
     loadAppState,
     setLoadingStatus,
     toggleSidebar,

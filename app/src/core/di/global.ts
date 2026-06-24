@@ -123,7 +123,6 @@ const ROOT: RawEptTypeHierarchyNode = {
 export const appStateRepository = new AppStateRepository();
 export const workspaceStateRepository = new WorkspaceStateRepository(
   workspaceStateApi,
-  appStateRepository,
 );
 const typingRepository = new TypingRepository(typesStorageApi, ROOT);
 const objectRepository = new ObjectStorageRepository(containerObjectStorageApi);

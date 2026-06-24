@@ -3,17 +3,15 @@ import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 import Tab from "@/core/components/Tab.vue";
 import { useGlobalTabsStore } from "@/core/store/browserTabsStore";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
-import {
-  isObjectPageMeta,
-  isSystemPageMeta,
-  isTypePageMeta,
-  type MetaId,
-} from "../types";
+import { type MetaId } from "../types";
 import { useGlobalNavigation } from "../store/navigationStore";
 import { applicationBus } from "@/bus/application";
+import { useWorkspaceStore } from "../store/workspaceStore";
+import type { SavedTab } from "../domain/workspace";
 
 const globalNavigationStore = useGlobalNavigation();
 const globalTabStore = useGlobalTabsStore();
+const workspaceStore = useWorkspaceStore();
 
 const activePageId = computed(() => {
   return globalTabStore.activeTab?.id;
@@ -44,13 +42,7 @@ watch(
   () => globalTabStore.activeTab,
   (tab) => {
     if (tab) {
-      if (isSystemPageMeta(tab)) {
-        globalNavigationStore.openSystemPage(tab.id);
-      } else if (isObjectPageMeta(tab)) {
-        globalNavigationStore.openPage(tab.id);
-      } else if (isTypePageMeta(tab)) {
-        globalNavigationStore.openType(tab.id);
-      }
+      globalNavigationStore.open(tab);
     } else {
       globalNavigationStore.clearPageSelection();
     }
@@ -75,19 +67,78 @@ watch(
 const handleObjectUpdate = async (it: { id: string }) => {
   if (it) {
     const obj = await globalNavigationStore.updateMeta(it.id);
-    console.log(obj);
     if (obj) {
       globalTabStore.updateMeta(it.id, obj);
     }
   }
 };
 
-onMounted(() => {
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+const preload = async () => {
+  const state = await workspaceStore.state();
+
+  if (state.savedTabs.length > 0) {
+    const promises = state.savedTabs.map((tab) =>
+      globalNavigationStore.preloadMeta(tab),
+    );
+    const metas = await Promise.all(promises);
+    const validMetas = metas.filter((meta) => meta !== undefined);
+    let lastActiveTab = undefined;
+    if (state.lastActiveTab) {
+      lastActiveTab = await globalNavigationStore.preloadMeta(
+        state.lastActiveTab,
+      );
+    }
+
+    globalTabStore.preload(validMetas, lastActiveTab);
+  }
+};
+
+watch(
+  () => globalTabStore.openedTabs,
+  (openedTabs) => {
+    if (debounceTimer) clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(async () => {
+      const _res: SavedTab[] = Array.from(openedTabs.values()).map((it) => ({
+        id: it.id,
+        kind: it.kind,
+      }));
+
+      await workspaceStore.saveTabs(_res);
+    }, 1000);
+  },
+  { deep: true },
+);
+
+watch(
+  () => globalTabStore.activeTab,
+  (tab) => {
+    if (!tab) return;
+    if (debounceTimer) clearTimeout(debounceTimer);
+
+    debounceTimer = setTimeout(async () => {
+      await workspaceStore.saveLastActiveTab({
+        id: tab.id,
+        kind: tab.kind,
+      });
+    }, 1000);
+  },
+  { deep: true },
+);
+
+onMounted(async () => {
   applicationBus.on("object:update", handleObjectUpdate);
+  await preload();
 });
 
 onUnmounted(() => {
   applicationBus.off("object:update", handleObjectUpdate);
+
+  if (debounceTimer) {
+    clearTimeout(debounceTimer);
+  }
 });
 </script>
 

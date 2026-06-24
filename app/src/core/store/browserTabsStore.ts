@@ -38,10 +38,25 @@ export const useGlobalTabsStore = defineStore("tabs", () => {
     }
   };
 
+  const preload = async (meta: PageMeta[], lastOpenedTab?: PageMeta) => {
+    const map = new Map();
+    meta.forEach((it) => {
+      map.set(it.id, it);
+    });
+    if (lastOpenedTab?.id && !map.has(lastOpenedTab.id)) {
+      map.set(lastOpenedTab.id, lastOpenedTab);
+    }
+    openedTabs.value = map;
+    if (lastOpenedTab) {
+      openTab(lastOpenedTab.id);
+    }
+  };
+
   return {
     openedTabs,
     activeTab,
 
+    preload,
     updateMeta,
     clearSelection,
     createTab,

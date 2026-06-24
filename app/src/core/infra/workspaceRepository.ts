@@ -1,6 +1,10 @@
 import type { FileSystemApi } from "../../../fileSystemApiContract";
 import type { WorkspaceRepositoryContract } from "../domain/repositories/workspaceRepository";
-import type { SavedTab, WorkspaceLocalConfigEntity } from "../domain/workspace";
+import type {
+  SavedTab,
+  WorkspaceLocalConfigEntity,
+  WorkspaceLocalState,
+} from "../domain/workspace";
 
 export class WorkspaceStateRepository implements WorkspaceRepositoryContract {
   private readonly fileSystemApi: FileSystemApi<WorkspaceLocalConfigEntity>;
@@ -11,18 +15,36 @@ export class WorkspaceStateRepository implements WorkspaceRepositoryContract {
   constructor(userStorageApi: FileSystemApi<WorkspaceLocalConfigEntity>) {
     this.fileSystemApi = userStorageApi;
   }
+  getDefaultWorkspaceState = (): WorkspaceLocalState => ({
+    savedTabs: [],
+    lastActiveTab: undefined,
+  });
 
   async load(): Promise<WorkspaceLocalConfigEntity> {
     let root = await this.fileSystemApi.get(this.PATH);
+
     if (!root) {
-      throw Error();
+      throw Error("Workspace config not found");
     }
+
+    root.state = {
+      ...this.getDefaultWorkspaceState(),
+      ...(root.state || {}),
+    };
+
     this.config = root;
     return root;
   }
+  async sync(): Promise<void> {
+    if (!this.config) {
+      this.config = await this.load();
+    }
+    await this.fileSystemApi.save(this.PATH, this.config);
+    this.config = await this.load();
+  }
 
   async init(): Promise<void> {
-    await this.load();
+    await this.sync();
   }
 
   async get(): Promise<WorkspaceLocalConfigEntity> {
@@ -32,14 +54,24 @@ export class WorkspaceStateRepository implements WorkspaceRepositoryContract {
     return await this.load();
   }
 
-  async save(data: WorkspaceLocalConfigEntity): Promise<void> {
-    await this.fileSystemApi.save(this.PATH, data);
-    this.config = await this.load();
+  async saveState(data: WorkspaceLocalState): Promise<void> {
+    const conf = await this.get();
+    conf.state = data;
+    this.config = conf;
+    await this.sync();
   }
 
   async saveTabs(data: SavedTab[]): Promise<void> {
     const conf = await this.get();
-    conf.savedTabs = data;
-    await this.save(conf);
+    conf.state.savedTabs = data;
+    this.config = conf;
+    await this.sync();
+  }
+
+  async saveLastActiveTab(data: SavedTab): Promise<void> {
+    const conf = await this.get();
+    conf.state.lastActiveTab = data;
+    this.config = conf;
+    await this.sync();
   }
 }

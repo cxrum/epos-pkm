@@ -68,11 +68,11 @@ export type SystemPageId = "graph" | "aggregator" | "type-graph";
 
 export type MetaId = EpObjectId | SystemPageId;
 
-type _Kind = "system" | "page" | "type";
+export type _MetaKind = "system" | "page" | "type";
 
 export interface BasePageMeta<
   TId extends MetaId = MetaId,
-  TKind extends _Kind = "system",
+  TKind extends _MetaKind = "system",
 > {
   id: TId;
   title: string;
