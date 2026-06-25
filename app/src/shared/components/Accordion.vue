@@ -91,21 +91,17 @@ defineExpose({
         <dots-menu />
       </base-icon>
 
-      <transition name="fade">
-        <pop-up-menu
-          ref="menuRef"
-          :groups="menuData"
-          :style="floatingStyles"
-          v-if="isPopUpMenuOpen"
-        />
-      </transition>
+      <pop-up-menu
+        ref="menuRef"
+        :groups="menuData"
+        :style="floatingStyles"
+        v-if="isPopUpMenuOpen"
+      />
     </div>
 
-    <transition name="slide-fade">
-      <div v-show="isOpen" class="flex flex-col py-2 whitespace-nowrap">
-        <slot></slot>
-      </div>
-    </transition>
+    <div v-show="isOpen" class="flex flex-col py-2 whitespace-nowrap">
+      <slot></slot>
+    </div>
   </div>
 </template>
 
