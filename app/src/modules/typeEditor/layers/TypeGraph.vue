@@ -71,7 +71,7 @@
               :y="it.label.y"
               fill="var(--property-label)"
             >
-              {{ it.prop.title }}
+              {{ it.prop.parentType ? "*" : "" }} {{ it.prop.title }}
             </text>
             <text
               font-family="fixel"
@@ -170,7 +170,7 @@ const generatePath = (edge: any) => {
 };
 
 const calculateTableDimensions = (node: TypeTreeNodes) => {
-  const paddingX = 28;
+  const paddingX = 16;
   const headerHeight = 32;
   const rowHeight = 22;
   const paddingYBottom = 8;

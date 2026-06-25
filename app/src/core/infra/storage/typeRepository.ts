@@ -294,11 +294,9 @@ export class TypingRepository implements TypingRepositoryContract {
 
     return true;
   }
-  getFullPropsScheme(id: EpTypeId): BasePropertiesScheme {
+  getPropsScheme(id: EpTypeId): BasePropertiesScheme {
     const ancestors = this.getAncestors(id);
     const currentType = this.flattenTree.get(id);
-
-    console.log(currentType);
 
     const aggregatedPropertiesScheme: BasePropertiesScheme = {
       order: [],

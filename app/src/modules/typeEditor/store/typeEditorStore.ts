@@ -18,6 +18,7 @@ export interface TypeTreeEdges {
 
 export interface PropertyEntry {
   id: string;
+  parentType?: EpTypeId;
   title: string;
   icon: Icon;
   type: EpPropertyTypes;
@@ -157,8 +158,22 @@ export const useTypeEditorStore = defineStore("types", () => {
         for (const propId of rawScheme.order) {
           const prop = rawScheme.props[propId];
           if (prop) {
+            const parentType = rawScheme.inheritance.get(prop.id);
+            let resParentType: Ancestor | undefined = undefined;
+            if (parentType) {
+              const type = await globalTypingService.get(parentType);
+              if (type) {
+                resParentType = {
+                  id: type.id,
+                  title: type.title,
+                  icon: type.icon,
+                };
+              }
+            }
+
             resPropertyScheme.push({
               id: prop.id,
+              parentType: rawScheme.inheritance.get(prop.id),
               title: prop.title,
               type: prop.type,
               icon: resolveIcon(prop.type),

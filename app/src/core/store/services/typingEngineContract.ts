@@ -1,3 +1,4 @@
+import type { PropertiesScheme } from "@/core/application/type";
 import type { BasePropertiesScheme, EpTypeEntity } from "@/core/domain/type";
 import type { Edge } from "@/core/infra/utils";
 import type { EpTypeId, SystemTypeId } from "@/core/types";
@@ -28,6 +29,7 @@ export interface TypingServiceContract {
     parentType: EpTypeId,
     childType: EpTypeId,
   ): Promise<boolean>;
+  getFullPropsScheme(type: EpTypeId): Promise<PropertiesScheme>;
   getDescendants(parentType: EpTypeId): Promise<EpTypeEntity[]>;
   getAncestors(type: EpTypeId): Promise<EpTypeEntity[]>;
   getFullPropsScheme(type: EpTypeId): Promise<BasePropertiesScheme>;

@@ -190,7 +190,7 @@ describe("TypingRepository", () => {
         "usr:ancestor-1",
       );
 
-      const result = repository.getFullPropsScheme("usr:type-1");
+      const result = repository.getPropsScheme("usr:type-1");
 
       expect(result).toEqual({ order: [], props: {} });
     });
@@ -209,7 +209,7 @@ describe("TypingRepository", () => {
         "sys:root",
       );
 
-      const result = repository.getFullPropsScheme("usr:type-1");
+      const result = repository.getPropsScheme("usr:type-1");
 
       expect(result).toEqual({
         order: ["propA"],
@@ -244,7 +244,7 @@ describe("TypingRepository", () => {
         "usr:ancestor-1",
       );
 
-      const result = repository.getFullPropsScheme("usr:type-1");
+      const result = repository.getPropsScheme("usr:type-1");
 
       expect(result).toEqual({
         order: ["propA", "propB"],
@@ -288,7 +288,7 @@ describe("TypingRepository", () => {
         "usr:ancestor-1",
       );
 
-      const result = repository.getFullPropsScheme("usr:type-1");
+      const result = repository.getPropsScheme("usr:type-1");
 
       expect(result).toEqual({
         order: ["propA", "propB", "propC"],

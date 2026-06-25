@@ -237,7 +237,7 @@ export class ObjectsService implements ObjetServiceContract {
       throw new Error();
     }
 
-    const typeSchema = await this.typingRepository.getFullPropsScheme(type.id);
+    const typeSchema = await this.typingRepository.getPropsScheme(type.id);
 
     if (!typeSchema) {
       throw new Error();

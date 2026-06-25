@@ -22,7 +22,7 @@ export interface TypingRepositoryContract {
     parentId: EpTypeId,
     childId: Exclude<EpTypeId, SystemTypeId>,
   ): Promise<boolean>;
-  getFullPropsScheme(id: EpTypeId): BasePropertiesScheme;
+  getPropsScheme(id: EpTypeId): BasePropertiesScheme;
   index(): void;
   getTree(): Promise<TypeHierarchyNode>;
   getEdges(): Edge<EpTypeId>[];

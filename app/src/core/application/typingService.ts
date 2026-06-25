@@ -9,6 +9,7 @@ import {
 } from "../domain/type";
 import type { Edge } from "../infra/utils";
 import type { TreeNode } from "@/shared/components/tree/contract";
+import type { PropertiesScheme } from "./type";
 
 export class TypingService implements TypingServiceContract {
   private readonly typingRepository: TypingRepositoryContract;
@@ -178,7 +179,43 @@ export class TypingService implements TypingServiceContract {
     return result;
   }
 
-  async getFullPropsScheme(type: EpTypeId): Promise<BasePropertiesScheme> {
-    return await this.typingRepository.getFullPropsScheme(type);
+  async getFullPropsScheme(type: EpTypeId): Promise<PropertiesScheme> {
+    const ancestors = this.typingRepository.getAncestors(type);
+    const currentType = await this.typingRepository.get(type);
+
+    const aggregatedPropertiesScheme: PropertiesScheme = {
+      inheritance: new Map(),
+      order: [],
+      props: {},
+    };
+
+    for (const ancestor of ancestors) {
+      const type = await this.typingRepository.get(ancestor);
+      if (!type?.propertiesScheme) continue;
+
+      for (const prop of type.propertiesScheme.order) {
+        aggregatedPropertiesScheme.inheritance.set(prop, type.id);
+      }
+
+      const clonedProps = structuredClone(type.propertiesScheme.props);
+      Object.assign(aggregatedPropertiesScheme.props, clonedProps);
+
+      aggregatedPropertiesScheme.order.push(...type.propertiesScheme.order);
+    }
+
+    if (currentType?.propertiesScheme) {
+      const clonedProps = structuredClone(currentType.propertiesScheme.props);
+      Object.assign(aggregatedPropertiesScheme.props, clonedProps);
+
+      aggregatedPropertiesScheme.order.push(
+        ...currentType.propertiesScheme.order,
+      );
+    }
+
+    return {
+      inheritance: aggregatedPropertiesScheme.inheritance,
+      order: [...new Set(aggregatedPropertiesScheme.order)],
+      props: aggregatedPropertiesScheme.props,
+    };
   }
 }
