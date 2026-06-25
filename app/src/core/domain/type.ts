@@ -161,6 +161,18 @@ export type EpTypeEntity =
   | DefaultTypeEntity
   | UserTypeEntity;
 
+export function isSystemType(type: EpTypeEntity): type is SystemTypeEntity {
+  return type.kind === "system";
+}
+
+export function isDefaultType(type: EpTypeEntity): type is DefaultTypeEntity {
+  return type.kind === "default";
+}
+
+export function isUserType(type: EpTypeEntity): type is UserTypeEntity {
+  return type.kind === "user";
+}
+
 export const createCompanionEpTypeEntity = () => {
   const isInheritable = (
     parent: EpTypeEntity,

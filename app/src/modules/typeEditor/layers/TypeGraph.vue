@@ -48,6 +48,16 @@
             fill="var(--bg-class-label)"
             rx="4"
           />
+          <SvgDynamicIcon
+            v-if="node.isSystem"
+            :icon="{ type: 'default', name: 'lock' }"
+            :x="node.header.icon.x"
+            :y="node.header.icon.y"
+            :size="node.header.icon.size"
+            :style="{ opacity: '50%' }"
+            label="System type"
+          />
+          <title>System type</title>
           <text
             :x="node.header.label.x"
             :y="node.header.label.y"
@@ -113,6 +123,7 @@ import {
   type TypeTreeNodes,
 } from "../store/typeEditorStore";
 import ELK from "elkjs/lib/elk.bundled.js";
+import SvgDynamicIcon from "@/shared/components/icon/SvgDynamicIcon.vue";
 
 const typeEditorStore = useTypeEditorStore();
 const svgRef = ref<SVGSVGElement | null>(null);
@@ -127,11 +138,16 @@ interface Node {
   width: number;
   height: number;
   label: string;
-
+  isSystem: boolean;
   header: {
     height: number;
     label: {
       width: number;
+      x: number;
+      y: number;
+    };
+    icon: {
+      size: number;
       x: number;
       y: number;
     };
@@ -201,7 +217,8 @@ const calculateTableDimensions = (node: TypeTreeNodes) => {
   const paddingX = 16;
   const paddingY = 16;
   const fontSize = 18;
-
+  const iconSize = 16;
+  const minIconTitleSpacing = paddingX;
   const boldFont = `bold ${fontSize}px fixel`;
   const mediumFont = `${fontSize}px fixel`;
 
@@ -213,7 +230,10 @@ const calculateTableDimensions = (node: TypeTreeNodes) => {
 
   let titleWidth = measureTextWidth(node.label, boldFont);
 
-  let resultWidth = Math.max(titleWidth + paddingX, minWidth);
+  let resultWidth = Math.max(
+    titleWidth + paddingX + iconSize + minIconTitleSpacing,
+    minWidth,
+  );
 
   for (let i = 0; i < node.properties.length; i++) {
     const prop = node.properties[i];
@@ -265,6 +285,11 @@ const calculateTableDimensions = (node: TypeTreeNodes) => {
         x: Math.ceil(totalWidth / 2 - titleWidth / 2),
         y: Math.ceil(headerHeight / 2 + fontSize / 3),
       },
+      icon: {
+        size: iconSize,
+        x: Math.ceil(paddingX / 2),
+        y: Math.ceil(headerHeight / 2 - iconSize / 2),
+      },
     },
     content: {
       height: rowHeight,
@@ -285,6 +310,7 @@ const calculateLayout = async () => {
       return {
         id: it.id,
         label: it.label,
+        isSystem: it.isSystem,
         width: dimension.width,
         height: dimension.height,
         header: dimension.header,

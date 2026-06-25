@@ -1,24 +1,13 @@
 <script setup lang="ts">
-import { computed, defineAsyncComponent, ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 import type { Component } from "vue";
 import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
 import type { Icon } from "@/core/types";
+import { iconMap } from "./type";
 
 const props = defineProps<{
   icon: Icon | undefined;
 }>();
-
-const iconMap: Record<string, Component> = {
-  document: defineAsyncComponent(
-    () => import("@/assets/icons/DocumentIcon.vue"),
-  ),
-  object: defineAsyncComponent(() => import("@/assets/icons/TypeIcon.vue")),
-  table: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
-  error: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
-  typeDictionary: defineAsyncComponent(
-    () => import("@/assets/icons/TypeDictionary.vue"),
-  ),
-};
 
 const hasLinkLoadError = ref(false);
 

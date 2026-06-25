@@ -6,7 +6,11 @@ import type {
   EpTypeId,
   Icon,
 } from "@/core/types";
-import { isSystemProperty, type EpTypeEntity } from "@/core/domain/type";
+import {
+  isSystemProperty,
+  isSystemType,
+  type EpTypeEntity,
+} from "@/core/domain/type";
 import { globalTypingService } from "@/core/di/global";
 
 export interface TypeTreeEdges {
@@ -35,6 +39,7 @@ export interface Ancestor {
 export interface TypeTreeNodes {
   id: string;
   label: string;
+  isSystem: boolean;
   properties: PropertyEntry[];
 }
 
@@ -194,6 +199,7 @@ export const useTypeEditorStore = defineStore("types", () => {
       resNodes.push({
         id: node.id,
         label: node.title,
+        isSystem: isSystemType(node),
         properties: resPropertyScheme,
       });
     }

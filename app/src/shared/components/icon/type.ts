@@ -1,3 +1,5 @@
+import { defineAsyncComponent, type Component } from "vue";
+
 export interface BaseIcon {
   type: string;
 }
@@ -27,16 +29,21 @@ export interface TypeIcon extends BaseDefaultIcon {
   name: "type";
 }
 
-export interface TypeDictionary extends BaseDefaultIcon {
+export interface TypeDictionaryIcon extends BaseDefaultIcon {
   name: "typeDictionary";
+}
+
+export interface LockIcon extends BaseDefaultIcon {
+  name: "lock";
 }
 
 export type DefaultIcon =
   | TableIcon
-  | TypeDictionary
+  | TypeDictionaryIcon
   | PageIcon
   | ObjectIcon
   | ErrorIcon
+  | LockIcon
   | TypeIcon;
 
 export interface LinkIcon extends BaseIcon {
@@ -48,3 +55,16 @@ export interface EmojiIcon extends BaseIcon {
   type: "emoji";
   emoji: string;
 }
+
+export const iconMap: Record<string, Component> = {
+  document: defineAsyncComponent(
+    () => import("@/assets/icons/DocumentIcon.vue"),
+  ),
+  object: defineAsyncComponent(() => import("@/assets/icons/TypeIcon.vue")),
+  table: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
+  error: defineAsyncComponent(() => import("@/assets/icons/Table.vue")),
+  typeDictionary: defineAsyncComponent(
+    () => import("@/assets/icons/TypeDictionary.vue"),
+  ),
+  lock: defineAsyncComponent(() => import("@/assets/icons/Lock.vue")),
+};

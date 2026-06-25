@@ -189,14 +189,27 @@ const handleOnChainClick = (value: Path) => {
               v-for="entry in group.items"
               :key="entry.id"
               :id="entry.id"
-              class="flex flex-row items-center"
+              class="flex flex-row items-center gap-2"
             >
               <BaseIcon size="24px">
                 <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
               </BaseIcon>
-              <p class="flex flex-1 m-0">
+
+              <p class="">
                 {{ entry.title }}
               </p>
+
+              <BaseIcon
+                size="24px"
+                class="opacity-50"
+                v-if="entry.isSystem"
+                title="System property"
+              >
+                <DynamicIcon :icon="{ type: 'default', name: 'lock' }" />
+              </BaseIcon>
+
+              <div class="flex flex-1 m-0"></div>
+
               <BaseSelect
                 :disabled="entry.isSystem"
                 :options="propertyTypesMenu"
