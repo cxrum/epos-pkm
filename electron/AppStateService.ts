@@ -89,7 +89,7 @@ export class RawAppStateService implements AppStateApi {
       const workspaceConfigPath = path.join(absolutePath, ".workspace");
       const rawData = await fs.readFile(workspaceConfigPath, "utf-8");
       return JSON.parse(rawData) as WorkspaceConf;
-    } catch {
+    } catch (e) {
       return null;
     }
   }
@@ -229,7 +229,8 @@ export class RawAppStateService implements AppStateApi {
   }
 
   public async loadWorkspace(absolutePath: string): Promise<WorkspaceConf> {
-    const localConfig = await this.readLocalConfig(absolutePath);
+    const _path = path.join(absolutePath);
+    const localConfig = await this.readLocalConfig(_path);
 
     if (!localConfig) {
       throw new Error("INVALID_WORKSPACE");

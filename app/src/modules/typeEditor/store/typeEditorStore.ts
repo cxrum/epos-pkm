@@ -18,7 +18,7 @@ export interface TypeTreeEdges {
 
 export interface PropertyEntry {
   id: string;
-  parentType?: EpTypeId;
+  parentType?: Ancestor;
   title: string;
   icon: Icon;
   type: EpPropertyTypes;
@@ -53,11 +53,72 @@ export const useTypeEditorStore = defineStore("types", () => {
 
   const breadCrumbs: Ref<Ancestor[]> = ref([]);
 
+  const getFullPropsScheme = async (
+    typeId: EpTypeId,
+  ): Promise<PropertyEntry[]> => {
+    const resPropertyScheme: PropertyEntry[] = [];
+    const rawScheme = await globalTypingService.getFullPropsScheme(typeId);
+
+    if (rawScheme) {
+      for (const propId of rawScheme.order) {
+        const prop = rawScheme.props[propId];
+        if (prop) {
+          const parentType = rawScheme.inheritance.get(prop.id);
+          let resParentType: Ancestor | undefined = undefined;
+          if (parentType) {
+            const type = await globalTypingService.get(parentType);
+            if (type) {
+              resParentType = {
+                id: type.id,
+                title: type.title,
+                icon: type.icon,
+              };
+            }
+          }
+
+          resPropertyScheme.push({
+            id: prop.id,
+            parentType: resParentType,
+            title: prop.title,
+            type: prop.type,
+            icon: resolveIcon(prop.type),
+            isChangeable: prop.isChangeable,
+            isSystem: isSystemProperty(prop),
+          });
+        }
+      }
+    }
+    return resPropertyScheme;
+  };
+
+  const getPropsScheme = async (typeId: EpTypeId): Promise<PropertyEntry[]> => {
+    const resPropertyScheme: PropertyEntry[] = [];
+    const type = await globalTypingService.get(typeId);
+    const rawScheme = type ? type.propertiesScheme : undefined;
+
+    if (type && rawScheme) {
+      for (const propId of rawScheme.order) {
+        const prop = rawScheme.props[propId];
+        resPropertyScheme.push({
+          id: prop.id,
+          parentType: undefined,
+          title: prop.title,
+          type: prop.type,
+          icon: resolveIcon(prop.type),
+          isChangeable: prop.isChangeable,
+          isSystem: isSystemProperty(prop),
+        });
+      }
+    }
+
+    return resPropertyScheme;
+  };
+
   const loadType = async (id: EpTypeId) => {
     isTypeLoading.value = true;
     type.value = await globalTypingService.get(id);
     if (type.value) {
-      const res = await getPropsScheme(type.value);
+      const res = await getFullPropsScheme(type.value.id);
       properties.value = res;
       propertiesOrder.value = properties.value.map((it) => it.id);
       const _ancestors = await globalTypingService.getAncestors(id);
@@ -80,28 +141,6 @@ export const useTypeEditorStore = defineStore("types", () => {
     isTypeLoading.value = false;
   };
 
-  const getPropsScheme = async (
-    type: EpTypeEntity,
-  ): Promise<PropertyEntry[]> => {
-    const rawScheme = await globalTypingService.getFullPropsScheme(type.id);
-    const res: PropertyEntry[] = [];
-    console.log(rawScheme);
-
-    for (const key of rawScheme.order) {
-      const entry = rawScheme.props[key];
-      const _res = {
-        id: entry.id,
-        title: entry.title,
-        type: entry.type,
-        icon: resolveIcon(entry.type),
-        isChangeable: entry.isChangeable,
-        isSystem: isSystemProperty(entry),
-      };
-      res.push(_res);
-    }
-
-    return res;
-  };
   const resolveIcon = (type: EpPropertyTypes): Icon => {
     if (type === "boolean") {
       return {
@@ -151,39 +190,7 @@ export const useTypeEditorStore = defineStore("types", () => {
     const resEdges: TypeTreeEdges[] = [];
 
     for (const node of nodes) {
-      const resPropertyScheme: PropertyEntry[] = [];
-      const rawScheme = await globalTypingService.getFullPropsScheme(node.id);
-
-      if (rawScheme) {
-        for (const propId of rawScheme.order) {
-          const prop = rawScheme.props[propId];
-          if (prop) {
-            const parentType = rawScheme.inheritance.get(prop.id);
-            let resParentType: Ancestor | undefined = undefined;
-            if (parentType) {
-              const type = await globalTypingService.get(parentType);
-              if (type) {
-                resParentType = {
-                  id: type.id,
-                  title: type.title,
-                  icon: type.icon,
-                };
-              }
-            }
-
-            resPropertyScheme.push({
-              id: prop.id,
-              parentType: rawScheme.inheritance.get(prop.id),
-              title: prop.title,
-              type: prop.type,
-              icon: resolveIcon(prop.type),
-              isChangeable: prop.isChangeable,
-              isSystem: isSystemProperty(prop),
-            });
-          }
-        }
-      }
-
+      const resPropertyScheme: PropertyEntry[] = await getPropsScheme(node.id);
       resNodes.push({
         id: node.id,
         label: node.title,

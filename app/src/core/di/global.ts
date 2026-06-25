@@ -10,6 +10,7 @@ import type {
 import { AppStateRepository } from "../infra/stateRepository";
 import { WorkspaceStateRepository } from "../infra/workspaceRepository";
 import type { WorkspaceLocalConfigEntity } from "../domain/workspace";
+import { SystemRoot } from "./type";
 
 const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>(
   "/workspace",
@@ -19,112 +20,12 @@ const workspaceStateApi = new IpcFileSystem<WorkspaceLocalConfigEntity>(
 );
 const typesStorageApi = new IpcFileSystem<RawEptTypeHierarchyNode>("/types");
 
-const ROOT: RawEptTypeHierarchyNode = {
-  id: "sys:root",
-  type: {
-    id: "sys:root",
-    title: "root",
-    kind: "system",
-    propertiesScheme: {
-      order: ["isContainer"],
-      props: {
-        isContainer: {
-          id: "isContainer",
-          title: "isContainer",
-          type: "boolean",
-          kind: "system",
-          isChangeable: false,
-        },
-      },
-    },
-  },
-  children: [
-    {
-      id: "sys:container",
-      type: {
-        id: "sys:container",
-        title: "Page",
-        icon: {
-          type: "default",
-          name: "page",
-        },
-        kind: "system",
-      },
-      children: [],
-    },
-    {
-      id: "def:text",
-      type: {
-        id: "def:text",
-        icon: {
-          type: "default",
-          name: "type",
-        },
-        title: "Text",
-        kind: "default",
-      },
-      children: [
-        {
-          id: "def:latex",
-          type: {
-            id: "def:latex",
-            title: "LaTeX",
-            kind: "default",
-          },
-          children: [],
-        },
-        {
-          id: "def:code",
-          type: {
-            id: "def:code",
-            title: "Code",
-            kind: "default",
-            propertiesScheme: {
-              order: ["codeLanguage"],
-              props: {
-                codeLanguage: {
-                  id: "codeLanguage",
-                  title: "codeLanguage",
-                  type: "text",
-                  kind: "system",
-                  isChangeable: true,
-                },
-              },
-            },
-          },
-          children: [],
-        },
-      ],
-    },
-    {
-      id: "def:heading",
-      type: {
-        id: "def:heading",
-        title: "Heading",
-        kind: "default",
-        propertiesScheme: {
-          order: ["level"],
-          props: {
-            level: {
-              id: "level",
-              title: "level",
-              type: "number",
-              kind: "system",
-              isChangeable: true,
-            },
-          },
-        },
-      },
-      children: [],
-    },
-  ],
-};
-
 export const appStateRepository = new AppStateRepository();
 export const workspaceStateRepository = new WorkspaceStateRepository(
   workspaceStateApi,
 );
-const typingRepository = new TypingRepository(typesStorageApi, ROOT);
+
+const typingRepository = new TypingRepository(typesStorageApi, SystemRoot());
 const objectRepository = new ObjectStorageRepository(containerObjectStorageApi);
 
 export async function bootstrapWorkspaceServices() {

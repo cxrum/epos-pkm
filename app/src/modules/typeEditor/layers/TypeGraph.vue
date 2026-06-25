@@ -52,7 +52,7 @@
             :x="node.header.label.x"
             :y="node.header.label.y"
             font-family="fixel"
-            font-weight="semi-bold"
+            font-weight="bold"
             font-size="18"
             fill="var(--class-label)"
           >
@@ -63,27 +63,41 @@
             :key="index"
             :transform="`translate(${0}, ${node.header.height + node.content.height * index})`"
           >
-            <text
-              font-family="fixel"
-              font-weight="semi-bold"
-              font-size="18"
-              :x="it.label.x"
-              :y="it.label.y"
-              fill="var(--property-label)"
-            >
-              {{ it.prop.parentType ? "*" : "" }} {{ it.prop.title }}
-            </text>
-            <text
-              font-family="fixel"
-              font-weight="semi-bold"
-              font-size="18"
-              :x="it.type.x + it.type.width"
-              :y="it.type.y"
-              fill="var(--property-type-label)"
-              text-anchor="end"
-            >
-              {{ it.prop.type }}
-            </text>
+            <g v-if="isPropRow(it)">
+              <text
+                font-family="fixel"
+                font-weight="medium"
+                font-size="18"
+                :x="it.label.x"
+                :y="it.label.y"
+                fill="var(--property-label)"
+              >
+                {{ it.prop.title }}
+              </text>
+              <text
+                font-family="fixel"
+                font-weight="medium"
+                font-size="18"
+                :x="it.type.x + it.type.width"
+                :y="it.type.y"
+                fill="var(--property-type-label)"
+                text-anchor="end"
+              >
+                {{ it.prop.type }}
+              </text>
+            </g>
+            <g v-else-if="isLabelRow(it)">
+              <text
+                font-family="fixel"
+                font-weight="medium"
+                font-size="18"
+                :x="it.label.x"
+                :y="it.label.y"
+                fill="var(--property-parent-label)"
+              >
+                {{ it.label.data }}:
+              </text>
+            </g>
           </g>
         </g>
       </g>
@@ -124,14 +138,28 @@ interface Node {
   };
   content: {
     height: number;
-    items: {
-      prop: PropertyEntry;
-      label: { x: number; y: number; width: number };
-      type: { x: number; y: number; width: number };
-    }[];
+    items: (PropRow | LabelRow)[];
   };
   x?: number;
   y?: number;
+}
+
+function isPropRow(row: any): row is PropRow {
+  return typeof row === "object" && row["prop"];
+}
+
+function isLabelRow(row: any): row is LabelRow {
+  return typeof row === "object" && row["label"] && row.label["data"];
+}
+
+interface PropRow {
+  prop: PropertyEntry;
+  label: { x: number; y: number; width: number };
+  type: { x: number; y: number; width: number };
+}
+
+interface LabelRow {
+  label: { data: string; x: number; y: number; width: number };
 }
 
 interface Edge {
@@ -171,21 +199,26 @@ const generatePath = (edge: any) => {
 
 const calculateTableDimensions = (node: TypeTreeNodes) => {
   const paddingX = 16;
-  const headerHeight = 32;
-  const rowHeight = 22;
-  const paddingYBottom = 8;
-  const fontSize = 16;
-  const minSpaceBetweenLabelType = 64;
+  const paddingY = 16;
+  const fontSize = 18;
+
+  const boldFont = `bold ${fontSize}px fixel`;
+  const mediumFont = `${fontSize}px fixel`;
+
+  const headerHeight = Math.max(fontSize + paddingY, 32);
+  const rowHeight = Math.max(fontSize + paddingY, 22);
+  const paddingYBottom = 4;
+  const minSpaceBetweenLabelType = 32;
   const minWidth = 128;
 
-  let titleWidth = measureTextWidth(node.label, `bold ${fontSize}px fixel`);
+  let titleWidth = measureTextWidth(node.label, boldFont);
 
-  let resultWidth = Math.max(titleWidth + paddingX, minWidth + paddingX);
+  let resultWidth = Math.max(titleWidth + paddingX, minWidth);
 
   for (let i = 0; i < node.properties.length; i++) {
     const prop = node.properties[i];
-    let labelWidth = measureTextWidth(prop.title, `${fontSize}px fixel`);
-    let typeWidth = measureTextWidth(prop.type, `${fontSize}px fixel`);
+    let labelWidth = measureTextWidth(prop.title, mediumFont);
+    let typeWidth = measureTextWidth(prop.type, mediumFont);
     let rowRequiredWidth =
       labelWidth + typeWidth + minSpaceBetweenLabelType + paddingX;
 
@@ -196,21 +229,25 @@ const calculateTableDimensions = (node: TypeTreeNodes) => {
 
   const content = [];
 
+  const totalWidth = resultWidth + paddingX;
+
   for (let i = 0; i < node.properties.length; i++) {
     const prop = node.properties[i];
+
     let labelWidth = measureTextWidth(prop.title, `${fontSize}px fixel`);
     let typeWidth = measureTextWidth(prop.type, `${fontSize}px fixel`);
 
+    const rowY = Math.ceil(rowHeight / 2 + fontSize / 2);
     content.push({
       prop: prop,
       label: {
         x: Math.ceil(paddingX / 2),
-        y: Math.ceil(rowHeight / 2 + fontSize / 2),
+        y: rowY,
         width: labelWidth,
       },
       type: {
-        x: Math.ceil(resultWidth - typeWidth - paddingX / 2),
-        y: Math.ceil(rowHeight / 2 + fontSize / 2),
+        x: Math.ceil(totalWidth - typeWidth - paddingX / 2),
+        y: rowY,
         width: typeWidth,
       },
     });
@@ -219,14 +256,13 @@ const calculateTableDimensions = (node: TypeTreeNodes) => {
   const resYPaddingBottom = node.properties.length > 0 ? paddingYBottom : 0;
 
   return {
-    width: resultWidth,
-    height:
-      headerHeight + node.properties.length * rowHeight + resYPaddingBottom,
+    width: totalWidth,
+    height: headerHeight + content.length * rowHeight + resYPaddingBottom,
     header: {
       height: headerHeight,
       label: {
         width: titleWidth,
-        x: Math.ceil((resultWidth - titleWidth) / 2),
+        x: Math.ceil(totalWidth / 2 - titleWidth / 2),
         y: Math.ceil(headerHeight / 2 + fontSize / 3),
       },
     },
@@ -262,8 +298,13 @@ const calculateLayout = async () => {
     layoutOptions: {
       "elk.algorithm": "layered",
       "elk.direction": "DOWN",
+      "elk.alignment": "CENTER",
       "elk.edgeRouting": "ORTHOGONAL",
-      "elk.spacing.nodeNode": "60",
+      "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+      "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
+      "elk.layered.mergeEdges": "true",
+      "elk.spacing.nodeNode": "40",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "40",
     },
     children: children(),
     edges: typeEditorStore.typeTreeEdges.map((it) => ({
@@ -380,6 +421,7 @@ onUnmounted(() => {
   --bg-class-label: var(--bg-bottom-layer-contrast);
   --class-label: var(--text-default-color);
   --property-label: var(--text-default-color);
+  --property-parent-label: var(--text-secondary-color);
   --property-type-label: var(--text-secondary-color);
 }
 

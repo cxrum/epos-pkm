@@ -1,8 +1,12 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
-import { useTypeEditorStore } from "../store/typeEditorStore";
-import type { EpPropertyTypes, EpTypeId, Path } from "@/core/types";
+import {
+  useTypeEditorStore,
+  type PropertyEntry,
+  type TypeTreeNodes,
+} from "../store/typeEditorStore";
+import type { EpPropertyTypes, EpTypeId, Icon, Path } from "@/core/types";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 import BaseSelect from "@/shared/components/BaseSelect.vue";
@@ -64,6 +68,39 @@ const computedPath = computed(() => {
   return typeEditorStore.breadCrumbs;
 });
 
+const groupedProperties = computed(
+  (): { id: string; title: string; icon?: Icon; items: PropertyEntry[] }[] => {
+    const filteredProps = typeEditorStore.properties;
+    const groups = new Map();
+
+    filteredProps.forEach((prop) => {
+      const groupId = prop.parentType?.id || "current";
+      const groupTitle = prop.parentType?.title || "This";
+
+      if (!groups.has(groupId)) {
+        groups.set(groupId, {
+          id: groupId,
+          title: groupTitle,
+          items: [],
+          icon: prop.parentType?.icon,
+        });
+      }
+
+      groups.get(groupId).items.push(prop);
+    });
+
+    return Array.from(groups.values());
+  },
+);
+
+const currentProperties = computed(() => {
+  return groupedProperties.value.find((it) => it.id === "current");
+});
+
+const inheritedProperties = computed(() => {
+  return groupedProperties.value.filter((it) => it.id !== "current");
+});
+
 const handleOnChainClick = (value: Path) => {
   globalNavigationStore.openType(value.id);
 };
@@ -103,72 +140,71 @@ const handleOnChainClick = (value: Path) => {
   <div v-if="!typeEditorStore.type"></div>
   <div v-else class="page">
     <div class="flex flex-col gap-4">
-      <span class="flex flex-row gap-2 items-center">
-        <BaseIcon size="32px">
-          <DynamicIcon :icon="typeEditorStore.type.icon" />
-        </BaseIcon>
-        <h1>
-          {{ typeEditorStore.type.title }}
-        </h1>
-      </span>
+      <div class="flex flex-col gap-2">
+        <span class="flex flex-row gap-1 items-center">
+          <BaseIcon size="32px">
+            <DynamicIcon :icon="typeEditorStore.type.icon" />
+          </BaseIcon>
+          <h1>
+            {{ typeEditorStore.type.title }}
+          </h1>
+        </span>
 
-      <div class="flex flex-col gap-1.5">
-        <div
-          v-if="typeEditorStore.isSystemPropertiesVisible"
-          class="flex flex-col gap-2"
-        >
-          <label>System properties:</label>
-          <span
-            v-for="entry in typeEditorStore.properties.filter(
-              (it) => it.isSystem,
-            )"
-            :key="entry.id"
-            :id="entry.id"
-            class="flex flex-row items-center"
+        <div class="flex flex-col gap-2">
+          <div
+            v-if="currentProperties && currentProperties.items.length > 0"
+            class="flex flex-col"
           >
-            <BaseIcon size="24px">
-              <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
-            </BaseIcon>
-            <p class="flex flex-1">
-              {{ entry.title }}
-            </p>
-            <BaseSelect
-              :disabled="entry.isSystem"
-              :options="propertyTypesMenu"
-              :model-value="entry.type"
-              @update:model-value="handleTypeChange(entry.id, $event)"
-            />
-          </span>
-        </div>
+            <span
+              v-for="entry in currentProperties.items"
+              class="flex flex-row items-center"
+            >
+              <BaseIcon size="24px">
+                <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
+              </BaseIcon>
+              <p class="flex flex-1">
+                {{ entry.title }}
+              </p>
+              <BaseSelect
+                :disabled="entry.isSystem"
+                :options="propertyTypesMenu"
+                :model-value="entry.type"
+                @update:model-value="handleTypeChange(entry.id, $event)"
+              />
+            </span>
+          </div>
+          <div
+            v-for="group in inheritedProperties"
+            :key="group.id"
+            class="flex flex-col"
+          >
+            <span class="flex flex-row">
+              <BaseIcon size="24px">
+                <DynamicIcon :icon="group.icon" class="text-(--icon-color)" />
+              </BaseIcon>
+              <p class="text-(--text-secondary-color)">{{ group.title }}:</p>
+            </span>
 
-        <div
-          class="flex flex-col gap-2"
-          v-if="
-            typeEditorStore.properties.filter((it) => !it.isSystem).length > 0
-          "
-        >
-          <label>Properties:</label>
-          <span
-            v-for="entry in typeEditorStore.properties.filter(
-              (it) => !it.isSystem,
-            )"
-            :key="entry.id"
-            :id="entry.id"
-            class="flex flex-row items-center"
-          >
-            <BaseIcon size="24px">
-              <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
-            </BaseIcon>
-            <p class="flex flex-1">
-              {{ entry.title }}
-            </p>
-            <BaseSelect
-              :disabled="entry.isSystem"
-              :options="propertyTypesMenu"
-              :model-value="entry.type"
-              @update:model-value="handleTypeChange(entry.id, $event)"
-            />
-          </span>
+            <span
+              v-for="entry in group.items"
+              :key="entry.id"
+              :id="entry.id"
+              class="flex flex-row items-center"
+            >
+              <BaseIcon size="24px">
+                <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
+              </BaseIcon>
+              <p class="flex flex-1 m-0">
+                {{ entry.title }}
+              </p>
+              <BaseSelect
+                :disabled="entry.isSystem"
+                :options="propertyTypesMenu"
+                :model-value="entry.type"
+                @update:model-value="handleTypeChange(entry.id, $event)"
+              />
+            </span>
+          </div>
         </div>
       </div>
       <div class="hl mb-4"></div>

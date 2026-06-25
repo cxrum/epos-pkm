@@ -74,7 +74,6 @@ const handleObjectUpdate = async (it: { id: string }) => {
 };
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let lastActiveTabDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 const preload = async () => {
   const state = await workspaceStore.state();
@@ -97,33 +96,25 @@ const preload = async () => {
 };
 
 watch(
-  () => globalTabStore.openedTabs,
-  (openedTabs) => {
+  () => [globalTabStore.openedTabs, globalTabStore.activeTab],
+  ([openedTabs, activeTab]) => {
     if (debounceTimer) clearTimeout(debounceTimer);
 
     debounceTimer = setTimeout(async () => {
-      const _res: SavedTab[] = Array.from(openedTabs.values()).map((it) => ({
-        id: it.id,
-        kind: it.kind,
-      }));
+      if (openedTabs) {
+        const _res: SavedTab[] = Array.from(openedTabs.values()).map((it) => ({
+          id: it.id,
+          kind: it.kind,
+        }));
+        await workspaceStore.saveTabs(_res);
+      }
 
-      await workspaceStore.saveTabs(_res);
-    }, 1000);
-  },
-  { deep: true },
-);
-
-watch(
-  () => globalTabStore.activeTab,
-  (tab) => {
-    if (!tab) return;
-    if (lastActiveTabDebounceTimer) clearTimeout(lastActiveTabDebounceTimer);
-
-    lastActiveTabDebounceTimer = setTimeout(async () => {
-      await workspaceStore.saveLastActiveTab({
-        id: tab.id,
-        kind: tab.kind,
-      });
+      if (activeTab) {
+        await workspaceStore.saveLastActiveTab({
+          id: activeTab.id,
+          kind: activeTab.kind,
+        });
+      }
     }, 1000);
   },
   { deep: true },
@@ -139,10 +130,6 @@ onUnmounted(() => {
 
   if (debounceTimer) {
     clearTimeout(debounceTimer);
-  }
-
-  if (lastActiveTabDebounceTimer) {
-    clearTimeout(lastActiveTabDebounceTimer);
   }
 });
 </script>
