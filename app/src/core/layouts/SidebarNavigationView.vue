@@ -55,6 +55,10 @@ const createEmptyPageInside = (parentId: EpObjectId) => {
   globalPageStore.createEmptyPage(parentId);
 };
 
+const removePage = (parentId: EpObjectId) => {
+  globalPageStore.removeObject(parentId);
+};
+
 const onCreateEmptyPageRoot = () => {
   globalPageStore.createEmptyPage(undefined);
 };
@@ -66,7 +70,9 @@ const treeItemsGroup: TreeMenuGroup = [
         type: "button",
         label: "Remove",
         icon: markRaw(DocumentIcon),
-        action() {},
+        action(context) {
+          removePage(context.id);
+        },
       },
       {
         type: "button",

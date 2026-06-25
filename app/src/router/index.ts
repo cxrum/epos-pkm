@@ -31,7 +31,8 @@ const routes = [
           {
             name: "type-graph",
             path: "graph",
-            component: () => import("@/modules/typeEditor/layers/TypeList.vue"),
+            component: () =>
+              import("@/modules/typeEditor/layers/TypeGraph.vue"),
           },
         ],
       },

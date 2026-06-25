@@ -1,5 +1,13 @@
 <template>
-  <div class="graph-container">
+  <div
+    class="graph-container"
+    :class="{ 'is-panning': isSpacePressed }"
+    @mousedown="startPan"
+    @mousemove="doPan"
+    @mouseup="endPan"
+    @mouseleave="endPan"
+    @wheel.prevent="doZoom"
+  >
     <svg
       viewBox="0 0 1000 1000"
       width="100%"
@@ -7,7 +15,10 @@
       ref="svgRef"
       v-if="!typeEditorStore.isTypeLoading"
     >
-      <g ref="containerRef">
+      <g
+        ref="containerRef"
+        :transform="`translate(${transform.x}, ${transform.y}) scale(${transform.k})`"
+      >
         <path
           v-for="edge in graphEdges"
           :key="edge.id"
@@ -81,8 +92,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
-import * as d3 from "d3";
+import { ref, onMounted, watch, onUnmounted } from "vue";
 import {
   useTypeEditorStore,
   type PropertyEntry,
@@ -93,6 +103,10 @@ import ELK from "elkjs/lib/elk.bundled.js";
 const typeEditorStore = useTypeEditorStore();
 const svgRef = ref<SVGSVGElement | null>(null);
 const containerRef = ref<SVGGElement | null>(null);
+const isSpacePressed = ref(false);
+const transform = ref({ x: 100, y: 100, k: 1 });
+let isPanning = false;
+let startPoint = { x: 0, y: 0 };
 
 interface Node {
   id: string;
@@ -263,24 +277,54 @@ const calculateLayout = async () => {
     const layoutedGraph = await elk.layout(currentGraph);
     graphNodes.value = (layoutedGraph.children as Node[]) || [];
     graphEdges.value = (layoutedGraph.edges as Edge[]) || [];
-
-    setTimeout(initZoom, 0);
   } catch (error) {
     console.error(error);
   }
 };
 
-const initZoom = () => {
-  if (!svgRef.value || !containerRef.value) return;
+const doZoom = (e: WheelEvent) => {
+  if (e.ctrlKey || e.metaKey) {
+    const zoomFactor = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = transform.value.k * zoomFactor;
 
-  const zoom = d3
-    .zoom<SVGSVGElement, unknown>()
-    .scaleExtent([0.1, 4])
-    .on("zoom", (event) => {
-      d3.select(containerRef.value!).attr("transform", event.transform);
-    });
+    if (newScale >= 0.1 && newScale <= 4) {
+      const rect = (e.currentTarget as HTMLElement).getBoundingClientRect();
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
 
-  d3.select(svgRef.value).call(zoom);
+      transform.value.x = mouseX - (mouseX - transform.value.x) * zoomFactor;
+      transform.value.y = mouseY - (mouseY - transform.value.y) * zoomFactor;
+      transform.value.k = newScale;
+    }
+  } else {
+    const deltaX = e.shiftKey ? e.deltaY : e.deltaX;
+    const deltaY = e.shiftKey ? 0 : e.deltaY;
+
+    transform.value.x -= deltaX;
+    transform.value.y -= deltaY;
+  }
+};
+
+const startPan = (e: MouseEvent) => {
+  if (!isSpacePressed.value || e.button !== 0) return;
+
+  isPanning = true;
+
+  startPoint = {
+    x: e.clientX - transform.value.x,
+    y: e.clientY - transform.value.y,
+  };
+};
+
+const doPan = (e: MouseEvent) => {
+  if (!isPanning) return;
+
+  transform.value.x = e.clientX - startPoint.x;
+  transform.value.y = e.clientY - startPoint.y;
+};
+
+const endPan = () => {
+  isPanning = false;
 };
 
 watch(
@@ -291,8 +335,33 @@ watch(
   { deep: true },
 );
 
+const onKeyDown = (e: KeyboardEvent) => {
+  if (e.code === "Space") {
+    if (
+      document.activeElement?.tagName !== "INPUT" &&
+      document.activeElement?.tagName !== "TEXTAREA"
+    ) {
+      e.preventDefault();
+      isSpacePressed.value = true;
+    }
+  }
+};
+
+const onKeyUp = (e: KeyboardEvent) => {
+  if (e.code === "Space") {
+    isSpacePressed.value = false;
+  }
+};
+
 onMounted(() => {
+  window.addEventListener("keydown", onKeyDown);
+  window.addEventListener("keyup", onKeyUp);
   typeEditorStore.loadTree();
+});
+
+onUnmounted(() => {
+  window.removeEventListener("keydown", onKeyDown);
+  window.removeEventListener("keyup", onKeyUp);
 });
 </script>
 
@@ -305,11 +374,27 @@ onMounted(() => {
   overflow: hidden;
   width: 100%;
   height: 100%;
+  cursor: default;
 
   --bg-class: transparent;
   --bg-class-label: var(--bg-bottom-layer-contrast);
   --class-label: var(--text-default-color);
   --property-label: var(--text-default-color);
   --property-type-label: var(--text-secondary-color);
+}
+
+.is-panning,
+.is-panning * {
+  cursor: grab !important;
+  user-select: none;
+}
+
+.is-panning:active,
+.is-panning:active * {
+  cursor: grabbing !important;
+}
+
+.node {
+  cursor: pointer;
 }
 </style>

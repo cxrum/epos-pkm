@@ -10,7 +10,8 @@ export interface ObjectStorageRepositoryContract {
     data: EpObjectEntity,
   ): Promise<EpObjectEntity>;
   update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity>;
-  delete(id: EpObjectId): Promise<boolean>;
+  remove(id: EpObjectId): Promise<boolean>;
+  getParent(id: EpObjectId): Promise<EpObjectId | undefined>;
   getAll(filterOptions: RawObjectFilterOptions): Promise<EpObjectEntity[]>;
   getTreeHierarchy(): Promise<ObjectHierarchyNode>;
   getAncestors(objId: EpObjectId): EpObjectId[];

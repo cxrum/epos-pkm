@@ -24,6 +24,13 @@ export const useGlobalObjectStore = defineStore("objects", () => {
     selectedObject.value = id;
   };
 
+  const refreshTreeStructure = async () => {
+    isTreeStructureLoading.value = true;
+    const result = await globalObjectsService.getFileTree();
+    treeStructure.value = result;
+    isTreeStructureLoading.value = false;
+  };
+
   const getMetaInfo = async (id: EpObjectId): Promise<ObjectMetaInfo> => {
     isObjectLoading.value.set(id, true);
     const res = await globalObjectsService.get(id);
@@ -71,11 +78,9 @@ export const useGlobalObjectStore = defineStore("objects", () => {
     isOjectSaving.value = false;
   };
 
-  const refreshTreeStructure = async () => {
-    isTreeStructureLoading.value = true;
-    const result = await globalObjectsService.getFileTree();
-    treeStructure.value = result;
-    isTreeStructureLoading.value = false;
+  const removeObject = async (id: EpObjectId) => {
+    await globalObjectsService.remove(id);
+    await refreshTreeStructure();
   };
 
   return {
@@ -86,6 +91,7 @@ export const useGlobalObjectStore = defineStore("objects", () => {
 
     refreshTreeStructure,
     setSelectedObject,
+    removeObject,
     createEmptyPage,
     getMetaInfo,
     move,

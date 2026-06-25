@@ -442,7 +442,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     return newData;
   }
 
-  async delete(id: EpObjectId): Promise<boolean> {
+  async remove(id: EpObjectId): Promise<boolean> {
     const filePath = this.objectPathCache.get(id);
 
     if (!filePath) {
@@ -478,6 +478,31 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     }
 
     return isDeleted;
+  }
+
+  async getParent(id: EpObjectId): Promise<EpObjectId | undefined> {
+    const parentEdge = this.objectTreeEdges.find((edge) => edge.target === id);
+
+    if (!parentEdge) {
+      const mountLinkNode = Array.from(this.fileTreeCache.values()).find(
+        (obj) => isRawMountedContainer(obj) && obj.content.toId === id,
+      );
+
+      if (mountLinkNode) {
+        return this.getParent(mountLinkNode.id);
+      }
+
+      return undefined;
+    }
+
+    const parentId = parentEdge.source;
+    const parentObj = this.fileTreeCache.get(parentId);
+
+    if (parentObj && isRawMountedContainer(parentObj)) {
+      return this.getParent(parentId);
+    }
+
+    return parentId;
   }
 
   async getAll(

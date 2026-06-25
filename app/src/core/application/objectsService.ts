@@ -13,6 +13,7 @@ import {
 } from "../domain/type";
 import type { ObjetServiceContract } from "../store/services/objectsContract";
 import type { EpObjectId, EpTypeId, ObjectPath } from "../types";
+import { toRaw } from "vue";
 
 export class ObjectsService implements ObjetServiceContract {
   private readonly typingRepository: TypingRepositoryContract;
@@ -73,7 +74,7 @@ export class ObjectsService implements ObjetServiceContract {
       );
 
       if (linkToDelete) {
-        await this.objectsStorageRepository.delete(linkToDelete.id);
+        await this.objectsStorageRepository.remove(linkToDelete.id);
       }
 
       const newMountedLinks = this.getMountedLinks(newParent);
@@ -108,6 +109,30 @@ export class ObjectsService implements ObjetServiceContract {
 
     return result;
   }
+
+  async existTitle(parentId: EpObjectId, title: string): Promise<boolean> {
+    const parent = await this.objectsStorageRepository.get(parentId);
+
+    if (!parent || !isAnyContainer(parent)) {
+      return false;
+    }
+
+    const links = this.getMountedLinks(parent);
+
+    const childPromises = links.map((link) =>
+      this.objectsStorageRepository.get(link.content.toId),
+    );
+
+    const children = await Promise.all(childPromises);
+
+    return children.some(
+      (childObj) =>
+        childObj &&
+        isAnyContainer(childObj) &&
+        childObj.content.title === title,
+    );
+  }
+
   async getAll(filterOptions: ObjectFilterOptions): Promise<EpObjectEntity[]> {
     let expandedTypes: EpTypeId[] | undefined = undefined;
     const descendantsMap = await this.typingRepository.getAllDescendants();
@@ -165,15 +190,39 @@ export class ObjectsService implements ObjetServiceContract {
     };
   }
 
+  private async generateUniqueTitle(
+    parentId: EpObjectId,
+    baseTitle: string = "Untitled",
+  ): Promise<string> {
+    let counter = 0;
+    let candidateTitle = baseTitle;
+
+    while (await this.existTitle(parentId, candidateTitle)) {
+      counter++;
+      candidateTitle = `${baseTitle} (${counter})`;
+    }
+
+    return candidateTitle;
+  }
+
   async create(
     parentId: EpObjectId | undefined,
     object: EpObjectEntity,
   ): Promise<EpObjectEntity> {
-    const res = await this.objectsStorageRepository.create(parentId, object);
+    const obj = toRaw(object);
+    if (isAnyContainer(obj)) {
+      const resultTitle = await this.generateUniqueTitle(
+        parentId ?? "-1",
+        obj.content.title,
+      );
+      obj.content.title = resultTitle;
+    }
+
+    const res = await this.objectsStorageRepository.create(parentId, obj);
     const parent = await this.objectsStorageRepository.get(parentId ?? "-1"); // TODO: Fix hardcoded workspace ID. Rebase it to current workspace meta.
-    if (isAnyContainer(object) && parent && isAnyContainer(parent)) {
-      const obj = this.createContainerLink(object.id);
-      await this.objectsStorageRepository.create(parentId, obj);
+    if (isAnyContainer(obj) && parent && isAnyContainer(parent)) {
+      const _obj = this.createContainerLink(obj.id);
+      await this.objectsStorageRepository.create(parentId, _obj);
     }
     return res;
   }
@@ -220,8 +269,13 @@ export class ObjectsService implements ObjetServiceContract {
       };
     }
 
+    const resultTitle = await this.generateUniqueTitle(
+      parentId ?? "-1",
+      "Untitled",
+    );
+
     const initialContent = isContainer
-      ? { title: "Untitled", order: [], inlineObjects: {} }
+      ? { title: resultTitle, order: [], inlineObjects: {} }
       : {};
 
     const objectPath = parentId
@@ -262,10 +316,29 @@ export class ObjectsService implements ObjetServiceContract {
   ): Promise<EpObjectEntity> {
     return await this.objectsStorageRepository.update(id, newData);
   }
-  async delete(id: EpObjectId): Promise<boolean> {
-    return await this.objectsStorageRepository.delete(id);
-  }
 
+  async remove(id: EpObjectId): Promise<boolean> {
+    const obj = await this.objectsStorageRepository.get(id);
+
+    if (obj && isAnyContainer(obj)) {
+      const parentObjId = await this.objectsStorageRepository.getParent(obj.id);
+
+      if (parentObjId) {
+        const parentObj = await this.objectsStorageRepository.get(parentObjId);
+
+        if (parentObj && isAnyContainer(parentObj)) {
+          const mountedLinks = this.getMountedLinks(parentObj);
+          const link = mountedLinks.find((it) => it.content.toId === id);
+
+          if (link) {
+            await this.objectsStorageRepository.remove(link.id);
+          }
+        }
+      }
+    }
+
+    return await this.objectsStorageRepository.remove(id);
+  }
   async getFileTree(): Promise<TreeNode> {
     const result = await this.objectsStorageRepository.getTreeHierarchy();
     const convertor = async (

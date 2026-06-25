@@ -74,6 +74,7 @@ const handleObjectUpdate = async (it: { id: string }) => {
 };
 
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let lastActiveTabDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 const preload = async () => {
   const state = await workspaceStore.state();
@@ -116,9 +117,9 @@ watch(
   () => globalTabStore.activeTab,
   (tab) => {
     if (!tab) return;
-    if (debounceTimer) clearTimeout(debounceTimer);
+    if (lastActiveTabDebounceTimer) clearTimeout(lastActiveTabDebounceTimer);
 
-    debounceTimer = setTimeout(async () => {
+    lastActiveTabDebounceTimer = setTimeout(async () => {
       await workspaceStore.saveLastActiveTab({
         id: tab.id,
         kind: tab.kind,
@@ -138,6 +139,10 @@ onUnmounted(() => {
 
   if (debounceTimer) {
     clearTimeout(debounceTimer);
+  }
+
+  if (lastActiveTabDebounceTimer) {
+    clearTimeout(lastActiveTabDebounceTimer);
   }
 });
 </script>

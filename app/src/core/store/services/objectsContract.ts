@@ -14,13 +14,14 @@ export interface ObjetServiceContract {
     objectType: EpTypeId,
   ): Promise<EpObjectEntity>;
   update(id: EpObjectId, newData: EpObjectEntity): Promise<EpObjectEntity>;
-  delete(id: EpObjectId): Promise<boolean>;
+  remove(id: EpObjectId): Promise<boolean>;
   move(
     movedId: EpObjectId,
     newParentId: EpObjectId,
     oldParentId: EpObjectId,
   ): Promise<boolean>;
   getFileTree(): Promise<TreeNode>;
+  existTitle(parentId: EpObjectId, title: string): Promise<boolean>;
   getObjectAncestors(id: EpObjectId): Promise<ObjectPath>;
   getPaths(): Promise<Record<EpObjectId, ObjectPath>>;
 }
