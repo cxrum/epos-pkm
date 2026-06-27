@@ -2,7 +2,15 @@ import { defineStore } from "pinia";
 import type { TreeNode } from "@/shared/components/tree/contract";
 import { globalTypingService } from "../di/global";
 import { ref } from "vue";
-import type { EpTypeId } from "../types";
+import type { EpTypeId, Icon } from "../types";
+import type { PropertyEntry } from "../application/type";
+
+export interface PropertyGroup {
+  id: string;
+  title: string;
+  icon?: Icon;
+  items: PropertyEntry[];
+}
 
 export const useGlobalTypeStore = defineStore("global-type", () => {
   const treeStructure = ref<TreeNode>({ id: "-1", title: "-1", children: [] });

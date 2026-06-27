@@ -119,11 +119,11 @@
 import { ref, onMounted, watch, onUnmounted } from "vue";
 import {
   useTypeEditorStore,
-  type PropertyEntry,
   type TypeTreeNodes,
 } from "../store/typeEditorStore";
 import ELK from "elkjs/lib/elk.bundled.js";
 import SvgDynamicIcon from "@/shared/components/icon/SvgDynamicIcon.vue";
+import type { PropertyEntry } from "@/core/application/type";
 
 const typeEditorStore = useTypeEditorStore();
 const svgRef = ref<SVGSVGElement | null>(null);

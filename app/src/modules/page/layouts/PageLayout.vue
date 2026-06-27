@@ -29,9 +29,10 @@ import Breadcrumbs from "@/core/components/Breadcrumbs.vue";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import TypeIcon from "@/assets/icons/TypeIcon.vue";
 import DotsMenu from "@/assets/icons/DotsMenu.vue";
-import TypeEditorLayout from "@/core/layouts/TypeEditorLayout.vue";
+import TypeEditorLayout from "./TypeEditorLayout.vue";
 import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
 import { applicationBus } from "@/bus/application.ts";
+import { useObjectEditorStore } from "../store/objectEditorStore.ts";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -40,7 +41,8 @@ const props = defineProps();
 const pageStore = usePageEditorStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
-const globalObjectStore = useGlobalObjectStore();
+const objectEditorStore = useObjectEditorStore();
+
 const editorController = useBaseEditorController();
 
 const currentPageEntity = ref<EpContainerObjectEntity>();
@@ -143,11 +145,11 @@ onBeforeUnmount(() => {
   }
 });
 
-watch(editorController.selectedObjectId, (id) => {
+watch(editorController.focusedObjectId, (id) => {
   if (id !== selectedObjectId.value) {
     selectedObjectId.value = id;
     if (id) {
-      globalObjectStore.setSelectedObject(id);
+      objectEditorStore.focusObject(id);
     }
   }
 });

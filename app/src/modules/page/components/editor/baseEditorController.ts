@@ -5,15 +5,15 @@ import type { EpContainerObjectEntity } from "@/core/domain/type";
 import type { JSONContent } from "@tiptap/core";
 
 export function useBaseEditorController(): EditorControllerContract {
-  const selectedObjectId: Ref<EpObjectId | undefined> = ref();
+  const focusedObjectId: Ref<EpObjectId | undefined> = ref();
   const initialData: Ref<EpContainerObjectEntity | undefined> = ref();
   const draftData: Ref<JSONContent | undefined> = ref();
 
   const setObjectId = (id: EpObjectId): void => {
-    selectedObjectId.value = id;
+    focusedObjectId.value = id;
   };
   const clearSelection = (): void => {
-    selectedObjectId.value = undefined;
+    focusedObjectId.value = undefined;
   };
 
   const setInitialData = (obj: EpContainerObjectEntity): void => {
@@ -25,7 +25,7 @@ export function useBaseEditorController(): EditorControllerContract {
   };
 
   return {
-    selectedObjectId,
+    focusedObjectId,
     initialData,
     draftData,
 

@@ -18,11 +18,6 @@ export const useGlobalObjectStore = defineStore("objects", () => {
   const isTreeStructureLoading = ref(false);
 
   const isObjectLoading = ref(new Map<EpObjectId, boolean>());
-  const selectedObject: Ref<EpObjectId | undefined> = ref(undefined);
-
-  const setSelectedObject = async (id: EpObjectId) => {
-    selectedObject.value = id;
-  };
 
   const refreshTreeStructure = async () => {
     isTreeStructureLoading.value = true;
@@ -84,13 +79,11 @@ export const useGlobalObjectStore = defineStore("objects", () => {
   };
 
   return {
-    selectedObject,
     isObjectLoading,
     treeStructure,
     isTreeStructureLoading,
 
     refreshTreeStructure,
-    setSelectedObject,
     removeObject,
     createEmptyPage,
     getMetaInfo,

@@ -1,15 +1,23 @@
 import type { TypingRepositoryContract } from "@/core/domain/repositories/typesRepositoryContract";
-import type { EpTypeId, SystemTypeId } from "@/core/types";
+import type {
+  EpPropertyId,
+  EpPropertyType,
+  EpTypeId,
+  Icon,
+  SystemTypeId,
+} from "@/core/types";
 import type { TypingServiceContract } from "../store/services/typingEngineContract";
 import {
   createCompanionEpTypeEntity,
+  isSystemProperty,
   type BasePropertiesScheme,
   type EpTypeEntity,
   type TypeHierarchyNode,
 } from "../domain/type";
 import type { Edge } from "../infra/utils";
 import type { TreeNode } from "@/shared/components/tree/contract";
-import type { PropertiesScheme } from "./type";
+import type { AncestorType, PropertiesScheme, PropertyEntry } from "./type";
+import { convertDomainProperties } from "./utils";
 
 export class TypingService implements TypingServiceContract {
   private readonly typingRepository: TypingRepositoryContract;
@@ -179,33 +187,51 @@ export class TypingService implements TypingServiceContract {
     return result;
   }
 
-  async getFullPropsScheme(type: EpTypeId): Promise<PropertiesScheme> {
-    const ancestors = this.typingRepository.getAncestors(type);
-    const currentType = await this.typingRepository.get(type);
+  async getFullPropsScheme(typeId: EpTypeId): Promise<PropertiesScheme> {
+    const ancestors = await this.typingRepository.getAncestors(typeId);
+    const currentType = await this.typingRepository.get(typeId);
 
     const aggregatedPropertiesScheme: PropertiesScheme = {
       inheritance: new Map(),
       order: [],
-      props: {},
+      props: new Map(),
     };
 
-    for (const ancestor of ancestors) {
-      const type = await this.typingRepository.get(ancestor);
-      if (!type?.propertiesScheme) continue;
+    for (const ancestorId of ancestors) {
+      const ancestorType = await this.typingRepository.get(ancestorId);
+      if (!ancestorType?.propertiesScheme) continue;
 
-      for (const prop of type.propertiesScheme.order) {
-        aggregatedPropertiesScheme.inheritance.set(prop, type.id);
+      const ancestorMeta: AncestorType = {
+        id: ancestorType.id,
+        title: ancestorType.title,
+        icon: ancestorType.icon,
+      };
+
+      const convertedProps = convertDomainProperties(
+        ancestorType.propertiesScheme,
+      );
+
+      for (const prop of convertedProps) {
+        prop.parentType = ancestorMeta;
+
+        aggregatedPropertiesScheme.inheritance.set(prop.id, ancestorType.id);
+        aggregatedPropertiesScheme.props.set(prop.id, prop);
       }
 
-      const clonedProps = structuredClone(type.propertiesScheme.props);
-      Object.assign(aggregatedPropertiesScheme.props, clonedProps);
-
-      aggregatedPropertiesScheme.order.push(...type.propertiesScheme.order);
+      aggregatedPropertiesScheme.order.push(
+        ...ancestorType.propertiesScheme.order,
+      );
     }
 
     if (currentType?.propertiesScheme) {
-      const clonedProps = structuredClone(currentType.propertiesScheme.props);
-      Object.assign(aggregatedPropertiesScheme.props, clonedProps);
+      const convertedProps = convertDomainProperties(
+        currentType.propertiesScheme,
+      );
+
+      for (const prop of convertedProps) {
+        prop.parentType = undefined;
+        aggregatedPropertiesScheme.props.set(prop.id, prop);
+      }
 
       aggregatedPropertiesScheme.order.push(
         ...currentType.propertiesScheme.order,
@@ -217,5 +243,26 @@ export class TypingService implements TypingServiceContract {
       order: [...new Set(aggregatedPropertiesScheme.order)],
       props: aggregatedPropertiesScheme.props,
     };
+  }
+
+  async getPropsScheme(typeId: EpTypeId): Promise<PropertiesScheme> {
+    const type = await this.typingRepository.get(typeId);
+    const rawScheme = type ? type.propertiesScheme : undefined;
+
+    const resultScheme: PropertiesScheme = {
+      inheritance: new Map(),
+      order: rawScheme?.order ?? [],
+      props: new Map(),
+    };
+
+    if (type && rawScheme) {
+      const convertedProps = convertDomainProperties(rawScheme);
+
+      for (const prop of convertedProps) {
+        resultScheme.props.set(prop.id, prop);
+      }
+    }
+
+    return resultScheme;
   }
 }

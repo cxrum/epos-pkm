@@ -1,12 +1,8 @@
 <script setup lang="ts">
 import { computed, watch } from "vue";
 import { useRoute } from "vue-router";
-import {
-  useTypeEditorStore,
-  type PropertyEntry,
-  type TypeTreeNodes,
-} from "../store/typeEditorStore";
-import type { EpPropertyTypes, EpTypeId, Icon, Path } from "@/core/types";
+import { useTypeEditorStore } from "../store/typeEditorStore";
+import type { EpPropertyType, EpTypeId, Icon, Path } from "@/core/types";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 import BaseSelect from "@/shared/components/BaseSelect.vue";
@@ -18,6 +14,7 @@ import TypeIcon from "@/assets/icons/TypeIcon.vue";
 import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
 import DotsMenu from "@/assets/icons/DotsMenu.vue";
 import { useGlobalNavigation } from "@/core/store/navigationStore";
+import type { PropertyEntry } from "@/core/application/type";
 
 const props = defineProps();
 const route = useRoute();
@@ -47,7 +44,7 @@ const handleTypeChange = (
   newValue: string | number | null,
 ) => {
   if (newValue) {
-    typeEditorStore.updatePropertyType(propertyId, newValue as EpPropertyTypes);
+    typeEditorStore.updatePropertyType(propertyId, newValue as EpPropertyType);
   }
 };
 

@@ -13,6 +13,9 @@ export const usePageEditorStore = defineStore("page", () => {
   const currentObject = ref<EpObjectEntity>();
   const pagePath = ref<ObjectPath>();
 
+  const focusedObjectId = ref<EpObjectId>();
+  const focusedObject = ref<EpObjectEntity>();
+
   const paths = ref<Record<EpObjectId, ObjectPath>>({});
   const isOjectSaving = ref(false);
   const isObjectLoading = ref(false);
@@ -69,13 +72,27 @@ export const usePageEditorStore = defineStore("page", () => {
     currentObject.value = undefined;
   };
 
+  const focusObject = async (id: EpObjectId) => {
+    focusedObjectId.value = id;
+    focusedObject.value = await globalObjectsService.get(id);
+  };
+
+  const clearFocusObject = () => {
+    focusedObject.value = undefined;
+    focusedObject.value = undefined;
+  };
+
   return {
+    focusedObject,
+
     isOjectSaving,
     isObjectLoading,
     currentObject,
     paths,
     pagePath,
 
+    focusObject,
+    clearFocusObject,
     clearActiveObject,
     update,
     get,

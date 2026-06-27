@@ -2,7 +2,7 @@ import type { _PropertyKind, _TypeKind } from "@/core/domain/type";
 import type {
   EpObjectId,
   EpPropertyId,
-  EpPropertyTypes,
+  EpPropertyType,
   EpTypeId,
   Icon,
 } from "@/core/types";
@@ -28,7 +28,7 @@ export interface RawContainerObject extends RawBaseEpObject<
 export type RawPropertiesSchemeEntry = {
   id: EpPropertyId;
   title: string;
-  type: EpPropertyTypes;
+  type: EpPropertyType;
   kind: _PropertyKind;
   isChangeable: boolean;
 };

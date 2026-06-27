@@ -29,8 +29,8 @@ export interface TypingServiceContract {
     parentType: EpTypeId,
     childType: EpTypeId,
   ): Promise<boolean>;
-  getFullPropsScheme(type: EpTypeId): Promise<PropertiesScheme>;
+  getFullPropsScheme(typeId: EpTypeId): Promise<PropertiesScheme>;
+  getPropsScheme(typeId: EpTypeId): Promise<PropertiesScheme>;
   getDescendants(parentType: EpTypeId): Promise<EpTypeEntity[]>;
   getAncestors(type: EpTypeId): Promise<EpTypeEntity[]>;
-  getFullPropsScheme(type: EpTypeId): Promise<BasePropertiesScheme>;
 }

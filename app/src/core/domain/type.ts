@@ -5,7 +5,7 @@ import type {
   SystemTypeId,
   DefaultTypeId,
   EpPropertyId,
-  EpPropertyTypes,
+  EpPropertyType,
   ObjectPath,
   UserTypeId,
 } from "../types";
@@ -15,7 +15,7 @@ export type _PropertyKind = "system" | "user";
 
 export interface BasePropertySchemeEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TPropertyType extends EpPropertyType = EpPropertyType,
   TKind extends _PropertyKind = _PropertyKind,
   TisChangeable extends boolean = boolean,
 > {
@@ -28,19 +28,19 @@ export interface BasePropertySchemeEntry<
 
 export type PropertySchemeEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TPropertyType extends EpPropertyType = EpPropertyType,
   TisChangeable extends boolean = boolean,
 > = BasePropertySchemeEntry<TProperty, TPropertyType, "user", TisChangeable>;
 
 export type SystemPropertySchemeEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TPropertyType extends EpPropertyType = EpPropertyType,
   TisChangeable extends boolean = boolean,
 > = BasePropertySchemeEntry<TProperty, TPropertyType, "system", TisChangeable>;
 
 export type ValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TPropertyType extends EpPropertyType = EpPropertyType,
   TValue = unknown,
   TKind extends _PropertyKind = _PropertyKind,
   TisChangeable extends boolean = boolean,
@@ -50,13 +50,13 @@ export type ValuedPropertyEntry<
 
 export type UserValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TPropertyType extends EpPropertyType = EpPropertyType,
   TValue = unknown,
 > = ValuedPropertyEntry<TProperty, TPropertyType, TValue, "user">;
 
 export type SystemValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
-  TPropertyType extends EpPropertyTypes = EpPropertyTypes,
+  TPropertyType extends EpPropertyType = EpPropertyType,
   TValue = unknown,
   TisChangeable extends boolean = boolean,
 > = ValuedPropertyEntry<

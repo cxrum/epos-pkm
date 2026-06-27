@@ -4,7 +4,7 @@ import type { JSONContent } from "@tiptap/core";
 import type { Ref } from "vue";
 
 export interface EditorControllerContract {
-  selectedObjectId: Ref<EpObjectId | undefined>;
+  focusedObjectId: Ref<EpObjectId | undefined>;
   initialData: Ref<EpContainerObjectEntity | undefined>;
   draftData: Ref<JSONContent | undefined>;
 

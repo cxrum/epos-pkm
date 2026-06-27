@@ -6,6 +6,8 @@ import {
   isMountedContainerEntity,
   isWorkspaceEntity,
   type AllPropertiesMap,
+  type AnyValidPropertyEntry,
+  type BasePropertiesScheme,
   type EpObjectEntity,
   type MountedContainerObjectEntity,
   type ObjectFilterOptions,
@@ -14,6 +16,14 @@ import {
 import type { ObjetServiceContract } from "../store/services/objectsContract";
 import type { EpObjectId, EpTypeId, ObjectPath } from "../types";
 import { toRaw } from "vue";
+import type {
+  AncestorType,
+  PropertiesScheme,
+  PropertyEntry,
+  ValuedPropertiesScheme,
+  ValuedPropertyEntry,
+} from "./type";
+import { convertDomainProperties } from "./utils";
 
 export class ObjectsService implements ObjetServiceContract {
   private readonly typingRepository: TypingRepositoryContract;
@@ -399,6 +409,98 @@ export class ObjectsService implements ObjetServiceContract {
     }
 
     return res;
+  }
+
+  private async getFullPropsScheme(
+    typeId: EpTypeId,
+  ): Promise<PropertiesScheme> {
+    const ancestors = await this.typingRepository.getAncestors(typeId);
+    const currentType = await this.typingRepository.get(typeId);
+
+    const aggregatedPropertiesScheme: PropertiesScheme = {
+      inheritance: new Map(),
+      order: [],
+      props: new Map(),
+    };
+
+    for (const ancestorId of ancestors) {
+      const ancestorType = await this.typingRepository.get(ancestorId);
+      if (!ancestorType?.propertiesScheme) continue;
+
+      const ancestorMeta: AncestorType = {
+        id: ancestorType.id,
+        title: ancestorType.title,
+        icon: ancestorType.icon,
+      };
+
+      const convertedProps = convertDomainProperties(
+        ancestorType.propertiesScheme,
+      );
+
+      for (const prop of convertedProps) {
+        prop.parentType = ancestorMeta;
+
+        aggregatedPropertiesScheme.inheritance.set(prop.id, ancestorType.id);
+        aggregatedPropertiesScheme.props.set(prop.id, prop);
+      }
+
+      aggregatedPropertiesScheme.order.push(
+        ...ancestorType.propertiesScheme.order,
+      );
+    }
+
+    if (currentType?.propertiesScheme) {
+      const convertedProps = convertDomainProperties(
+        currentType.propertiesScheme,
+      );
+
+      for (const prop of convertedProps) {
+        prop.parentType = undefined;
+        aggregatedPropertiesScheme.props.set(prop.id, prop);
+      }
+
+      aggregatedPropertiesScheme.order.push(
+        ...currentType.propertiesScheme.order,
+      );
+    }
+
+    return {
+      inheritance: aggregatedPropertiesScheme.inheritance,
+      order: [...new Set(aggregatedPropertiesScheme.order)],
+      props: aggregatedPropertiesScheme.props,
+    };
+  }
+
+  async getValuedObjectProps(id: EpObjectId): Promise<ValuedPropertiesScheme> {
+    const valuedProperties: ValuedPropertiesScheme = {
+      props: new Map(),
+      order: [],
+      inheritance: new Map(),
+    };
+
+    const object = await this.objectsStorageRepository.get(id);
+    if (!object) {
+      return valuedProperties;
+    }
+
+    const typeProps: PropertiesScheme = await this.getFullPropsScheme(
+      object.typeId,
+    );
+
+    valuedProperties.order = typeProps.order;
+    valuedProperties.inheritance = typeProps.inheritance;
+
+    for (const propId of typeProps.order) {
+      const prop = typeProps.props.get(propId)!;
+      const valuedProp = object.props[prop.id];
+      const _res: ValuedPropertyEntry = {
+        value: valuedProp,
+        propertyScheme: prop,
+      };
+      valuedProperties.props.set(propId, _res);
+    }
+
+    return valuedProperties;
   }
 
   async getPaths(): Promise<Record<EpObjectId, ObjectPath>> {
