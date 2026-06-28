@@ -74,14 +74,16 @@ const updateNumberValue = async (
   const focusedObject = objectEditorStore.focusedObject;
   if (!focusedObject) return;
 
+  let parsedValue = 1;
+
   if (val === "" || val === null) {
     return;
   }
 
-  const parsedValue = Number(val);
+  parsedValue = Number(val);
 
   if (Number.isNaN(parsedValue)) {
-    console.warn(`[Warning] Некоректне число для властивості ${propId}`);
+    objectEditorStore.setPropertyErrorMsg(propId, "Enter a valid number");
     return;
   }
 
@@ -90,6 +92,7 @@ const updateNumberValue = async (
     propId,
     parsedValue,
   );
+  objectEditorStore.clearPropertyErrorMsg(propId);
 };
 const updateBooleanValue = (val: boolean, propId: EpPropertyId) => {
   console.log(`[Boolean] Оновлюємо ${propId}:`, val);
@@ -186,7 +189,7 @@ watch(
         v-for="entry of currentProperties?.items"
         :key="entry.propertyScheme.id"
         :id="entry.propertyScheme.id"
-        class="flex flex-row items-center gap-2"
+        class="flex flex-row items-center"
       >
         <BaseIcon size="24px">
           <DynamicIcon
@@ -206,7 +209,7 @@ watch(
           <DynamicIcon :icon="{ type: 'default', name: 'lock' }" />
         </BaseIcon>
 
-        <p class="flex">
+        <p class="flex pe-4">
           {{ entry.propertyScheme.title }}
         </p>
         <BaseInput
@@ -217,6 +220,10 @@ watch(
           "
           v-model="handlers.get(entry.propertyScheme.id).value"
           class="w-full"
+          :err-msg="
+            objectEditorStore.propertyFieldError.get(entry.propertyScheme.id)
+          "
+          type="number"
         ></BaseInput>
 
         <p v-else class="flex">
@@ -244,7 +251,7 @@ watch(
           v-for="entry in group.items"
           :key="entry.propertyScheme.id"
           :id="entry.propertyScheme.id"
-          class="flex flex-row items-center gap-2"
+          class="flex flex-row items-center"
         >
           <BaseIcon size="24px">
             <DynamicIcon
@@ -252,6 +259,10 @@ watch(
               class="text-(--icon-color)"
             />
           </BaseIcon>
+
+          <p class="flex pe-2">
+            {{ entry.propertyScheme.title }}
+          </p>
 
           <BaseIcon
             size="24px"
@@ -264,10 +275,6 @@ watch(
           >
             <DynamicIcon :icon="{ type: 'default', name: 'lock' }" />
           </BaseIcon>
-
-          <p class="flex">
-            {{ entry.propertyScheme.title }}
-          </p>
 
           <p class="flex">
             {{ entry.value?.value }}

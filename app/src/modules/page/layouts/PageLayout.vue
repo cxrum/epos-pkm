@@ -16,13 +16,10 @@ import {
   type EpObjectEntity,
 } from "@/core/domain/type.ts";
 import { useBaseEditorController } from "../components/editor/baseEditorController.ts";
-import { useGlobalObjectStore } from "@/core/store/globalObjectStore.ts";
 import { type EpObjectId, type Path } from "@/core/types.ts";
 import { useRoute } from "vue-router";
 import { useGlobalNavigation } from "@/core/store/navigationStore.ts";
 import { usePageEditorStore } from "../store/pageEditorStore.ts";
-import { tiptapDocToEntities } from "../components/editor/mappers.ts";
-import { mapObjectEntitiesToContent } from "../components/editor/helpers.ts";
 import DocumentIcon from "@/assets/icons/DocumentIcon.vue";
 import type { MenuGroup } from "@/shared/components/popUpMenu/type.ts";
 import Breadcrumbs from "@/core/components/Breadcrumbs.vue";

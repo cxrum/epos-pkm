@@ -16,22 +16,26 @@ export const UniqueBlockIdExtension = Extension.create({
           const tr = newState.tr;
           let modified = false;
 
+          const usedIds = new Set<string>();
+
           newState.doc.descendants((node, pos) => {
             if (node.isBlock && node.type.name !== "text") {
               const id = node.attrs.id;
 
-              if (id) {
+              if (!id) {
                 tr.setNodeMarkup(pos, undefined, {
                   ...node.attrs,
-                  id: undefined,
+                  id: crypto.randomUUID(),
+                });
+                modified = true;
+              } else if (usedIds.has(id)) {
+                tr.setNodeMarkup(pos, undefined, {
+                  ...node.attrs,
+                  id: crypto.randomUUID(),
                 });
                 modified = true;
               } else {
-                tr.setNodeMarkup(pos, undefined, {
-                  ...node.attrs,
-                  id: undefined,
-                });
-                modified = true;
+                usedIds.add(id);
               }
             }
           });
