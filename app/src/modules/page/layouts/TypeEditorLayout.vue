@@ -1,36 +1,32 @@
 <script setup lang="ts">
 import {
   computed,
+  onBeforeUnmount,
   reactive,
   ref,
+  toRaw,
   watch,
-  type ComputedRef,
   type WritableComputedRef,
 } from "vue";
 import Accordion from "@/shared/components/Accordion.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
 import BaseSelect from "@/shared/components/BaseSelect.vue";
 import { usePageEditorStore } from "../store/pageEditorStore";
-import { useWorkspaceStore } from "@/core/store/workspaceStore";
-import { useGlobalNavigation } from "@/core/store/navigationStore";
-import { useGlobalObjectStore } from "@/core/store/globalObjectStore";
-import { useBaseEditorController } from "../components/editor/baseEditorController";
-import { useGlobalTypeStore } from "@/core/store/globalTypeStore";
 import type { EpPropertyId, Icon } from "@/core/types";
-import type {
-  PropertyEntry,
-  ValuedPropertyEntry,
-} from "@/core/application/type";
+import type { ValuedPropertyEntry } from "@/core/application/type";
 import { useObjectEditorStore } from "../store/objectEditorStore";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
+import {
+  isAnyInlineEntity,
+  type EpInlineObjectEntity,
+} from "@/core/domain/type";
 
 const pageEditorStore = usePageEditorStore();
 const objectEditorStore = useObjectEditorStore();
 
-const workSpaceStore = useWorkspaceStore();
-const globalNavigationStore = useGlobalNavigation();
-const globalTypeStore = useGlobalTypeStore();
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let maxWaitTimer: ReturnType<typeof setInterval> | null = null;
 
 const selectedBasicType = ref(null);
 const selectBasicTypeOptions = [
@@ -83,39 +79,60 @@ const updateStringValue = (val: string, propId: EpPropertyId) => {
   console.log(`[Text] Оновлюємо ${propId}:`, val);
 };
 
-const updateNumberValue = (val: string, propId: EpPropertyId) => {
-  console.log(`[Text] Оновлюємо ${propId}:`, val);
-};
+const updateNumberValue = async (
+  val: string | number,
+  propId: EpPropertyId,
+) => {
+  const focusedObject = objectEditorStore.focusedObject;
+  if (!focusedObject) return;
 
+  if (val === "" || val === null) {
+    return;
+  }
+
+  const parsedValue = Number(val);
+
+  if (Number.isNaN(parsedValue)) {
+    console.warn(`[Warning] Некоректне число для властивості ${propId}`);
+    return;
+  }
+};
 const updateBooleanValue = (val: boolean, propId: EpPropertyId) => {
   console.log(`[Boolean] Оновлюємо ${propId}:`, val);
 };
 
 const createPropertyHandler = (
-  prop: ValuedPropertyEntry,
+  propId: EpPropertyId,
+  type: string,
 ): WritableComputedRef<any> | undefined => {
-  const scheme = prop.propertyScheme;
-
-  switch (scheme.type) {
+  switch (type) {
     case "text":
       return computed({
-        get: () => prop.value?.value,
-        set: (val: string) => updateStringValue(val, scheme.id),
+        get: () =>
+          objectEditorStore.valuedProperties?.props.get(propId)?.value?.value ??
+          "",
+        set: (val: string) => updateStringValue(val, propId),
       });
 
     case "boolean":
       return computed({
-        get: () => prop.value ?? false,
-        set: (val: boolean) => updateBooleanValue(val, scheme.id),
+        get: () =>
+          objectEditorStore.valuedProperties?.props.get(propId)?.value?.value ??
+          false,
+        set: (val: boolean) => updateBooleanValue(val, propId),
       });
+
     case "number":
       return computed({
-        get: () => prop.value?.value,
-        set: (val: string) => updateNumberValue(val, scheme.id),
+        get: () =>
+          objectEditorStore.valuedProperties?.props.get(propId)?.value?.value,
+        set: (val: string) => {
+          updateNumberValue(val, propId);
+        },
       });
 
     default:
-      console.warn(`[Warning] Немає обробника для типу: ${scheme.type}`);
+      console.warn(`[Warning] Немає обробника для типу: ${type}`);
       return undefined;
   }
 };
@@ -124,6 +141,8 @@ watch(
   () => objectEditorStore.valuedProperties,
   (valuedProperties) => {
     if (!valuedProperties) return;
+
+    console.log(valuedProperties);
 
     const currentIds = new Set(valuedProperties.order);
     for (const key of handlers.keys()) {
@@ -137,7 +156,7 @@ watch(
 
       if (prop && prop.propertyScheme.isChangeable) {
         if (!handlers.has(id)) {
-          const handler = createPropertyHandler(prop);
+          const handler = createPropertyHandler(id, prop.propertyScheme.type);
           if (handler) {
             handlers.set(id, handler);
           }

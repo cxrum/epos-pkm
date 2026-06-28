@@ -3,11 +3,7 @@ import { ref, type Ref } from "vue";
 import type { EpObjectId, ObjectPath, Path } from "@/core/types";
 import { globalObjectsService, globalTypingService } from "@/core/di/global";
 import { type EpObjectEntity } from "@/core/domain/type";
-import type {
-  PropertiesScheme,
-  PropertyEntry,
-  ValuedPropertiesScheme,
-} from "@/core/application/type";
+import type { ValuedPropertiesScheme } from "@/core/application/type";
 
 export const useObjectEditorStore = defineStore("object-editor", () => {
   const focusedObjectId = ref<EpObjectId>();
