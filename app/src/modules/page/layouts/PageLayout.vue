@@ -43,7 +43,7 @@ const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
 const objectEditorStore = useObjectEditorStore();
 
-const editorController = useBaseEditorController();
+const editorController = useBaseEditorController(applicationBus);
 
 const currentPageEntity = ref<EpContainerObjectEntity>();
 const title = ref<string>();
@@ -104,16 +104,15 @@ const performSave = () => {
   const value = editorController.draftData.value;
   if (!value) return;
 
-  const pureTiptapData = structuredClone(toRaw(value));
-  const data = tiptapDocToEntities(pureTiptapData);
+  const data = toRaw(value);
 
   if (currentPageEntity.value) {
     const payloadToSave = {
       ...currentPageEntity.value,
       content: {
         ...currentPageEntity.value.content,
-        inlineObjects: toRaw(mapObjectEntitiesToContent(data.content)),
-        order: toRaw(data.order),
+        inlineObjects: toRaw(data.content.inlineObjects),
+        order: toRaw(data.content.order),
       },
     };
 
@@ -233,6 +232,7 @@ onUnmounted(() => {
           :controller="editorController"
           v-if="currentPageEntity"
           :initial="editorController.initialData.value"
+          :application-bus="applicationBus"
         ></BaseEditor>
         <div class="h-80 shrink-0"></div>
       </div>
@@ -248,7 +248,7 @@ onUnmounted(() => {
       class="h-full w-64 p-2 border-l border-(--border) bg-(--bg-sidebar) overflow-y-auto auto-hide-scroll shrink-0"
       v-if="isTypeEditorOpen"
     >
-      <TypeEditorLayout />
+      <TypeEditorLayout :controller="editorController" />
     </div>
   </div>
 </template>

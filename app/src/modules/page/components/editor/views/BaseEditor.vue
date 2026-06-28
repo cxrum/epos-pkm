@@ -18,14 +18,17 @@ import { ref, computed, watch, onMounted, toRaw, onBeforeUnmount } from "vue";
 import { DragHandle } from "@tiptap/extension-drag-handle-vue-3";
 import NodeRange from "@tiptap/extension-node-range";
 import StarterKit from "@tiptap/starter-kit";
-import { useEditor, EditorContent } from "@tiptap/vue-3";
+import { useEditor, EditorContent, Editor } from "@tiptap/vue-3";
 import { Placeholder } from "@tiptap/extensions";
 import { EpObjectAttributesExtension } from "../extension/customObjectExtension";
 import type { EpContainerObjectEntity } from "@/core/domain/type";
-import { entitiesToTiptapDoc } from "../mappers";
+import { entitiesToTiptapDoc, tiptapDocToEntities } from "../mappers";
 import { EpBlockExtension } from "../nodes/EpBlockExtension";
 import type { EditorControllerContract } from "../contract";
 import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
+import type { ApplicationEvents } from "@/bus/application";
+import type { Emitter } from "mitt";
+import type { EpObjectId } from "@/core/types";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },
@@ -37,6 +40,7 @@ const NESTED_CONFIG_RTL = {
 const props = defineProps<{
   controller: EditorControllerContract;
   initial: EpContainerObjectEntity;
+  applicationBus: Emitter<ApplicationEvents>;
 }>();
 
 const editable = ref(true);
@@ -80,7 +84,8 @@ const editor = useEditor({
     if (res === undefined) {
       return;
     }
-    props.controller.updateDraftContent(res);
+    const parsed = tiptapDocToEntities(res);
+    props.controller.updateDraftContent(parsed.content, parsed.order);
   },
   onSelectionUpdate({ editor }) {
     const { $anchor } = editor.state.selection;
@@ -126,7 +131,57 @@ watch(rtl, (newValue) => {
   }
 });
 
+const updateTipTapNodeAttributes = (
+  editor: Editor,
+  targetObjectId: EpObjectId,
+  newAttributes: Record<string, any>,
+) => {
+  let targetNodePos: number | null = null;
+  let currentAttrs: Record<string, any> = {};
+
+  editor.state.doc.descendants((node, pos) => {
+    if (
+      node.attrs.objectId === targetObjectId ||
+      node.attrs.id === targetObjectId
+    ) {
+      targetNodePos = pos;
+      currentAttrs = node.attrs;
+      return false;
+    }
+  });
+
+  if (targetNodePos !== null) {
+    editor.view.dispatch(
+      editor.state.tr.setNodeMarkup(targetNodePos, undefined, {
+        ...currentAttrs,
+        ...newAttributes,
+      }),
+    );
+  } else {
+    console.warn(
+      `[TipTap] Вузол з ID ${targetObjectId} не знайдено в редакторі.`,
+    );
+  }
+};
+
+const syncTipTapProperty = (payload: {
+  targetObjectId: string;
+  propertyId: string;
+  newValue: any;
+}) => {
+  if (!editor.value) return;
+
+  updateTipTapNodeAttributes(editor.value, payload.targetObjectId, {
+    [payload.propertyId]: payload.newValue,
+  });
+};
+
+onBeforeUnmount(() => {
+  props.applicationBus.off("draft:property-updated", syncTipTapProperty);
+});
+
 onMounted(() => {
+  props.applicationBus.on("draft:property-updated", syncTipTapProperty);
   if (rtl.value && editor.value) {
     editor.value.view.dom.setAttribute("dir", "rtl");
   }

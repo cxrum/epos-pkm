@@ -1,14 +1,22 @@
-import type { EpContainerObjectEntity } from "@/core/domain/type";
-import type { EpObjectId } from "@/core/types";
-import type { JSONContent } from "@tiptap/core";
+import type {
+  EpContainerObjectEntity,
+  EpInlineObjectEntity,
+  EpObjectEntity,
+} from "@/core/domain/type";
+import type { EpObjectId, EpPropertyId } from "@/core/types";
 import type { Ref } from "vue";
 
 export interface EditorControllerContract {
   focusedObjectId: Ref<EpObjectId | undefined>;
   initialData: Ref<EpContainerObjectEntity | undefined>;
-  draftData: Ref<JSONContent | undefined>;
+  draftData: Ref<EpContainerObjectEntity | undefined>;
 
-  updateDraftContent(obj: JSONContent): void;
+  updateDraftObjectProperty(
+    targetObjectId: EpObjectId,
+    propertyId: EpPropertyId,
+    newValue: any,
+  ): void;
+  updateDraftContent(content: EpObjectEntity[], order: EpObjectId[]): void;
   setInitialData(obj: EpContainerObjectEntity): void;
   setObjectId(id: EpObjectId): void;
   clearSelection(): void;

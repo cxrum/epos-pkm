@@ -1,32 +1,20 @@
 <script setup lang="ts">
-import {
-  computed,
-  onBeforeUnmount,
-  reactive,
-  ref,
-  toRaw,
-  watch,
-  type WritableComputedRef,
-} from "vue";
+import { computed, reactive, ref, watch, type WritableComputedRef } from "vue";
 import Accordion from "@/shared/components/Accordion.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
 import BaseSelect from "@/shared/components/BaseSelect.vue";
-import { usePageEditorStore } from "../store/pageEditorStore";
 import type { EpPropertyId, Icon } from "@/core/types";
 import type { ValuedPropertyEntry } from "@/core/application/type";
 import { useObjectEditorStore } from "../store/objectEditorStore";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
-import {
-  isAnyInlineEntity,
-  type EpInlineObjectEntity,
-} from "@/core/domain/type";
+import type { EditorControllerContract } from "../components/editor/contract";
 
-const pageEditorStore = usePageEditorStore();
 const objectEditorStore = useObjectEditorStore();
 
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
-let maxWaitTimer: ReturnType<typeof setInterval> | null = null;
+const props = defineProps<{
+  controller: EditorControllerContract;
+}>();
 
 const selectedBasicType = ref(null);
 const selectBasicTypeOptions = [
@@ -96,6 +84,12 @@ const updateNumberValue = async (
     console.warn(`[Warning] Некоректне число для властивості ${propId}`);
     return;
   }
+
+  props.controller.updateDraftObjectProperty(
+    focusedObject.id,
+    propId,
+    parsedValue,
+  );
 };
 const updateBooleanValue = (val: boolean, propId: EpPropertyId) => {
   console.log(`[Boolean] Оновлюємо ${propId}:`, val);
