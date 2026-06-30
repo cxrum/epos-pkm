@@ -112,10 +112,6 @@ export class ObjectsService implements ObjetServiceContract {
     if (!result) {
       return undefined;
     }
-    const type = await this.typingRepository.get(result.typeId);
-    if (!type) {
-      return undefined;
-    }
 
     return result;
   }
