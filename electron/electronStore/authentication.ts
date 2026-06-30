@@ -9,8 +9,7 @@ export const authConfig = new ElectronStore<AuthStoreShape>({
   name: "authConfig",
   defaults: {
     auth: {
-      accessToken: null,
-      refreshToken: null,
+      refreshTokenEncrypted: null,
       tokenType: null,
       userId: null,
       userEmail: null,
@@ -18,3 +17,18 @@ export const authConfig = new ElectronStore<AuthStoreShape>({
     },
   },
 });
+
+export function migrateLegacyAuthFields(): void {
+  const auth = authConfig.get("auth") as unknown as StoredAuthSession & {
+    accessToken?: unknown;
+    refreshToken?: unknown;
+  };
+
+  authConfig.set("auth", {
+    refreshTokenEncrypted: auth.refreshTokenEncrypted ?? null,
+    tokenType: auth.tokenType ?? null,
+    userId: auth.userId ?? null,
+    userEmail: auth.userEmail ?? null,
+    skipPrompt: auth.skipPrompt ?? false,
+  });
+}

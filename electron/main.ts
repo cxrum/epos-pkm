@@ -16,6 +16,7 @@ import { RawAppStateService } from "./AppStateService";
 import { setupAppState } from "./handlers/configHanlders";
 import { AuthService } from "./AuthService";
 import { setupAuthHandlers } from "./handlers/authHandlers";
+import { migrateLegacyAuthFields } from "./electronStore/authentication";
 
 function resolveWindowIcon() {
   if (app.isPackaged) {
@@ -108,6 +109,7 @@ app.whenReady().then(async () => {
   });
 
   const appStateService = new RawAppStateService();
+  migrateLegacyAuthFields();
   const authService = new AuthService(
     process.env.EPOS_API_URL ?? "http://localhost:8000",
   );
