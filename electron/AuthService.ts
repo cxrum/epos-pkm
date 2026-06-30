@@ -1,3 +1,4 @@
+import { safeStorage } from "electron";
 import { authConfig } from "./electronStore/authentication";
 import type {
   AuthCredentials,
@@ -22,6 +23,9 @@ const DEFAULT_API_BASE_URL = "http://localhost:8000";
 
 export class AuthService {
   private readonly apiBaseUrl: string;
+  private accessToken: string | null = null;
+  private currentUser: AuthUser | null = null;
+  private currentTokenType: string | null = null;
 
   constructor(apiBaseUrl: string = DEFAULT_API_BASE_URL) {
     this.apiBaseUrl = apiBaseUrl.replace(/\/+$/, "");
@@ -29,6 +33,32 @@ export class AuthService {
 
   private getSession(): StoredAuthSession {
     return authConfig.get("auth");
+  }
+
+  private hasSecureStorage(): boolean {
+    return safeStorage.isEncryptionAvailable();
+  }
+
+  private assertSecureStorageAvailable(): void {
+    if (!this.hasSecureStorage()) {
+      throw new Error(
+        "Secure OS storage is unavailable. Authentication cannot persist refresh tokens safely on this system.",
+      );
+    }
+  }
+
+  private encryptRefreshToken(refreshToken: string): string {
+    this.assertSecureStorageAvailable();
+    return safeStorage.encryptString(refreshToken).toString("base64");
+  }
+
+  private decryptRefreshToken(encrypted: string | null): string | null {
+    if (!encrypted) {
+      return null;
+    }
+
+    this.assertSecureStorageAvailable();
+    return safeStorage.decryptString(Buffer.from(encrypted, "base64"));
   }
 
   private async saveSession(session: Partial<StoredAuthSession>): Promise<void> {
@@ -39,10 +69,16 @@ export class AuthService {
     });
   }
 
+  private clearRuntimeTokens(): void {
+    this.accessToken = null;
+    this.currentUser = null;
+    this.currentTokenType = null;
+  }
+
   private async clearSessionTokens(): Promise<void> {
+    this.clearRuntimeTokens();
     await this.saveSession({
-      accessToken: null,
-      refreshToken: null,
+      refreshTokenEncrypted: null,
       tokenType: null,
       userId: null,
       userEmail: null,
@@ -116,6 +152,16 @@ export class AuthService {
     };
   }
 
+  private setRuntimeSession(
+    accessToken: string,
+    user: AuthUser,
+    tokenType: string,
+  ): void {
+    this.accessToken = accessToken;
+    this.currentUser = user;
+    this.currentTokenType = tokenType;
+  }
+
   private async persistSession(
     pair: TokenPairResponse,
     fallbackEmail?: string,
@@ -131,9 +177,9 @@ export class AuthService {
       // Keep the login/register flow usable even if profile lookup is unavailable.
     }
 
+    this.setRuntimeSession(pair.access_token, user, pair.token_type);
     await this.saveSession({
-      accessToken: pair.access_token,
-      refreshToken: pair.refresh_token,
+      refreshTokenEncrypted: this.encryptRefreshToken(pair.refresh_token),
       tokenType: pair.token_type,
       userId: user.id,
       userEmail: user.email,
@@ -151,23 +197,28 @@ export class AuthService {
     session: StoredAuthSession,
     authenticated: boolean,
   ): AuthState {
-    return {
-      authenticated,
-      skipPrompt: session.skipPrompt,
-      user:
-        authenticated && session.userId && session.userEmail
+    const user = authenticated
+      ? this.currentUser ??
+        (session.userId && session.userEmail
           ? {
               id: session.userId,
               email: session.userEmail,
             }
-          : null,
+          : null)
+      : null;
+
+    return {
+      authenticated,
+      skipPrompt: session.skipPrompt,
+      user,
     };
   }
 
   private async refreshSession(): Promise<AuthState> {
     const session = this.getSession();
+    const refreshToken = this.decryptRefreshToken(session.refreshTokenEncrypted);
 
-    if (!session.refreshToken) {
+    if (!refreshToken) {
       return this.toState(session, false);
     }
 
@@ -177,7 +228,7 @@ export class AuthService {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        refresh_token: session.refreshToken,
+        refresh_token: refreshToken,
       }),
     });
 
@@ -187,7 +238,11 @@ export class AuthService {
   async getStatus(): Promise<AuthState> {
     const session = this.getSession();
 
-    if (session.refreshToken) {
+    if (this.accessToken && this.currentUser) {
+      return this.toState(session, true);
+    }
+
+    if (session.refreshTokenEncrypted) {
       try {
         return await this.refreshSession();
       } catch {
@@ -200,6 +255,7 @@ export class AuthService {
   }
 
   async login(payload: AuthCredentials): Promise<AuthState> {
+    this.assertSecureStorageAvailable();
     const body = new URLSearchParams({
       email: payload.email,
       password: payload.password,
@@ -217,6 +273,7 @@ export class AuthService {
   }
 
   async register(payload: AuthCredentials): Promise<AuthState> {
+    this.assertSecureStorageAvailable();
     const pair = await this.requestJson<TokenPairResponse>(
       "/v1/users/register",
       {

@@ -15,8 +15,7 @@ export interface AuthState {
 }
 
 export interface StoredAuthSession {
-  accessToken: string | null;
-  refreshToken: string | null;
+  refreshTokenEncrypted: string | null;
   tokenType: string | null;
   userId: string | null;
   userEmail: string | null;
