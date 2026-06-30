@@ -8,6 +8,7 @@ import type {
   RawEptTypeHierarchyNode,
 } from "../infra/storage/type";
 import { AppStateRepository } from "../infra/stateRepository";
+import { AuthRepository } from "../infra/authRepository";
 import { WorkspaceStateRepository } from "../infra/workspaceRepository";
 import type { WorkspaceLocalConfigEntity } from "../domain/workspace";
 import { SystemRoot } from "./type";
@@ -21,6 +22,7 @@ const workspaceStateApi = new IpcFileSystem<WorkspaceLocalConfigEntity>(
 const typesStorageApi = new IpcFileSystem<RawEptTypeHierarchyNode>("/types");
 
 export const appStateRepository = new AppStateRepository();
+export const authRepository = new AuthRepository();
 export const workspaceStateRepository = new WorkspaceStateRepository(
   workspaceStateApi,
 );
