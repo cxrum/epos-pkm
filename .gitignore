@@ -20,6 +20,7 @@ jspm_packages/
 
 *.tsbuildinfo
 .npm
+package-lock.json
 
 .env
 .env.*
