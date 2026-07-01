@@ -316,12 +316,12 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
         order: data.content.order || [],
         content: data.content.inlineObjects || {},
       };
-      const parentContainerPath = parent.physicalRelativePath.replace(
-        ".json",
-        "",
-      );
-      relativePath = `${parentContainerPath}/${container.title}.json`;
-
+      console.log(parent.physicalRelativePath)
+      const parsedParent = await this.userStorageApi.parse(parent.physicalRelativePath);
+      console.log(parsedParent)
+      const parentContainerPath = await this.userStorageApi.join(parsedParent.dir, parsedParent.name);
+      relativePath = await this.userStorageApi.join(parentContainerPath, `${container.title}.json`);
+      console.log(relativePath)
       await this.userStorageApi.save(relativePath, container);
 
       isSaved = true;
@@ -401,14 +401,9 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       container.content = cleanInlineObjects;
 
       if (oldTitle !== newData.content.title) {
-        const lastSlashIndex = filePath.lastIndexOf("/");
-        const dirPath =
-          lastSlashIndex !== -1 ? filePath.substring(0, lastSlashIndex) : "";
-        const newFilePath = dirPath
-          ? `${dirPath}/${newData.content.title}.json`
-          : `${newData.content.title}.json`;
-
-        await this.userStorageApi.rename(filePath, newFilePath);
+        console.log(filePath)
+        const newFilePath = await this.userStorageApi.renameFile(filePath, newData.content.title);
+        console.log(newFilePath);
         await this.userStorageApi.save(newFilePath, container);
       } else {
         await this.userStorageApi.save(filePath, container);
@@ -575,25 +570,28 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     let isMoved = false;
 
     if (movedObj.properties?.isContainer?.value) {
-      const newDirPath = newParentFilePath.replace(".json", "");
 
-      const oldFileName = oldFilePath.split("/").pop() || "";
-      const newFilePath = newDirPath
-        ? `${newDirPath}/${oldFileName}`
-        : oldFileName;
+      const parsedOldPath = await this.userStorageApi.parse(oldFilePath)
+      const parsedNewPath = await this.userStorageApi.parse(newParentFilePath)
 
-      console.log(newFilePath)
+      const newDirPath = await this.userStorageApi.join(parsedNewPath.dir, parsedNewPath.name) 
+
+      const oldFile = parsedOldPath.name + parsedOldPath.ext 
+      const newFilePath = await this.userStorageApi.join(newDirPath, oldFile) 
+      
       if (oldFilePath !== newFilePath) {
         await this.userStorageApi.move(oldFilePath, newFilePath);
 
-        const oldFolderPath = oldFilePath.replace(".json", "");
-        const newFolderPath = newFilePath.replace(".json", "");
-
-        if (await this.userStorageApi.exists(oldFolderPath)) {
-          await this.userStorageApi.move(oldFolderPath, newFolderPath);
+        const oldContainerPath = await this.userStorageApi.join(parsedOldPath.dir, parsedOldPath.name);
+        const newContainerPath = await this.userStorageApi.join(newDirPath, parsedOldPath.name) 
+        
+        if (await this.userStorageApi.exists(oldContainerPath)) {
+          await this.userStorageApi.move(oldContainerPath, newContainerPath);
         }
+        
         isMoved = true;
       }
+
     } else {
       if (oldFilePath === newParentFilePath) {
         return true;

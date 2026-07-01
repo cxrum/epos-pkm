@@ -87,21 +87,10 @@ export class JsonNodeFileSystem<
     }
   }
 
-  private async getInfo(targetPath: string): Promise<FileInfo> {
-    const fullPath = this.getFullPath(targetPath);
-    const stat = await fs.stat(fullPath);
-    const isDir = stat.isDirectory();
-
-    return {
-      path: this.normalizePath(targetPath, 'posix'),
-      type: isDir ? "dir" : "file",
-      extension: isDir ? undefined : path.extname(targetPath).toLowerCase(),
-    };
-  }
-
   async isDirectory(targetPath: string): Promise<boolean> {
     const fullPath = this.getFullPath(targetPath);
     const stat = await fs.stat(fullPath);
+    
     return stat.isDirectory();
   }
 
@@ -109,31 +98,42 @@ export class JsonNodeFileSystem<
     const fullPath = this.getFullPath(directoryPath);
     const entries = await fs.readdir(fullPath, { withFileTypes: true });
 
-    return entries.map((entry) => {
-      const relativePath = path.join(directoryPath, entry.name);
-      const isDir = entry.isDirectory();
-
-      return {
-        path: this.normalizePath(relativePath, 'posix'),
-        type: isDir ? "dir" : "file",
-        extension: isDir ? undefined : path.extname(entry.name).toLowerCase(),
-      };
-    });
+    return Promise.all(
+      entries.map((entry) => {
+        const relativeTarget = path.join(directoryPath, entry.name);
+        return this.parse(relativeTarget);
+      })
+    );
   }
 
   async rename(path: string, newPath: string): Promise<boolean> {
-    const newFileExist = await this.exists(newPath);
-    const current = await this.exists(path);
-
     const fullOldPath = this.getFullPath(path);
     const fullNewPath = this.getFullPath(newPath);
 
-    if (!newFileExist && current) {
-      await fs.rename(fullOldPath, fullNewPath);
+    if (fullOldPath === fullNewPath) {
       return true;
     }
 
-    return false;
+    const currentExists = await this.exists(path);
+    if (!currentExists) {
+      return false;
+    }
+
+    const isCaseOnlyChange = fullOldPath.toLowerCase() === fullNewPath.toLowerCase();
+    
+    const newFileExists = await this.exists(newPath);
+
+    if (newFileExists && !isCaseOnlyChange) {
+      return false;
+    }
+
+    try {
+      await fs.rename(fullOldPath, fullNewPath);
+      return true;
+    } catch (error) {
+      console.error(`[FileSystem] Помилка перейменування ${path} -> ${newPath}:`, error);
+      return false;
+    }
   }
 
   async tree(rootPath: string): Promise<{ source: string; target: string }[]> {
@@ -215,25 +215,67 @@ export class JsonNodeFileSystem<
   }
 
   public async renameFile(filePath: string, newTitle: string): Promise<string> {
-    const oldPath = path.parse(filePath);
-    const formatedPath =  path.format({
-      dir: oldPath.dir,
+    const fullOldPath = this.getFullPath(filePath);
+    const oldRelativeParsed = path.parse(filePath);
+    const oldParsed = path.parse(fullOldPath);
+    
+    const fullNewPath = path.format({
+      dir: oldParsed.dir,
       name: newTitle,
       ext: ".json",
     });
+    
+    const newParsed = path.parse(fullNewPath)
+    const relativeNewPath = oldRelativeParsed.dir + newParsed.name + newParsed.ext  
 
-    const res = await this.rename(filePath, formatedPath)
-    return res ? formatedPath : filePath
+    if (fullOldPath === fullNewPath) {
+      return relativeNewPath;
+    }
+
+    try {
+      await fs.access(fullOldPath);
+    } catch {
+      return filePath;
+    }
+
+    const isCaseOnlyChange = fullOldPath.toLowerCase() === fullNewPath.toLowerCase();
+
+    if (!isCaseOnlyChange) {
+      try {
+        await fs.access(fullNewPath);
+        return filePath;
+      } catch {
+      }
+    }
+
+
+    try {
+      await fs.rename(fullOldPath, fullNewPath);
+      return relativeNewPath;
+    } catch (error) {
+      console.error(error);
+      return relativeNewPath;
+    }
+  }
+  
+  async parse(targetPath: string): Promise<FileInfo> {
+    const parsed = path.parse(targetPath);
+
+    return {
+      path: path.normalize(targetPath),
+      name: parsed.name,
+      dir: parsed.dir,
+      ext: parsed.ext,
+    };
   }
 
-  public getChildPath(parentPath: string, childTitle: string): string {
-    const parsedParent = path.parse(parentPath);
-    const parentContainer = path.join(parsedParent.dir, parsedParent.name);
+  async join(basePath: string | undefined, targetPath: string | undefined): Promise<string> {
+    const safeTarget = targetPath || "";
 
-    return path.format({
-      dir: parentContainer,
-      name: childTitle,
-      ext: ".json",
-    });
-}
+    if (!basePath) {
+      return path.normalize(safeTarget);
+    }
+    
+    return path.join(basePath, safeTarget);
+  }
 }

@@ -2,8 +2,9 @@ import type { Edge } from "@/core/infra/utils";
 
 export interface FileInfo {
   path: string;
-  type: "dir" | "file";
-  extension?: string;
+  ext?: string;
+  dir: string;
+  name: string;
 }
 
 export interface FileSystemApi<T = unknown> {
@@ -18,4 +19,8 @@ export interface FileSystemApi<T = unknown> {
 
   tree(rootPath: string): Promise<Edge<string>[]>;
   getAllFlat(rootPath: string): Promise<Record<string, T>>;
+
+  join(basePath: string | undefined, targetPath: string | undefined): Promise<string>
+  parse(targetPath: string): Promise<FileInfo>
+  renameFile(filePath: string, newTitle: string): Promise<string>
 }
