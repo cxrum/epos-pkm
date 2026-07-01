@@ -197,7 +197,8 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     this.fileTreeCache = await this.loadFileCache(flattenData);
     this.fileTreeStructure = await this.loadTree(flattenData);
     this.objectTreeEdges = this.buildObjectEdges(flattenData);
-    console.log(this.objectTreeEdges);
+    console.log(Array.from(this.objectPathCache.values()))
+
   }
 
   private getAncestorPath(id: EpObjectId): ObjectPath {
@@ -581,11 +582,13 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
         ? `${newDirPath}/${oldFileName}`
         : oldFileName;
 
+      console.log(newFilePath)
       if (oldFilePath !== newFilePath) {
         await this.userStorageApi.move(oldFilePath, newFilePath);
 
         const oldFolderPath = oldFilePath.replace(".json", "");
         const newFolderPath = newFilePath.replace(".json", "");
+
         if (await this.userStorageApi.exists(oldFolderPath)) {
           await this.userStorageApi.move(oldFolderPath, newFolderPath);
         }

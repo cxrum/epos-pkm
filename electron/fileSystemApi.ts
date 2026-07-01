@@ -12,16 +12,29 @@ export class JsonNodeFileSystem<
     this.appState = appStateService;
   }
 
+  private normalizePath(targetPath: string, format: "posix" | "os" = "posix"): string {
+    const normalized = path.normalize(targetPath);
+
+    if (format === "posix" && path.sep === "\\") {
+      return normalized.replace(/\\/g, "/");
+    }
+
+    return normalized;
+  }
+
   private getWorkspacePath(): string {
     const workspacePath = this.appState.getSelectedWorkspacePath();
     if (!workspacePath) {
       throw Error();
     }
-    return workspacePath;
+    return this.normalizePath(workspacePath, 'os');
   }
 
   private getFullPath(targetPath: string): string {
-    return path.join(this.getWorkspacePath(), targetPath);
+    let res = path.join(this.getWorkspacePath(), targetPath);
+    res = this.normalizePath(res, 'os');
+    console.log("TARGET: ", targetPath, "\nRES: ", res )
+    return res
   }
 
   async get(targetPath: string): Promise<T | undefined> {
@@ -80,7 +93,7 @@ export class JsonNodeFileSystem<
     const isDir = stat.isDirectory();
 
     return {
-      path: targetPath,
+      path: this.normalizePath(targetPath, 'posix'),
       type: isDir ? "dir" : "file",
       extension: isDir ? undefined : path.extname(targetPath).toLowerCase(),
     };
@@ -101,7 +114,7 @@ export class JsonNodeFileSystem<
       const isDir = entry.isDirectory();
 
       return {
-        path: relativePath,
+        path: this.normalizePath(relativePath, 'posix'),
         type: isDir ? "dir" : "file",
         extension: isDir ? undefined : path.extname(entry.name).toLowerCase(),
       };
@@ -150,8 +163,8 @@ export class JsonNodeFileSystem<
           }
 
           treeEdges.push({
-            source: relativeSource,
-            target: relativeTarget,
+            source: this.normalizePath(relativeSource, 'posix'),
+            target: this.normalizePath(relativeTarget, 'posix'),
           });
 
           if (isDir) {
@@ -178,8 +191,8 @@ export class JsonNodeFileSystem<
 
       for (let index = 0; index < entries.length; index++) {
         const el = entries[index];
-        const absolutePath = path.resolve(currentPath, el.name);
 
+        const absolutePath = path.resolve(currentPath, el.name);
         const relativeTarget = path.relative(fullRootPath, absolutePath);
 
         if (!discovered.has(absolutePath)) {
@@ -200,4 +213,27 @@ export class JsonNodeFileSystem<
 
     return await traverse(fullRootPath);
   }
+
+  public async renameFile(filePath: string, newTitle: string): Promise<string> {
+    const oldPath = path.parse(filePath);
+    const formatedPath =  path.format({
+      dir: oldPath.dir,
+      name: newTitle,
+      ext: ".json",
+    });
+
+    const res = await this.rename(filePath, formatedPath)
+    return res ? formatedPath : filePath
+  }
+
+  public getChildPath(parentPath: string, childTitle: string): string {
+    const parsedParent = path.parse(parentPath);
+    const parentContainer = path.join(parsedParent.dir, parsedParent.name);
+
+    return path.format({
+      dir: parentContainer,
+      name: childTitle,
+      ext: ".json",
+    });
+}
 }
