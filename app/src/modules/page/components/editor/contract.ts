@@ -4,7 +4,7 @@ import type {
   EpObjectEntity,
 } from "@/core/domain/type";
 import type { EpObjectId, EpPropertyId } from "@/core/types";
-import type { Ref } from "vue";
+import type { InjectionKey, Ref } from "vue";
 
 export interface EditorControllerContract {
   focusedObjectId: Ref<EpObjectId | undefined>;
@@ -21,3 +21,6 @@ export interface EditorControllerContract {
   setObjectId(id: EpObjectId): void;
   clearSelection(): void;
 }
+
+export const EditorControllerKey: InjectionKey<EditorControllerContract> =
+  Symbol("EditorController");

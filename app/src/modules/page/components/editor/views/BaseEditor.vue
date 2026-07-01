@@ -29,6 +29,7 @@ import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
 import type { ApplicationEvents } from "@/bus/application";
 import type { Emitter } from "mitt";
 import type { EpObjectId } from "@/core/types";
+import { NodeSelection } from "@tiptap/pm/state";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },
@@ -186,6 +187,38 @@ onMounted(() => {
     editor.value.view.dom.setAttribute("dir", "rtl");
   }
 });
+
+const forceSelectTipTapNode = (
+  editor: Editor,
+  targetId: string | undefined,
+) => {
+  let targetPos: number | null = null;
+
+  editor.state.doc.descendants((node, pos) => {
+    if (node.attrs.id === targetId) {
+      targetPos = pos;
+      return false;
+    }
+  });
+
+  if (targetPos !== null) {
+    const tr = editor.state.tr;
+    const selection = NodeSelection.create(editor.state.doc, targetPos);
+
+    editor.view.dispatch(tr.setSelection(selection));
+
+    editor.view.dispatch(editor.state.tr.scrollIntoView());
+  }
+};
+
+watch(
+  () => props.controller.focusedObjectId,
+  (it) => {
+    if (editor.value) {
+      forceSelectTipTapNode(editor.value, it.value);
+    }
+  },
+);
 </script>
 
 <style lang="scss">

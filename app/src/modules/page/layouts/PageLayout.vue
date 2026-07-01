@@ -7,6 +7,7 @@ import {
   computed,
   onMounted,
   onUnmounted,
+  provide,
 } from "vue";
 import { useWorkspaceStore } from "@/core/store/workspaceStore.ts";
 import BaseEditor from "../components/editor/views/BaseEditor.vue";
@@ -30,6 +31,7 @@ import TypeEditorLayout from "./TypeEditorLayout.vue";
 import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
 import { applicationBus } from "@/bus/application.ts";
 import { useObjectEditorStore } from "../store/objectEditorStore.ts";
+import { EditorControllerKey } from "../components/editor/contract.ts";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -41,6 +43,7 @@ const globalNavigationStore = useGlobalNavigation();
 const objectEditorStore = useObjectEditorStore();
 
 const editorController = useBaseEditorController(applicationBus);
+provide(EditorControllerKey, editorController);
 
 const currentPageEntity = ref<EpContainerObjectEntity>();
 const title = ref<string>();

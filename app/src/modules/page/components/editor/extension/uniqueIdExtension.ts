@@ -4,6 +4,63 @@ import { Plugin, PluginKey } from "@tiptap/pm/state";
 export const UniqueBlockIdExtension = Extension.create({
   name: "uniqueBlockId",
 
+  addKeyboardShortcuts() {
+    return {
+      "Shift-Enter": () => {
+        const { state, dispatch } = this.editor.view;
+        const { $from, $to } = state.selection;
+        const parentNode = $from.node($from.depth);
+
+        if (!parentNode || !parentNode.isBlock) return false;
+
+        if (dispatch) {
+          const newAttrs = { ...parentNode.attrs };
+          newAttrs.id = crypto.randomUUID();
+
+          let tr = state.tr.delete($from.pos, $to.pos);
+
+          tr = tr.split(tr.mapping.map($from.pos), 1, [
+            { type: parentNode.type, attrs: newAttrs },
+          ]);
+
+          dispatch(tr.scrollIntoView());
+        }
+
+        return true;
+      },
+
+      Enter: () => {
+        const { state, dispatch } = this.editor.view;
+        const { $from, $to } = state.selection;
+        const parentNode = $from.node($from.depth);
+
+        if (!parentNode || !parentNode.isBlock) return false;
+
+        if (
+          ["listItem", "bulletList", "orderedList"].includes(
+            parentNode.type.name,
+          )
+        ) {
+          return false;
+        }
+
+        if (dispatch) {
+          const cleanType = state.schema.nodes.paragraph || parentNode.type;
+
+          let tr = state.tr.delete($from.pos, $to.pos);
+
+          tr = tr.split(tr.mapping.map($from.pos), 1, [
+            { type: cleanType, attrs: { id: crypto.randomUUID() } },
+          ]);
+
+          dispatch(tr.scrollIntoView());
+        }
+
+        return true;
+      },
+    };
+  },
+
   addProseMirrorPlugins() {
     return [
       new Plugin({

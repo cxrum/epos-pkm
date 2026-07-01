@@ -2,7 +2,7 @@ import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
 import type { EpObjectId, EpPropertyId, ObjectPath, Path } from "@/core/types";
 import { globalObjectsService, globalTypingService } from "@/core/di/global";
-import { type EpObjectEntity } from "@/core/domain/type";
+import { type EpObjectEntity, type EpTypeEntity } from "@/core/domain/type";
 import type { ValuedPropertiesScheme } from "@/core/application/type";
 
 export const useObjectEditorStore = defineStore("object-editor", () => {
@@ -11,6 +11,9 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
 
   const valuedProperties = ref<ValuedPropertiesScheme>();
 
+  const selectedType = ref<EpTypeEntity>();
+  const availableTypes = ref<EpTypeEntity[]>([]);
+
   const propertyFieldError = ref<Map<EpPropertyId, string | undefined>>(
     new Map(),
   );
@@ -18,8 +21,16 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
   const focusObject = async (id: EpObjectId) => {
     focusedObjectId.value = id;
     focusedObject.value = await globalObjectsService.get(id);
-    valuedProperties.value =
-      await globalObjectsService.getValuedObjectProps(id);
+    if (focusedObject.value) {
+      valuedProperties.value =
+        await globalObjectsService.getValuedObjectProps(id);
+      selectedType.value = await globalTypingService.get(
+        focusedObject.value.id,
+      );
+      availableTypes.value = await globalTypingService.getDescendants(
+        focusedObject.value.typeId,
+      );
+    }
   };
 
   const clearFocusObject = () => {
@@ -42,6 +53,9 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
   return {
     focusedObject,
     valuedProperties,
+
+    availableTypes,
+    selectedType,
 
     propertyFieldError,
 

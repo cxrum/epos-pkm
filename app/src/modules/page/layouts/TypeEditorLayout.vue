@@ -1,9 +1,16 @@
 <script setup lang="ts">
-import { computed, reactive, ref, watch, type WritableComputedRef } from "vue";
+import {
+  computed,
+  reactive,
+  ref,
+  watch,
+  type Ref,
+  type WritableComputedRef,
+} from "vue";
 import Accordion from "@/shared/components/Accordion.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
 import BaseSelect from "@/shared/components/BaseSelect.vue";
-import type { EpPropertyId, Icon } from "@/core/types";
+import type { EpPropertyId, EpTypeId, Icon } from "@/core/types";
 import type { ValuedPropertyEntry } from "@/core/application/type";
 import { useObjectEditorStore } from "../store/objectEditorStore";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
@@ -16,12 +23,8 @@ const props = defineProps<{
   controller: EditorControllerContract;
 }>();
 
-const selectedBasicType = ref(null);
-const selectBasicTypeOptions = [
-  { label: "Type 1", value: "ab1" },
-  { label: "Type 2", value: "ab2" },
-  { label: "Type 3", value: "ab3" },
-];
+const selectedType = ref<EpTypeId>();
+const typeOptions: Ref<{ label: string; value: EpTypeId }[]> = ref([]);
 
 const groupedProperties = computed(
   (): {
@@ -165,6 +168,27 @@ watch(
   },
   { immediate: true, deep: false },
 );
+watch(
+  () => objectEditorStore.selectedType,
+  (type) => {
+    if (type) {
+      selectedType.value = type.id;
+    }
+  },
+);
+watch(
+  () => objectEditorStore.availableTypes,
+  (types) => {
+    if (types) {
+      typeOptions.value = types.map((it) => {
+        return {
+          label: it.title,
+          value: it.id,
+        };
+      });
+    }
+  },
+);
 </script>
 
 <template>
@@ -173,16 +197,7 @@ watch(
 
     <div
       class="flex flex-row w-full items-center justify-between pb-2 border-b border-(--border)"
-    >
-      <span class=""> Basic Type </span>
-
-      <BaseSelect
-        v-model="selectedBasicType"
-        :options="selectBasicTypeOptions"
-        class="w-1/2"
-      >
-      </BaseSelect>
-    </div>
+    ></div>
 
     <Accordion :label="'Properties'">
       <span
