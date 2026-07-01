@@ -9,6 +9,64 @@ export class MockFileSystem<T> implements FileSystemApi<T> {
     this.directories.add("");
   }
 
+  async join(basePath: string | undefined, targetPath: string | undefined): Promise<string> {
+    const base = basePath || "";
+    const target = targetPath || "";
+    if (!base) return this.normalizePath(target);
+    if (!target) return this.normalizePath(base);
+    return this.normalizePath(`${base}/${target}`);
+  }
+
+  async parse(targetPath: string): Promise<FileInfo> {
+    const normalized = this.normalizePath(targetPath);
+    const lastSlashIndex = normalized.lastIndexOf("/");
+    const dir = lastSlashIndex !== -1 ? normalized.substring(0, lastSlashIndex) : "";
+    const baseName = lastSlashIndex !== -1 ? normalized.substring(lastSlashIndex + 1) : normalized;
+
+    const lastDotIndex = baseName.lastIndexOf(".");
+    let name = baseName;
+    let ext = "";
+
+    if (lastDotIndex !== -1 && lastDotIndex !== 0) {
+      name = baseName.substring(0, lastDotIndex);
+      ext = baseName.substring(lastDotIndex);
+    }
+
+    return {
+      path: normalized,
+      name,
+      dir,
+      ext,
+    };
+  }
+
+  async renameFile(filePath: string, newTitle: string): Promise<string> {
+    const parsed = await this.parse(filePath);
+    const newPath = parsed.dir ? `${parsed.dir}/${newTitle}.json` : `${newTitle}.json`;
+
+    if (this.normalizePath(filePath) === this.normalizePath(newPath)) {
+      return newPath;
+    }
+
+    const isSuccess = await this.rename(filePath, newPath);
+    return isSuccess ? newPath : filePath;
+  }
+
+  async relative(fromPath: string, toPath: string): Promise<string> {
+    const from = this.normalizePath(fromPath);
+    const to = this.normalizePath(toPath);
+
+    if (from === to) return "";
+    if (from === "") return to;
+
+    const fromPrefix = `${from}/`;
+    if (to.startsWith(fromPrefix)) {
+      return to.substring(fromPrefix.length);
+    }
+
+    return to;
+  }
+
   private normalizePath(path: string): string {
     return path
       .replace(/^(\.\/|\/+)+/, "")
@@ -183,7 +241,8 @@ export class MockFileSystem<T> implements FileSystemApi<T> {
           resultMap.set(path, {
             name: parts[0],
             path: path,
-            isDirectory: isDir,
+            dir: normalizedDir,
+            ext: parts[0].includes(".") ? parts[0].substring(parts[0].lastIndexOf(".")) : ""
           });
         } else {
           const childDirName = parts[0];
@@ -192,7 +251,8 @@ export class MockFileSystem<T> implements FileSystemApi<T> {
             resultMap.set(childDirPath, {
               name: childDirName,
               path: childDirPath,
-              isDirectory: true,
+              dir: normalizedDir,
+              ext: ""
             });
           }
         }
