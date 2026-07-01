@@ -33,4 +33,5 @@ export function setupWorkSpaceStorage(appState: RawAppStateService) {
   ipcMain.handle("fs:renameFile", async (_, filePath: string, newTitle: string) => await fsApi.renameFile(filePath, newTitle));
   ipcMain.handle("fs:parse", async (_, targetPath) => await fsApi.parse(targetPath));
   ipcMain.handle("fs:join", async (_, basePath: string | undefined, targetPath: string | undefined) => await fsApi.join(basePath, targetPath));
+  ipcMain.handle("fs:relative", async (_, fromPath: string, toPath: string) => await fsApi.relative(fromPath, toPath));
 }

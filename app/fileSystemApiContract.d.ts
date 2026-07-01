@@ -23,4 +23,5 @@ export interface FileSystemApi<T = unknown> {
   join(basePath: string | undefined, targetPath: string | undefined): Promise<string>
   parse(targetPath: string): Promise<FileInfo>
   renameFile(filePath: string, newTitle: string): Promise<string>
+  relative(fromPath: string, toPath: string): Promise<string>
 }

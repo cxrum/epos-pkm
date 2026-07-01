@@ -226,7 +226,7 @@ export class JsonNodeFileSystem<
     });
     
     const newParsed = path.parse(fullNewPath)
-    const relativeNewPath = oldRelativeParsed.dir + newParsed.name + newParsed.ext  
+    const relativeNewPath = path.join(oldRelativeParsed.dir,  newParsed.name + newParsed.ext)  
 
     if (fullOldPath === fullNewPath) {
       return relativeNewPath;
@@ -277,5 +277,8 @@ export class JsonNodeFileSystem<
     }
     
     return path.join(basePath, safeTarget);
+  }
+  async relative(fromPath: string, toPath: string): Promise<string> {
+    return path.relative(fromPath, toPath);
   }
 }

@@ -401,9 +401,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       container.content = cleanInlineObjects;
 
       if (oldTitle !== newData.content.title) {
-        console.log(filePath)
         const newFilePath = await this.userStorageApi.renameFile(filePath, newData.content.title);
-        console.log(newFilePath);
         await this.userStorageApi.save(newFilePath, container);
       } else {
         await this.userStorageApi.save(filePath, container);
@@ -572,18 +570,25 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     if (movedObj.properties?.isContainer?.value) {
 
       const parsedOldPath = await this.userStorageApi.parse(oldFilePath)
+      console.log("[ObjectsRepo:move]-parsedOldPath: \n", parsedOldPath, "\n[END]\n")
+
       const parsedNewPath = await this.userStorageApi.parse(newParentFilePath)
-
+      console.log("[ObjectsRepo:move]-parsedNewPath: \n", parsedNewPath, "\n[END]\n")
+      
       const newDirPath = await this.userStorageApi.join(parsedNewPath.dir, parsedNewPath.name) 
-
+      console.log("[ObjectsRepo:move]-newDirPath: \n", newDirPath, "\n[END]\n")
+      
       const oldFile = parsedOldPath.name + parsedOldPath.ext 
+      console.log("[ObjectsRepo:move]-oldFile: \n", oldFile, "\n[END]\n")
       const newFilePath = await this.userStorageApi.join(newDirPath, oldFile) 
+      console.log("[ObjectsRepo:move]-parsedOldPath: \n", parsedOldPath, "\n[END]\n")
       
       if (oldFilePath !== newFilePath) {
         await this.userStorageApi.move(oldFilePath, newFilePath);
-
+        
         const oldContainerPath = await this.userStorageApi.join(parsedOldPath.dir, parsedOldPath.name);
         const newContainerPath = await this.userStorageApi.join(newDirPath, parsedOldPath.name) 
+        console.log("[ObjectsRepo:move]: \n", oldContainerPath, '\n [NEXT] \n', newContainerPath, "\n[END]\n")
         
         if (await this.userStorageApi.exists(oldContainerPath)) {
           await this.userStorageApi.move(oldContainerPath, newContainerPath);
