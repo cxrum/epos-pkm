@@ -79,7 +79,6 @@ watch(
         title.value = newData.content.title;
 
         editorController.setInitialData(currentPageEntity.value);
-        console.log(_newData);
         isFirst = false;
       }
     } else {
@@ -116,7 +115,7 @@ const performSave = () => {
       },
     };
 
-    pageStore.update(payloadToSave as EpObjectEntity);
+    // pageStore.update(payloadToSave as EpObjectEntity);
   }
 };
 

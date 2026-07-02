@@ -327,9 +327,33 @@ export type TextObjectEntity = BaseEpObjectEntity<
 export function isAnyText(
   entity: EpObjectEntity,
 ): entity is TextObjectEntity | HeadingObjectEntity {
-  return entity.typeId === "def:text" || entity.typeId === "def:heading";
+  return (
+    entity.typeId === "def:text" ||
+    entity.typeId === "def:heading" ||
+    entity.typeId === "def:code"
+  );
 }
 // TEXT INLINE OBJECT  -----------------------------------------------------
+
+// CODE INLINE OBJECT  -----------------------------------------------------
+export type CodeObjectPropertiesMap = WithContainerFlag<false> & {
+  codeLanguage: TextValuedPropertyEntry<"codeLanguage", "system", true> & {
+    value: "";
+  };
+};
+
+export type CodeObjectEntity = BaseEpObjectEntity<
+  "def:code",
+  Record<string, any>,
+  CodeObjectPropertiesMap
+>;
+
+export function isCodeEntity(
+  entity: EpObjectEntity,
+): entity is CodeObjectEntity {
+  return entity.typeId === "def:code";
+}
+// CODE INLINE OBJECT  -----------------------------------------------------
 
 // USER INLINE OBJECT  -----------------------------------------------------
 export type CustomInlinePropertiesMap = WithContainerFlag<false>;
@@ -374,6 +398,7 @@ export type EpInlineObjectEntity =
   | StandardInlineEntity
   | CustomInlineEntity
   | HeadingObjectEntity
+  | CodeObjectEntity
   | TextObjectEntity;
 
 export type EpObjectEntity = EpContainerObjectEntity | EpInlineObjectEntity;

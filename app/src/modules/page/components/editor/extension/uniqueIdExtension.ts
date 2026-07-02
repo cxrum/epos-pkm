@@ -13,6 +13,10 @@ export const UniqueBlockIdExtension = Extension.create({
 
         if (!parentNode || !parentNode.isBlock) return false;
 
+        if (["paragraph"].includes(parentNode.type.name)) {
+          return false;
+        }
+
         if (dispatch) {
           const newAttrs = { ...parentNode.attrs };
           newAttrs.id = crypto.randomUUID();
@@ -37,7 +41,7 @@ export const UniqueBlockIdExtension = Extension.create({
         if (!parentNode || !parentNode.isBlock) return false;
 
         if (
-          ["listItem", "bulletList", "orderedList"].includes(
+          ["listItem", "bulletList", "orderedList", "codeBlock"].includes(
             parentNode.type.name,
           )
         ) {

@@ -1,5 +1,8 @@
 import { describe, it, expect, vi, beforeEach, beforeAll } from "vitest";
-import { entitiesToTiptapDoc, tiptapDocToEntities } from "@/modules/page/components/editor/mappers";
+import {
+  entitiesToTiptapDoc,
+  tiptapDocToEntities,
+} from "@/modules/page/components/editor/mappers";
 import * as helpers from "@/modules/page/components/editor/helpers";
 import type { JSONContent } from "@tiptap/core";
 
@@ -9,7 +12,6 @@ vi.mock("@/modules/page/components/editor/helpers", () => ({
 }));
 
 describe("entitiesToTiptapDoc", () => {
-  
   beforeEach(() => {
     vi.clearAllMocks();
   });
@@ -88,13 +90,44 @@ describe("entitiesToTiptapDoc", () => {
     };
 
     vi.mocked(helpers.mapEpTypeToTiptapType).mockReturnValue("heading");
-    vi.mocked(helpers.isHeadingInlineEntity).mockReturnValue(true);
 
     const result = entitiesToTiptapDoc(entities, ["heading-1"]);
 
     expect(result.content[0].attrs?.level).toBe(2);
     expect(result.content[0].content).toEqual([
       { type: "text", text: "Section Title" },
+    ]);
+  });
+
+  it("should map a code entity and extract the language from props", () => {
+    const entities = {
+      "code-1": {
+        id: "code-1",
+        typeId: "def:code",
+        props: {
+          codeLanguage: { value: "typescript" },
+        },
+        physicalRelativePath: "",
+        objectPath: [],
+        content: [
+          {
+            type: "text",
+            text: 'console.log("Hello world");\nconsole.log("How are u?")',
+          },
+        ],
+      } as any,
+    };
+
+    vi.mocked(helpers.mapEpTypeToTiptapType).mockReturnValue("codeBlock");
+
+    const result = entitiesToTiptapDoc(entities, ["code-1"]);
+
+    expect(result.content[0].attrs?.language).toBe("typescript");
+    expect(result.content[0].content).toEqual([
+      {
+        type: "text",
+        text: 'console.log("Hello world");\nconsole.log("How are u?")',
+      },
     ]);
   });
 
@@ -173,7 +206,6 @@ describe("entitiesToTiptapDoc", () => {
 });
 
 describe("tiptapDocToEntities", () => {
-  // Мокаємо генерацію UUID для передбачуваності в тестах
   beforeAll(() => {
     Object.defineProperty(globalThis, "crypto", {
       value: {
@@ -185,17 +217,17 @@ describe("tiptapDocToEntities", () => {
   describe("Base and Empty States", () => {
     it("should return empty order and content if tiptapDoc.content is undefined", () => {
       const doc: JSONContent = {};
-      
+
       const result = tiptapDocToEntities(doc);
-      
+
       expect(result).toEqual({ order: [], content: [] });
     });
 
     it("should return empty arrays if tiptapDoc.content is empty array", () => {
       const doc: JSONContent = { content: [] };
-      
+
       const result = tiptapDocToEntities(doc);
-      
+
       expect(result).toEqual({ order: [], content: [] });
     });
   });
@@ -205,9 +237,9 @@ describe("tiptapDocToEntities", () => {
       const doc: JSONContent = {
         content: [{ type: "paragraph", attrs: { id: "existing-id-5678" } }],
       };
-      
+
       const result = tiptapDocToEntities(doc);
-      
+
       expect(result.order).toEqual(["existing-id-5678"]);
       expect(result.content[0].id).toBe("existing-id-5678");
     });
@@ -216,16 +248,53 @@ describe("tiptapDocToEntities", () => {
       const doc: JSONContent = {
         content: [{ type: "paragraph", attrs: {} }],
       };
-      
+
       const result = tiptapDocToEntities(doc);
-      
+
       expect(result.order).toEqual(["mocked-uuid-1234"]);
       expect(result.content[0].id).toBe("mocked-uuid-1234");
     });
   });
 
-  describe("Text Blocks Processing (Paragraph & Heading)", () => {
-    it("should process paragraph, set default typeId to 'def:text', and map text content", () => {
+  describe("Text Blocks Processing (Paragraph & Heading & CodeBlock)", () => {
+    it("should process paragraph, set default typeId to 'def:code', set language, and map code content", () => {
+      const doc: JSONContent = {
+        content: [
+          {
+            type: "codeBlock",
+            attrs: {
+              language: "typescript",
+            },
+            content: [
+              {
+                type: "text",
+                text: 'console.log("Hello world");\nconsole.log("How are u?")',
+              },
+            ],
+          },
+        ],
+      };
+
+      const result = tiptapDocToEntities(doc);
+
+      expect(result.content[0].typeId).toBe("def:code");
+      expect(result.content[0].content).toEqual([
+        {
+          type: "text",
+          text: 'console.log("Hello world");\nconsole.log("How are u?")',
+        },
+      ]);
+      expect(result.content[0].props).toEqual({
+        codeLanguage: {
+          id: "codeLanguage",
+          title: "Code language",
+          type: "text",
+          value: "typescript",
+        },
+      });
+    });
+
+    it("should process bullet list, set default typeId to 'def:bullet-list', and map text content", () => {
       const doc: JSONContent = {
         content: [
           {
@@ -238,7 +307,9 @@ describe("tiptapDocToEntities", () => {
       const result = tiptapDocToEntities(doc);
 
       expect(result.content[0].typeId).toBe("def:text");
-      expect(result.content[0].content).toEqual([{ type: "text", text: "Hello world" }]);
+      expect(result.content[0].content).toEqual([
+        { type: "text", text: "Hello world" },
+      ]);
       expect(result.content[0].props).toEqual({});
     });
 
@@ -256,8 +327,9 @@ describe("tiptapDocToEntities", () => {
       const result = tiptapDocToEntities(doc);
 
       expect(result.content[0].typeId).toBe("def:heading");
-      expect(result.content[0].content).toEqual([{ type: "text", text: "Title" }]);
-      // Перевіряємо, що старі props збереглись, а level додався
+      expect(result.content[0].content).toEqual([
+        { type: "text", text: "Title" },
+      ]);
       expect(result.content[0].props).toEqual({
         customProp: "value",
         level: {
@@ -278,12 +350,12 @@ describe("tiptapDocToEntities", () => {
 
       expect(result.content[0].props.level.value).toBe(1);
     });
-    
+
     it("should not override typeId for text blocks if it is already provided", () => {
       const doc: JSONContent = {
         content: [
           { type: "paragraph", attrs: { typeId: "custom:text" } },
-          { type: "heading", attrs: { typeId: "custom:heading" } }
+          { type: "heading", attrs: { typeId: "custom:heading" } },
         ],
       };
 
@@ -315,12 +387,11 @@ describe("tiptapDocToEntities", () => {
       const result = tiptapDocToEntities(doc);
 
       expect(result.order).toEqual(["widget-1"]);
-      
+
       const entity = result.content[0];
       expect(entity.id).toBe("widget-1");
       expect(entity.typeId).toBe("sys:widget");
-      // Перевіряємо, що взято domainContent, а не стандартний контент
-      expect(entity.content).toEqual({ configuration: "data" }); 
+      expect(entity.content).toEqual({ configuration: "data" });
       expect(entity.physicalRelativePath).toBe("/assets/widget.json");
       expect(entity.objectPath).toEqual(["root", "folder"]);
       expect(entity.props).toEqual({ isReadonly: true });
@@ -328,13 +399,13 @@ describe("tiptapDocToEntities", () => {
 
     it("should handle missing attrs safely for custom blocks", () => {
       const doc: JSONContent = {
-        content: [{ type: "image", attrs: null as any }], // Симуляція відсутності attrs
+        content: [{ type: "image", attrs: null as any }],
       };
 
       const result = tiptapDocToEntities(doc);
 
       const entity = result.content[0];
-      expect(entity.content).toEqual({}); // default domainContent
+      expect(entity.content).toEqual({});
       expect(entity.physicalRelativePath).toBe("");
       expect(entity.objectPath).toEqual([]);
       expect(entity.props).toEqual({});
