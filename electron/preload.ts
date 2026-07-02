@@ -2,6 +2,7 @@ import { contextBridge, ipcRenderer } from "electron";
 import { AppStateApi } from "../app/appState";
 import { FileInfo, FileSystemApi } from "../app/fileSystemApiContract";
 import { title } from "process";
+import type { AuthApi, AuthCredentials } from "./auth/types";
 
 contextBridge.exposeInMainWorld("browserWindow", {
   versions: () => ipcRenderer.invoke("versions"),
@@ -44,6 +45,16 @@ const appStateApi: AppStateApi = {
 
 contextBridge.exposeInMainWorld("electronFs", fileSystemApi);
 contextBridge.exposeInMainWorld("appState", appStateApi);
+const authApi: AuthApi = {
+  getStatus: () => ipcRenderer.invoke("auth:getStatus"),
+  login: (payload: AuthCredentials) => ipcRenderer.invoke("auth:login", payload),
+  register: (payload: AuthCredentials) =>
+    ipcRenderer.invoke("auth:register", payload),
+  skipAuth: (neverAskAgain: boolean) =>
+    ipcRenderer.invoke("auth:skip", neverAskAgain),
+};
+
+contextBridge.exposeInMainWorld("authApi", authApi);
 contextBridge.exposeInMainWorld("electronAPI", {
   selectDirectory: () => ipcRenderer.invoke("dialog:openDirectory"),
 });

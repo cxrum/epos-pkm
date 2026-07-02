@@ -12,8 +12,10 @@ import User from "@/assets/icons/User.vue";
 import Settings from "@/assets/icons/Settings.vue";
 import LoadingBar from "@/shared/components/LoadingBar.vue";
 import { useGlobalNavigation } from "../store/navigationStore";
+import { useAuthStore } from "../store/authStore";
 
 const workSpaceStore = useWorkspaceStore();
+const authStore = useAuthStore();
 
 const isWorkspaceReady = ref(false);
 const hasError = ref(false);
@@ -88,7 +90,9 @@ onClickOutside(omniSearchRef, (event: Event) => {
         <BaseIcon size="32px" v-show="isSidebarOpen" class="shrink-0">
           <User />
         </BaseIcon>
-        <span class="flex-1" v-show="isSidebarOpen"> UserName </span>
+        <span class="flex-1" v-show="isSidebarOpen">
+          {{ authStore.userLabel ?? "Guest" }}
+        </span>
 
         <router-link to="/workspace/settings" class="clickable rounded-md">
           <BaseIcon size="32px" class="shrink-0">
