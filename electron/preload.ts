@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { AppStateApi } from "../app/appState";
-import { FileSystemApi } from "../app/fileSystemApiContract";
+import { FileInfo, FileSystemApi } from "../app/fileSystemApiContract";
 import { title } from "process";
 
 contextBridge.exposeInMainWorld("browserWindow", {
@@ -19,6 +19,13 @@ const fileSystemApi: FileSystemApi = {
   list: (path: string) => ipcRenderer.invoke("fs:list", path),
   tree: (path: string) => ipcRenderer.invoke("fs:tree", path),
   getAllFlat: (path: string) => ipcRenderer.invoke("fs:getAllFlat", path),
+  join: (basePath: string | undefined, targetPath: string) =>
+    ipcRenderer.invoke("fs:join", basePath, targetPath),
+  relative: (fromPath: string, toPath: string) =>
+    ipcRenderer.invoke("fs:relative", fromPath, toPath),
+  parse: (targetPath: string) => ipcRenderer.invoke("fs:parse", targetPath),
+  renameFile: (filePath: string, newTitle: string) =>
+    ipcRenderer.invoke("fs:renameFile", filePath, newTitle),
 };
 
 const appStateApi: AppStateApi = {

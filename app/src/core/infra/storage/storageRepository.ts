@@ -11,19 +11,33 @@ export class IpcFileSystem<T extends any> implements FileSystemApi<T> {
     this.basePath = basePath;
   }
 
-  private resolvePath(targetPath: string): string {
-    if (!this.basePath) {
-      return targetPath;
-    }
-    const cleanTarget = targetPath.replace(/^(\.\/|\/+)+/, "");
-    if (!cleanTarget) {
-      return this.basePath;
-    }
-    if (this.basePath.endsWith("/")) {
-      return `${this.basePath}${cleanTarget}`;
-    }
+  async relative(fromPath: string, toPath: string): Promise<string> {
+    return await window.electronFs.relative(fromPath, toPath);
+  }
 
-    return `${this.basePath}/${cleanTarget}`;
+  async join(
+    basePath: string | undefined,
+    targetPath: string | undefined,
+  ): Promise<string> {
+    return await window.electronFs.join(basePath, targetPath);
+  }
+
+  async parse(targetPath: string): Promise<FileInfo> {
+    return await window.electronFs.parse(targetPath);
+  }
+
+  async renameFile(filePath: string, newTitle: string): Promise<string> {
+    const resPath = await window.electronFs.renameFile(
+      await this.resolvePath(filePath),
+      newTitle,
+    );
+    const res = await window.electronFs.relative(this.basePath ?? "", resPath);
+    return res;
+  }
+
+  private async resolvePath(targetPath: string): Promise<string> {
+    const cleanTarget = await this.join(this.basePath, targetPath);
+    return cleanTarget;
   }
 
   private toSerializable<TValue>(value: TValue): TValue {
@@ -32,50 +46,50 @@ export class IpcFileSystem<T extends any> implements FileSystemApi<T> {
 
   async rename(path: string, newPath: string): Promise<boolean> {
     return await window.electronFs.rename(
-      this.resolvePath(path),
-      this.resolvePath(newPath),
+      await this.resolvePath(path),
+      await this.resolvePath(newPath),
     );
   }
 
   async getAllFlat(rootPath: string): Promise<Record<string, T>> {
-    return await window.electronFs.getAllFlat(this.resolvePath(rootPath));
+    return await window.electronFs.getAllFlat(await this.resolvePath(rootPath));
   }
 
   async tree(rootPath: string): Promise<Edge<string>[]> {
-    return await window.electronFs.tree(this.resolvePath(rootPath));
+    return await window.electronFs.tree(await this.resolvePath(rootPath));
   }
 
   async get(path: string): Promise<T | undefined> {
-    return await window.electronFs.get(this.resolvePath(path));
+    return await window.electronFs.get(await this.resolvePath(path));
   }
 
   async save(path: string, data: T): Promise<void> {
     await window.electronFs.save(
-      this.resolvePath(path),
+      await this.resolvePath(path),
       this.toSerializable(data),
     );
   }
 
   async move(sourcePath: string, destinationPath: string): Promise<void> {
     await window.electronFs.move(
-      this.resolvePath(sourcePath),
-      this.resolvePath(destinationPath),
+      await this.resolvePath(sourcePath),
+      await this.resolvePath(destinationPath),
     );
   }
 
   async remove(path: string): Promise<void> {
-    await window.electronFs.remove(this.resolvePath(path));
+    await window.electronFs.remove(await this.resolvePath(path));
   }
 
   async exists(path: string): Promise<boolean> {
-    return await window.electronFs.exists(this.resolvePath(path));
+    return await window.electronFs.exists(await this.resolvePath(path));
   }
 
   async isDirectory(path: string): Promise<boolean> {
-    return await window.electronFs.isDirectory(this.resolvePath(path));
+    return await window.electronFs.isDirectory(await this.resolvePath(path));
   }
 
   async list(directoryPath: string): Promise<FileInfo[]> {
-    return await window.electronFs.list(this.resolvePath(directoryPath));
+    return await window.electronFs.list(await this.resolvePath(directoryPath));
   }
 }
