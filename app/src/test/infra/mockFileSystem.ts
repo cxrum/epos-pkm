@@ -9,7 +9,10 @@ export class MockFileSystem<T> implements FileSystemApi<T> {
     this.directories.add("");
   }
 
-  async join(basePath: string | undefined, targetPath: string | undefined): Promise<string> {
+  async join(
+    basePath: string | undefined,
+    targetPath: string | undefined,
+  ): Promise<string> {
     const base = basePath || "";
     const target = targetPath || "";
     if (!base) return this.normalizePath(target);
@@ -20,8 +23,12 @@ export class MockFileSystem<T> implements FileSystemApi<T> {
   async parse(targetPath: string): Promise<FileInfo> {
     const normalized = this.normalizePath(targetPath);
     const lastSlashIndex = normalized.lastIndexOf("/");
-    const dir = lastSlashIndex !== -1 ? normalized.substring(0, lastSlashIndex) : "";
-    const baseName = lastSlashIndex !== -1 ? normalized.substring(lastSlashIndex + 1) : normalized;
+    const dir =
+      lastSlashIndex !== -1 ? normalized.substring(0, lastSlashIndex) : "";
+    const baseName =
+      lastSlashIndex !== -1
+        ? normalized.substring(lastSlashIndex + 1)
+        : normalized;
 
     const lastDotIndex = baseName.lastIndexOf(".");
     let name = baseName;
@@ -42,7 +49,9 @@ export class MockFileSystem<T> implements FileSystemApi<T> {
 
   async renameFile(filePath: string, newTitle: string): Promise<string> {
     const parsed = await this.parse(filePath);
-    const newPath = parsed.dir ? `${parsed.dir}/${newTitle}.json` : `${newTitle}.json`;
+    const newPath = parsed.dir
+      ? `${parsed.dir}/${newTitle}.json`
+      : `${newTitle}.json`;
 
     if (this.normalizePath(filePath) === this.normalizePath(newPath)) {
       return newPath;
@@ -242,7 +251,9 @@ export class MockFileSystem<T> implements FileSystemApi<T> {
             name: parts[0],
             path: path,
             dir: normalizedDir,
-            ext: parts[0].includes(".") ? parts[0].substring(parts[0].lastIndexOf(".")) : ""
+            ext: parts[0].includes(".")
+              ? parts[0].substring(parts[0].lastIndexOf("."))
+              : "",
           });
         } else {
           const childDirName = parts[0];
@@ -252,7 +263,7 @@ export class MockFileSystem<T> implements FileSystemApi<T> {
               name: childDirName,
               path: childDirPath,
               dir: normalizedDir,
-              ext: ""
+              ext: "",
             });
           }
         }

@@ -12,7 +12,10 @@ export class JsonNodeFileSystem<
     this.appState = appStateService;
   }
 
-  private normalizePath(targetPath: string, format: "posix" | "os" = "posix"): string {
+  private normalizePath(
+    targetPath: string,
+    format: "posix" | "os" = "posix",
+  ): string {
     const normalized = path.normalize(targetPath);
 
     if (format === "posix" && path.sep === "\\") {
@@ -27,14 +30,13 @@ export class JsonNodeFileSystem<
     if (!workspacePath) {
       throw Error();
     }
-    return this.normalizePath(workspacePath, 'os');
+    return this.normalizePath(workspacePath, "os");
   }
 
   private getFullPath(targetPath: string): string {
     let res = path.join(this.getWorkspacePath(), targetPath);
-    res = this.normalizePath(res, 'os');
-    console.log("TARGET: ", targetPath, "\nRES: ", res )
-    return res
+    res = this.normalizePath(res, "os");
+    return res;
   }
 
   async get(targetPath: string): Promise<T | undefined> {
@@ -90,7 +92,7 @@ export class JsonNodeFileSystem<
   async isDirectory(targetPath: string): Promise<boolean> {
     const fullPath = this.getFullPath(targetPath);
     const stat = await fs.stat(fullPath);
-    
+
     return stat.isDirectory();
   }
 
@@ -102,7 +104,7 @@ export class JsonNodeFileSystem<
       entries.map((entry) => {
         const relativeTarget = path.join(directoryPath, entry.name);
         return this.parse(relativeTarget);
-      })
+      }),
     );
   }
 
@@ -119,8 +121,9 @@ export class JsonNodeFileSystem<
       return false;
     }
 
-    const isCaseOnlyChange = fullOldPath.toLowerCase() === fullNewPath.toLowerCase();
-    
+    const isCaseOnlyChange =
+      fullOldPath.toLowerCase() === fullNewPath.toLowerCase();
+
     const newFileExists = await this.exists(newPath);
 
     if (newFileExists && !isCaseOnlyChange) {
@@ -131,7 +134,7 @@ export class JsonNodeFileSystem<
       await fs.rename(fullOldPath, fullNewPath);
       return true;
     } catch (error) {
-      console.error(`[FileSystem] Помилка перейменування ${path} -> ${newPath}:`, error);
+      console.error(`[FileSystem] Rename error ${path} -> ${newPath}:`, error);
       return false;
     }
   }
@@ -163,8 +166,8 @@ export class JsonNodeFileSystem<
           }
 
           treeEdges.push({
-            source: this.normalizePath(relativeSource, 'posix'),
-            target: this.normalizePath(relativeTarget, 'posix'),
+            source: this.normalizePath(relativeSource, "posix"),
+            target: this.normalizePath(relativeTarget, "posix"),
           });
 
           if (isDir) {
@@ -218,15 +221,18 @@ export class JsonNodeFileSystem<
     const fullOldPath = this.getFullPath(filePath);
     const oldRelativeParsed = path.parse(filePath);
     const oldParsed = path.parse(fullOldPath);
-    
+
     const fullNewPath = path.format({
       dir: oldParsed.dir,
       name: newTitle,
       ext: ".json",
     });
-    
-    const newParsed = path.parse(fullNewPath)
-    const relativeNewPath = path.join(oldRelativeParsed.dir,  newParsed.name + newParsed.ext)  
+
+    const newParsed = path.parse(fullNewPath);
+    const relativeNewPath = path.join(
+      oldRelativeParsed.dir,
+      newParsed.name + newParsed.ext,
+    );
 
     if (fullOldPath === fullNewPath) {
       return relativeNewPath;
@@ -238,16 +244,15 @@ export class JsonNodeFileSystem<
       return filePath;
     }
 
-    const isCaseOnlyChange = fullOldPath.toLowerCase() === fullNewPath.toLowerCase();
+    const isCaseOnlyChange =
+      fullOldPath.toLowerCase() === fullNewPath.toLowerCase();
 
     if (!isCaseOnlyChange) {
       try {
         await fs.access(fullNewPath);
         return filePath;
-      } catch {
-      }
+      } catch {}
     }
-
 
     try {
       await fs.rename(fullOldPath, fullNewPath);
@@ -257,7 +262,7 @@ export class JsonNodeFileSystem<
       return relativeNewPath;
     }
   }
-  
+
   async parse(targetPath: string): Promise<FileInfo> {
     const parsed = path.parse(targetPath);
 
@@ -269,13 +274,16 @@ export class JsonNodeFileSystem<
     };
   }
 
-  async join(basePath: string | undefined, targetPath: string | undefined): Promise<string> {
+  async join(
+    basePath: string | undefined,
+    targetPath: string | undefined,
+  ): Promise<string> {
     const safeTarget = targetPath || "";
 
     if (!basePath) {
       return path.normalize(safeTarget);
     }
-    
+
     return path.join(basePath, safeTarget);
   }
   async relative(fromPath: string, toPath: string): Promise<string> {

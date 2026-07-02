@@ -10,33 +10,34 @@ export class IpcFileSystem<T extends any> implements FileSystemApi<T> {
   constructor(basePath: string | undefined) {
     this.basePath = basePath;
   }
-  
+
   async relative(fromPath: string, toPath: string): Promise<string> {
-    return await window.electronFs.relative(fromPath, toPath)
+    return await window.electronFs.relative(fromPath, toPath);
   }
 
-  async join(basePath: string | undefined, targetPath: string | undefined): Promise<string> {
-    return await window.electronFs.join(basePath, targetPath)
+  async join(
+    basePath: string | undefined,
+    targetPath: string | undefined,
+  ): Promise<string> {
+    return await window.electronFs.join(basePath, targetPath);
   }
 
   async parse(targetPath: string): Promise<FileInfo> {
-    return await window.electronFs.parse(targetPath)
+    return await window.electronFs.parse(targetPath);
   }
 
   async renameFile(filePath: string, newTitle: string): Promise<string> {
-    console.log("[IpcFileSystem] Rename file Start")
-    console.log("[IpcFileSystem]: ", filePath)
-    const resPath = await window.electronFs.renameFile(await this.resolvePath(filePath), newTitle)
-    console.log("[IpcFileSystem]: ", resPath)
-    const res = await window.electronFs.relative(this.basePath ?? "", resPath);  
-    console.log("[IpcFileSystem]: ", res)
-    console.log("[IpcFileSystem] Rename file End")
-    return res
+    const resPath = await window.electronFs.renameFile(
+      await this.resolvePath(filePath),
+      newTitle,
+    );
+    const res = await window.electronFs.relative(this.basePath ?? "", resPath);
+    return res;
   }
 
   private async resolvePath(targetPath: string): Promise<string> {
-    const cleanTarget = await this.join(this.basePath, targetPath)
-    return cleanTarget
+    const cleanTarget = await this.join(this.basePath, targetPath);
+    return cleanTarget;
   }
 
   private toSerializable<TValue>(value: TValue): TValue {
