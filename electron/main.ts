@@ -5,7 +5,7 @@ import {
   ipcMain,
   screen,
 } from "electron";
-import { APP_NAME, isDev } from "./config";
+import { APP_NAME, DEFAULT_SYNC_SERVER_URL, isDev } from "./config";
 import { appConfig } from "./electronStore/configuration";
 import AppUpdater from "./autoUpdate";
 import { setupWorkSpaceStorage } from "./handlers/workspaceStorageHandlers";
@@ -108,11 +108,9 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 
-  const appStateService = new RawAppStateService();
+  const appStateService = new RawAppStateService(DEFAULT_SYNC_SERVER_URL);
   migrateLegacyAuthFields();
-  const authService = new AuthService(
-    process.env.EPOS_API_URL ?? "http://localhost:8000",
-  );
+  const authService = new AuthService(() => appStateService.getSyncServerUrl());
 
   setupAppState(appStateService);
   setupWorkSpaceStorage(appStateService);

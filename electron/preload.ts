@@ -26,6 +26,9 @@ const appStateApi: AppStateApi = {
   getLocalWorkspace: (id: string) =>
     ipcRenderer.invoke("app-state:getLocalWorkspace", id),
   getWorkspaces: () => ipcRenderer.invoke("app-state:getWorkspaces"),
+  getSyncServerUrl: () => ipcRenderer.invoke("app-state:getSyncServerUrl"),
+  setSyncServerUrl: (url: string | null) =>
+    ipcRenderer.invoke("app-state:setSyncServerUrl", url),
   selectWorkspace: (id: string) =>
     ipcRenderer.invoke("app-state:selectWorkspace", id),
   hotReload: () => ipcRenderer.invoke("app-state:hotReload"),
