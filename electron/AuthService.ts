@@ -1,5 +1,6 @@
 import { safeStorage } from "electron";
 import { authConfig } from "./electronStore/authentication";
+import { DEFAULT_SYNC_SERVER_URL } from "./config";
 import type {
   AuthCredentials,
   AuthState,
@@ -19,16 +20,15 @@ interface MeResponse {
   email: string;
 }
 
-const DEFAULT_API_BASE_URL = "http://localhost:8000";
-
 export class AuthService {
-  private readonly apiBaseUrl: string;
+  private readonly resolveApiBaseUrl: () => Promise<string> | string;
   private accessToken: string | null = null;
   private currentUser: AuthUser | null = null;
   private currentTokenType: string | null = null;
 
-  constructor(apiBaseUrl: string = DEFAULT_API_BASE_URL) {
-    this.apiBaseUrl = apiBaseUrl.replace(/\/+$/, "");
+  constructor(resolveApiBaseUrl: () => Promise<string> | string = () =>
+    DEFAULT_SYNC_SERVER_URL) {
+    this.resolveApiBaseUrl = resolveApiBaseUrl;
   }
 
   private getSession(): StoredAuthSession {
@@ -89,7 +89,8 @@ export class AuthService {
     path: string,
     init: RequestInit,
   ): Promise<T> {
-    const response = await fetch(`${this.apiBaseUrl}${path}`, init);
+    const apiBaseUrl = (await this.resolveApiBaseUrl()).replace(/\/+$/, "");
+    const response = await fetch(`${apiBaseUrl}${path}`, init);
 
     if (!response.ok) {
       throw new Error(await this.readErrorMessage(response));

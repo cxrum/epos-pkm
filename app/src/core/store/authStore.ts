@@ -1,29 +1,13 @@
 import { acceptHMRUpdate, defineStore } from "pinia";
-import { computed, ref } from "vue";
-import { AuthRepository } from "../infra/authRepository";
+import { ref } from "vue";
+import { authRepository } from "../di/global";
 import type { AuthCredentials, AuthState } from "../../../authApi";
-
-const authRepository = new AuthRepository();
 
 export const useAuthStore = defineStore("auth", () => {
   const authState = ref<AuthState | null>(null);
   const isLoading = ref(false);
   const errorMsg = ref<string | undefined>(undefined);
   const authPromptDismissed = ref(false);
-
-  const shouldShowAuthPrompt = computed(() => {
-    if (!authState.value) {
-      return true;
-    }
-
-    return (
-      !authPromptDismissed.value &&
-      !authState.value.authenticated &&
-      !authState.value.skipPrompt
-    );
-  });
-
-  const userLabel = computed(() => authState.value?.user?.email ?? undefined);
 
   const loadAuthState = async () => {
     isLoading.value = true;
@@ -46,7 +30,7 @@ export const useAuthStore = defineStore("auth", () => {
       return authState.value;
     } catch (error) {
       errorMsg.value = error instanceof Error ? error.message : "Unable to log in";
-      throw error;
+      return undefined;
     } finally {
       isLoading.value = false;
     }
@@ -61,7 +45,7 @@ export const useAuthStore = defineStore("auth", () => {
       return authState.value;
     } catch (error) {
       errorMsg.value = error instanceof Error ? error.message : "Unable to register";
-      throw error;
+      return undefined;
     } finally {
       isLoading.value = false;
     }
@@ -76,7 +60,7 @@ export const useAuthStore = defineStore("auth", () => {
       return authState.value;
     } catch (error) {
       errorMsg.value = error instanceof Error ? error.message : "Unable to skip authentication";
-      throw error;
+      return undefined;
     } finally {
       isLoading.value = false;
     }
@@ -94,8 +78,7 @@ export const useAuthStore = defineStore("auth", () => {
     authState,
     isLoading,
     errorMsg,
-    shouldShowAuthPrompt,
-    userLabel,
+    authPromptDismissed,
 
     loadAuthState,
     login,

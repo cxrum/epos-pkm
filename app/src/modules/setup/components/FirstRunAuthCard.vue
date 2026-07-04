@@ -2,6 +2,7 @@
 import { computed, ref, watch } from "vue";
 import BaseButton from "@/shared/components/BaseButton.vue";
 import BaseCheckbox from "@/shared/components/BaseCheckbox.vue";
+import BaseDialog from "@/shared/components/BaseDialog.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
 import { useAuthStore } from "@/core/store/authStore";
 
@@ -38,6 +39,20 @@ const switchActionLabel = computed(() =>
   mode.value === "login" ? "Register" : "Log in",
 );
 
+const shouldShowAuthPrompt = computed(() => {
+  const authState = authStore.authState;
+
+  if (!authState) {
+    return true;
+  }
+
+  return (
+    !authStore.authPromptDismissed &&
+    !authState.authenticated &&
+    !authState.skipPrompt
+  );
+});
+
 watch(mode, () => {
   localError.value = undefined;
   authStore.clearErrorMsg();
@@ -52,20 +67,16 @@ const submit = async () => {
     return;
   }
 
-  try {
-    if (mode.value === "login") {
-      await authStore.login({
-        email: email.value.trim(),
-        password: password.value,
-      });
-    } else {
-      await authStore.register({
-        email: email.value.trim(),
-        password: password.value,
-      });
-    }
-  } catch {
-    // Store already carries the server error message.
+  if (mode.value === "login") {
+    await authStore.login({
+      email: email.value.trim(),
+      password: password.value,
+    });
+  } else {
+    await authStore.register({
+      email: email.value.trim(),
+      password: password.value,
+    });
   }
 };
 
@@ -75,11 +86,9 @@ const openSkipDialog = () => {
 };
 
 const confirmSkip = async () => {
-  try {
-    await authStore.skipAuth(neverAskAgain.value);
+  const result = await authStore.skipAuth(neverAskAgain.value);
+  if (result) {
     skipDialogOpen.value = false;
-  } catch {
-    // Store already carries the server error message.
   }
 };
 
@@ -102,7 +111,7 @@ const closeSkipDialog = () => {
     </div>
 
     <div class="relative flex flex-col gap-4 p-6">
-      <template v-if="authStore.shouldShowAuthPrompt">
+      <template v-if="shouldShowAuthPrompt">
         <div class="flex flex-col gap-2">
           <span
             class="text-xs uppercase tracking-[0.28em] text-(--text-secondary-color)"
@@ -203,7 +212,7 @@ const closeSkipDialog = () => {
         <h2 v-else>Local mode</h2>
 
         <label v-if="authStore.authState?.authenticated">
-          Connected as {{ authStore.userLabel }}.
+          Connected as {{ authStore.authState?.user?.email }}.
         </label>
         <label v-else-if="authStore.authState?.skipPrompt">
           Authorization was skipped. Cross-device data sync remains unavailable.
@@ -215,56 +224,30 @@ const closeSkipDialog = () => {
       </div>
     </div>
 
-    <Teleport to="body">
-      <transition name="fade">
-        <div
-          v-if="skipDialogOpen"
-          class="fixed inset-0 z-50 flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
-        >
-          <div
-            class="w-full max-w-md rounded-2xl border border-(--border) bg-(--surface-layer) p-6 shadow-2xl"
+    <BaseDialog :open="skipDialogOpen" @close="closeSkipDialog">
+      <div class="flex flex-col gap-2">
+        <h2>Skip authorization?</h2>
+        <label>
+          Without authorization, cross-device data sync is unavailable.
+        </label>
+      </div>
+
+      <div class="mt-4 flex flex-col gap-4">
+        <BaseCheckbox v-model="neverAskAgain" label="never ask again" />
+
+        <div class="flex justify-end gap-2">
+          <BaseButton variant="secondary" @click="closeSkipDialog">
+            Cancel
+          </BaseButton>
+          <BaseButton
+            variant="accent"
+            :disabled="authStore.isLoading"
+            @click="confirmSkip"
           >
-            <div class="flex flex-col gap-2">
-              <h2>Skip authorization?</h2>
-              <label>
-                Without authorization, cross-device data sync is unavailable.
-              </label>
-            </div>
-
-            <div class="mt-4 flex flex-col gap-4">
-              <BaseCheckbox
-                v-model="neverAskAgain"
-                label="never ask again"
-              />
-
-              <div class="flex gap-2 justify-end">
-                <BaseButton variant="secondary" @click="closeSkipDialog">
-                  Cancel
-                </BaseButton>
-                <BaseButton
-                  variant="accent"
-                  :disabled="authStore.isLoading"
-                  @click="confirmSkip"
-                >
-                  Skip
-                </BaseButton>
-              </div>
-            </div>
-          </div>
+            Skip
+          </BaseButton>
         </div>
-      </transition>
-    </Teleport>
+      </div>
+    </BaseDialog>
   </section>
 </template>
-
-<style scoped>
-.fade-enter-active,
-.fade-leave-active {
-  transition: opacity 0.15s ease;
-}
-
-.fade-enter-from,
-.fade-leave-to {
-  opacity: 0;
-}
-</style>

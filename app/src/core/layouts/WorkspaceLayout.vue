@@ -91,7 +91,7 @@ onClickOutside(omniSearchRef, (event: Event) => {
           <User />
         </BaseIcon>
         <span class="flex-1" v-show="isSidebarOpen">
-          {{ authStore.userLabel ?? "Guest" }}
+          {{ authStore.authState?.user?.email ?? "Guest" }}
         </span>
 
         <router-link to="/workspace/settings" class="clickable rounded-md">

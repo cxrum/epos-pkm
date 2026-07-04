@@ -19,20 +19,42 @@ interface Workspace {
 interface RawAppConfig {
   workspaces: WorkspaceEntry[];
   selectedWorkspace: string;
+  customSyncServerUrl: string | null;
 }
 
 export class RawAppStateService implements AppStateApi {
   private configPath: string;
   private config: RawAppConfig | null = null;
+  private readonly defaultSyncServerUrl: string;
 
-  constructor() {
+  constructor(defaultSyncServerUrl: string) {
     this.configPath = path.join(app.getPath("userData"), "config.json");
-    console.log(this.configPath);
+    this.defaultSyncServerUrl = defaultSyncServerUrl.replace(/\/+$/, "");
   }
 
   private mapConfig(raw: RawAppConfig): AppConfig {
     return {
       selectedWorkspace: raw.selectedWorkspace,
+      customSyncServerUrl: raw.customSyncServerUrl,
+    };
+  }
+
+  private normalizeSyncServerUrl(url: string | null | undefined): string | null {
+    if (!url) {
+      return null;
+    }
+
+    const trimmed = url.trim().replace(/\/+$/, "");
+    return trimmed.length ? trimmed : null;
+  }
+
+  private applyDefaults(raw: Partial<RawAppConfig>): RawAppConfig {
+    return {
+      workspaces: raw.workspaces ?? [],
+      selectedWorkspace: raw.selectedWorkspace ?? "",
+      customSyncServerUrl: this.normalizeSyncServerUrl(
+        raw.customSyncServerUrl ?? null,
+      ),
     };
   }
 
@@ -40,16 +62,14 @@ export class RawAppStateService implements AppStateApi {
     if (existsSync(this.configPath)) {
       try {
         const rawData = await fs.readFile(this.configPath, "utf-8");
-        return JSON.parse(rawData) as RawAppConfig;
+        const parsed = JSON.parse(rawData) as Partial<RawAppConfig>;
+        return this.applyDefaults(parsed);
       } catch (error) {
         console.error("File read error. Created a new config:", error);
       }
     }
 
-    const defaultConfig: RawAppConfig = {
-      workspaces: [],
-      selectedWorkspace: "",
-    };
+    const defaultConfig = this.applyDefaults({});
 
     await this.saveConfig(defaultConfig);
     return defaultConfig;
@@ -80,6 +100,25 @@ export class RawAppStateService implements AppStateApi {
     }
     const conf = await this.loadConfig();
     return this.mapConfig(conf);
+  }
+
+  async getSyncServerUrl(): Promise<string> {
+    if (!this.config) {
+      this.config = await this.loadConfig();
+    }
+
+    return this.config.customSyncServerUrl ?? this.defaultSyncServerUrl;
+  }
+
+  async setSyncServerUrl(url: string | null): Promise<string> {
+    if (!this.config) {
+      this.config = await this.loadConfig();
+    }
+
+    this.config.customSyncServerUrl = this.normalizeSyncServerUrl(url);
+    await this.saveConfig(this.config);
+
+    return this.config.customSyncServerUrl ?? this.defaultSyncServerUrl;
   }
 
   private async readLocalConfig(
