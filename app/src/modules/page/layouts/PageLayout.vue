@@ -115,7 +115,7 @@ const performSave = () => {
       },
     };
 
-    // pageStore.update(payloadToSave as EpObjectEntity);
+    pageStore.update(payloadToSave as EpObjectEntity);
   }
 };
 

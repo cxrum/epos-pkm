@@ -22,8 +22,8 @@ import { useEditor, EditorContent, Editor } from "@tiptap/vue-3";
 import { Placeholder } from "@tiptap/extensions";
 import { EpObjectAttributesExtension } from "../extension/customObjectExtension";
 import type { EpContainerObjectEntity } from "@/core/domain/type";
-import { entitiesToTiptapDoc, tiptapDocToEntities } from "../mappers";
-import { EpBlockExtension } from "../nodes/EpBlockExtension";
+import { domainPropertyToTiptap, entitiesToTiptapDoc, tiptapDocToEntities } from "../mappers";
+import { EpBaseBlock, EpCodeBlock } from "../nodes/EpBlockExtension";
 import type { EditorControllerContract } from "../contract";
 import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
 import type { ApplicationEvents } from "@/bus/application";
@@ -72,7 +72,8 @@ const editor = useEditor({
     StarterKit,
     UniqueBlockIdExtension,
     EpObjectAttributesExtension,
-    EpBlockExtension,
+    EpCodeBlock,
+    EpBaseBlock,
     Placeholder.configure({
       placeholder: "Press '/' for commands, or type to write...",
     }),
@@ -138,6 +139,7 @@ const updateTipTapNodeAttributes = (
   newAttributes: Record<string, any>,
 ) => {
   let targetNodePos: number | null = null;
+  let targetNodeType: string | null = null;
   let currentAttrs: Record<string, any> = {};
 
   editor.state.doc.descendants((node, pos) => {
@@ -147,15 +149,35 @@ const updateTipTapNodeAttributes = (
     ) {
       targetNodePos = pos;
       currentAttrs = node.attrs;
+      targetNodeType = node.type.name;
       return false;
     }
   });
 
-  if (targetNodePos !== null) {
+  if (targetNodePos !== null && targetNodeType !== null) {
+    const updatedProps = { ...(currentAttrs.props || {}) };
+
+    for (const [propId, newValue] of Object.entries(newAttributes)) {
+      if (updatedProps[propId]) {
+        updatedProps[propId] = {
+          ...updatedProps[propId],
+          value: newValue,
+        };
+      } else {
+        updatedProps[propId] = {
+          id: propId,
+          value: newValue,
+        };
+      }
+    }
+
+    const tiptapProperties = domainPropertyToTiptap(targetNodeType, updatedProps);
+
     editor.view.dispatch(
       editor.state.tr.setNodeMarkup(targetNodePos, undefined, {
         ...currentAttrs,
-        ...newAttributes,
+        props: updatedProps,
+        ...tiptapProperties,
       }),
     );
   } else {

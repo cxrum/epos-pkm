@@ -13,7 +13,7 @@ export const UniqueBlockIdExtension = Extension.create({
 
         if (!parentNode || !parentNode.isBlock) return false;
 
-        if (["paragraph"].includes(parentNode.type.name)) {
+        if (["paragraph", "codeBlock"].includes(parentNode.type.name)) {
           return false;
         }
 
