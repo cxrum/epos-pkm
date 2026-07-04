@@ -1,5 +1,24 @@
-# Vue 3 + TypeScript + Vite
+# Epos PKM Client
 
-This template should help get you started developing with Vue 3 and TypeScript in Vite. The template uses Vue 3 `<script setup>` SFCs, check out the [script setup docs](https://v3.vuejs.org/api/sfc-script-setup.html#sfc-script-setup) to learn more.
+Electron + Vue client for the local-first Epos PKM workspace.
 
-Learn more about the recommended Project Setup and IDE Support in the [Vue Docs TypeScript Guide](https://vuejs.org/guide/typescript/overview.html#project-setup).
+## Sync Behavior
+
+- Authentication enables encrypted cross-device sync.
+- The renderer runs a background sync loop every 30 seconds.
+- Workspace JSON files and `.workspace` metadata are synchronized as encrypted CRDT updates.
+- Local saves still happen immediately; sync only mirrors them to the server.
+
+## Configuration
+
+- Set the sync server URL in app settings.
+- Leave the field empty to use the default server from `EPOS_API_URL`.
+
+## Development
+
+```bash
+yarn
+yarn serve:front
+```
+
+The Electron shell uses the same local workspace files as the sync layer, so the app stays usable offline.

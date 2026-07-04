@@ -16,6 +16,8 @@ export interface AuthState {
 
 export interface AuthApi {
   getStatus(): Promise<AuthState>;
+  getAccessToken(): Promise<string | null>;
+  getSyncKey(): Promise<string | null>;
   login(payload: AuthCredentials): Promise<AuthState>;
   register(payload: AuthCredentials): Promise<AuthState>;
   skipAuth(neverAskAgain: boolean): Promise<AuthState>;

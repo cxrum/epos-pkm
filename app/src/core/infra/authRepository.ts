@@ -5,6 +5,14 @@ export class AuthRepository implements AuthApi {
     return window.authApi.getStatus();
   }
 
+  getAccessToken(): Promise<string | null> {
+    return window.authApi.getAccessToken();
+  }
+
+  getSyncKey(): Promise<string | null> {
+    return window.authApi.getSyncKey();
+  }
+
   login(payload: AuthCredentials): Promise<AuthState> {
     return window.authApi.login(payload);
   }

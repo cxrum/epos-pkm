@@ -13,6 +13,7 @@ export const authConfig = new ElectronStore<AuthStoreShape>({
       tokenType: null,
       userId: null,
       userEmail: null,
+      syncKeyEncrypted: null,
       skipPrompt: false,
     },
   },
@@ -29,6 +30,7 @@ export function migrateLegacyAuthFields(): void {
     tokenType: auth.tokenType ?? null,
     userId: auth.userId ?? null,
     userEmail: auth.userEmail ?? null,
+    syncKeyEncrypted: auth.syncKeyEncrypted ?? null,
     skipPrompt: auth.skipPrompt ?? false,
   });
 }

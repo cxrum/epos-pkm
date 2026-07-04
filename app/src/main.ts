@@ -6,6 +6,7 @@ import { i18n } from "./core/i18n";
 import router from "./router";
 import { createPinia } from "pinia";
 import { vContextMenu } from "./shared/components/contextMenu/index.ts";
+import { startWorkspaceSyncLoop } from "./core/sync/workspaceSync";
 
 const app = createApp(App);
 const pinia = createPinia();
@@ -13,6 +14,7 @@ const pinia = createPinia();
 app.directive("context-menu", vContextMenu);
 
 app.use(pinia).use(router).use(i18n).mount("#app");
+startWorkspaceSyncLoop();
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Enter" || e.key === " ") {

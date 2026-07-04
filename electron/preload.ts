@@ -43,6 +43,8 @@ contextBridge.exposeInMainWorld("electronFs", fileSystemApi);
 contextBridge.exposeInMainWorld("appState", appStateApi);
 const authApi: AuthApi = {
   getStatus: () => ipcRenderer.invoke("auth:getStatus"),
+  getAccessToken: () => ipcRenderer.invoke("auth:getAccessToken"),
+  getSyncKey: () => ipcRenderer.invoke("auth:getSyncKey"),
   login: (payload: AuthCredentials) => ipcRenderer.invoke("auth:login", payload),
   register: (payload: AuthCredentials) =>
     ipcRenderer.invoke("auth:register", payload),

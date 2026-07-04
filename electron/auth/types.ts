@@ -19,11 +19,14 @@ export interface StoredAuthSession {
   tokenType: string | null;
   userId: string | null;
   userEmail: string | null;
+  syncKeyEncrypted: string | null;
   skipPrompt: boolean;
 }
 
 export interface AuthApi {
   getStatus(): Promise<AuthState>;
+  getAccessToken(): Promise<string | null>;
+  getSyncKey(): Promise<string | null>;
   login(payload: AuthCredentials): Promise<AuthState>;
   register(payload: AuthCredentials): Promise<AuthState>;
   skipAuth(neverAskAgain: boolean): Promise<AuthState>;

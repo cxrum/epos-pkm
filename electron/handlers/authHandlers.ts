@@ -4,6 +4,8 @@ import type { AuthCredentials } from "../auth/types";
 
 export function setupAuthHandlers(authService: AuthService) {
   ipcMain.handle("auth:getStatus", () => authService.getStatus());
+  ipcMain.handle("auth:getAccessToken", () => authService.getAccessToken());
+  ipcMain.handle("auth:getSyncKey", () => authService.getSyncKey());
 
   ipcMain.handle("auth:login", (_, payload: AuthCredentials) =>
     authService.login(payload),

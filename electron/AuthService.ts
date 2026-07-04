@@ -1,4 +1,5 @@
 import { safeStorage } from "electron";
+import { createHash, pbkdf2Sync } from "crypto";
 import { authConfig } from "./electronStore/authentication";
 import { DEFAULT_SYNC_SERVER_URL } from "./config";
 import type {
@@ -73,6 +74,36 @@ export class AuthService {
     this.accessToken = null;
     this.currentUser = null;
     this.currentTokenType = null;
+  }
+
+  private deriveSyncKey(user: AuthUser, secret: string): string {
+    const salt = createHash("sha256")
+      .update(`epos-pkm-sync:${user.id}`)
+      .digest();
+    return pbkdf2Sync(secret, salt, 210000, 32, "sha256").toString("base64");
+  }
+
+  private encryptAndStoreSyncKey(user: AuthUser, secret: string): void {
+    this.assertSecureStorageAvailable();
+    const syncKey = this.deriveSyncKey(user, secret);
+    authConfig.set("auth", {
+      ...this.getSession(),
+      syncKeyEncrypted: safeStorage.encryptString(syncKey).toString("base64"),
+    });
+  }
+
+  getSyncKey(): string | null {
+    const encrypted = this.getSession().syncKeyEncrypted;
+    if (!encrypted) {
+      return null;
+    }
+
+    this.assertSecureStorageAvailable();
+    return safeStorage.decryptString(Buffer.from(encrypted, "base64"));
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken;
   }
 
   private async clearSessionTokens(): Promise<void> {
@@ -166,6 +197,7 @@ export class AuthService {
   private async persistSession(
     pair: TokenPairResponse,
     fallbackEmail?: string,
+    syncSecret?: string,
   ): Promise<AuthState> {
     let user: AuthUser = {
       id: pair.id,
@@ -179,6 +211,9 @@ export class AuthService {
     }
 
     this.setRuntimeSession(pair.access_token, user, pair.token_type);
+    if (syncSecret) {
+      this.encryptAndStoreSyncKey(user, syncSecret);
+    }
     await this.saveSession({
       refreshTokenEncrypted: this.encryptRefreshToken(pair.refresh_token),
       tokenType: pair.token_type,
@@ -270,7 +305,7 @@ export class AuthService {
       body,
     });
 
-    return await this.persistSession(pair, payload.email);
+    return await this.persistSession(pair, payload.email, payload.password);
   }
 
   async register(payload: AuthCredentials): Promise<AuthState> {
@@ -286,7 +321,7 @@ export class AuthService {
       },
     );
 
-    return await this.persistSession(pair, payload.email);
+    return await this.persistSession(pair, payload.email, payload.password);
   }
 
   async skipAuth(neverAskAgain: boolean): Promise<AuthState> {
