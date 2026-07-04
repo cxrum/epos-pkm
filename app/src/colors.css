@@ -1,0 +1,69 @@
+
+:root {
+  --white: #edefef;
+  --gray: rgba(237, 239, 239, 0.7);
+  --accent: rgba(37, 122, 136, 1);
+
+  --text-default-color: var(--white);
+  --text-secondary-color: var(--gray);
+  --text-on-accent-color: var(--white);
+  --text-error-color: rgba(199, 82, 82, 1);
+  --text-header-color: var(--white);
+
+  --icon-color: var(--gray);
+  
+  --bg-top-layer: #404142;
+  --bg-mid-layer: #36393a;
+  --bg-bottom-layer: rgba(43, 44, 45, 1);
+
+  --bg-top-layer-contrast: var(--bg-bottom-layer);
+  --bg-mid-layer-contrast: var(--bg-bottom-layer);
+  --bg-bottom-layer-contrast: var(--bg-top-layer);
+
+  --bg-btn: var(--bg-bottom-layer);
+  --bg-btn-accent: var(--accent);
+  --bg-select: var(--bg-bottom-layer);
+
+  --bg-context-menu: var(--bg-top-layer);
+  --bg-context-menu-contrast: var(--bg-top-layer-contrast);
+  --bg-sidebar: var(--bg-mid-layer);
+  --bg-sidebar-contrast: var(--bg-mid-layer-contrast);
+  --bg-settings: var(--bg-bottom-layer);
+  --bg-settings-contrast: var(--bg-bottom-layer-contrast);
+
+  --bg-btn: var(--bg-bottom-layer);
+  --bg-btn-accent: var(--accent);
+  --bg-select: var(--bg-bottom-layer);
+
+  --bg-header: var(--bg-mid-layer);
+  --bg-active-tab: color-mix(in oklch, var(--hover) 100%, var(--bg-header));
+  --bg-selected-tree-item: color-mix(
+    in oklch,
+    var(--hover) 50%,
+    var(--bg-sidebar)
+  );
+
+  --bg-omnisearh: var(--bg-mid-layer);
+
+  --bg-canvas: var(--bg-bottom-layer);
+  --bg-block-default: var(--bg-mid-layer);
+
+  --border: rgba(237, 239, 239, 0.15);
+
+  --hover: rgba(172, 213, 219, 0.2);
+
+  --accent-hover: color-mix(
+    in oklch,
+    rgba(91, 100, 102, 0.7) 70%,
+    var(--accent)
+  );
+  --option-hover: color-mix(
+    in oklch,
+    var(--hover) 100%,
+    var(--bg-bottom-layer)
+  );
+
+  --surface-layer: var(--bg-background-layer);
+  --surface-contrast-layer: var(--bg-background-layer-contrast);
+
+}

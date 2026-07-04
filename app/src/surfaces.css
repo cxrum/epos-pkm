@@ -1,0 +1,56 @@
+@layer components {
+  .surface-top-layer {
+    background-color: var(--bg-top-layer);
+    --surface-layer: var(--bg-top-layer);
+    --surface-contrast-layer: var(--bg-top-layer-contrast);
+  }
+
+  .surface-mid-layer {
+    background-color: var(--bg-mid-layer);
+    --surface-layer: var(--bg-mid-layer);
+    --surface-contrast-layer: var(--bg-mid-layer-contrast);
+  }
+
+  .surface-bottom-layer {
+    background-color: var(--bg-bottom-layer);
+    --surface-layer: var(--bg-bottom-layer);
+    --surface-contrast-layer: var(--bg-bottom-layer-contrast);
+  }
+
+  .surface-sidebar {
+    background-color: var(--bg-sidebar);
+    --surface-layer: var(--bg-sidebar);
+    --surface-contrast-layer: var(--bg-sidebar-contrast);
+  }
+
+  .surface-settings {
+    background-color: var(--bg-settings);
+    --surface-layer: var(--bg-settings);
+    --surface-contrast-layer: var(--bg-settings-contrast);
+  }
+
+  .surface-canvas {
+    background-color: var(--bg-canvas);
+    --surface-layer: var(--bg-canvas);
+    --surface-contrast-layer: var(--bg-canvas-contrast);
+  }
+
+  .surface-header {
+    background-color: var(--bg-header);
+    --surface-layer: var(--bg-header);
+    --surface-contrast-layer: var(--bg-header-contrast);
+  }
+
+  .surface-context-menu, .surface-omni-search {
+    background-color: var(--bg-context-menu);
+    --surface-layer: var(--bg-context-menu);
+    --surface-contrast-layer: var(--bg-context-menu-contrast);
+
+  }
+
+  .surface-modal {
+    background-color: var(--bg-settings);
+    --surface-layer: var(--bg-settings);
+    --surface-contrast-layer: var(--bg-settings-contrast);
+  }
+}

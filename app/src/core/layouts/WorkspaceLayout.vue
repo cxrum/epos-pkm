@@ -78,7 +78,7 @@ onClickOutside(omniSearchRef, (event: Event) => {
       </BaseIcon>
 
       <SidebarNavigationView
-        class="p-2 flex-1 overflow-y-auto auto-hide-scroll"
+        class="p-2 flex-1 overflow-y-auto scroll auto-hide-scroll"
       />
 
       <div

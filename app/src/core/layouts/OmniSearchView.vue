@@ -83,7 +83,7 @@ const sorterOptionsData: MenuGroup[] = [
 
 <template>
   <div
-    class="flex flex-col w-1/2 h-1/4 ьшт bg-(--bg-omnisearh) rounded-md border border-(--border) items-center shadow-md"
+    class="flex flex-col w-1/2 h-1/4 surface-omni-search rounded-md border border-(--border) items-center shadow-md"
   >
     <div
       class="flex justify-start items-center w-full p-2 gap-2 border-b border-(--border)"
