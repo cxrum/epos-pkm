@@ -1,4 +1,5 @@
 <script setup lang="ts" generic="T">
+import BaseIcon from "../icon/BaseIcon.vue";
 import type { MenuGroup } from "./type";
 
 const props = defineProps<{
@@ -16,39 +17,30 @@ const handleItemClick = (action?: (context: T) => void) => {
 </script>
 
 <template>
-  <div
-    class="flex flex-col w-fit max-w-72 p-2 gap-1 bg-(--bg-context-menu) rounded-md border border-(--border)"
-  >
+  <div class="surface-dialog">
     <div
       v-for="(group, groupIndex) in groups"
       :key="groupIndex"
       class="flex flex-col"
     >
-      <span
-        v-if="group.title"
-        class="px-2 py-1 label text-(--text-secondary-color)"
-      >
+      <label v-if="group.title" class="px-2 py-1">
         {{ group.title }}
-      </span>
+      </label>
 
       <template v-for="(item, itemIndex) in group.items" :key="itemIndex">
-        <div
-          v-if="item.type === 'divider'"
-          class="h-px bg-(--border) my-0.5"
-        ></div>
+        <div v-if="item.type === 'divider'" class="hl"></div>
 
         <button
           v-else-if="item.type === 'button'"
           @click="handleItemClick(item.action)"
           :disabled="item.disabled"
-          class="inline-flex justify-start items-center h-fit w-full min-w-[4em] min-h-[2em] px-2 py-[0.2rem] gap-2 rounded-md transition-colors text-(--text-default-color)"
+          class="base-button"
           type="button"
         >
-          <component
-            :is="item.icon"
-            v-if="item.icon"
-            class="w-5.5 h-5.5 text-(--icon-color) shrink-0"
-          />
+          <base-icon size="24px">
+            <component :is="item.icon" v-if="item.icon" />
+          </base-icon>
+
           <span class="truncate">{{ item.label }}</span>
         </button>
       </template>

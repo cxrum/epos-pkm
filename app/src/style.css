@@ -62,9 +62,9 @@
   }
 
   .scroll {
-    overflow-y: auto; 
-    overflow-x: hidden; 
-    
+    overflow-y: auto;
+    overflow-x: hidden;
+
     scrollbar-width: thin;
     scrollbar-color: var(--scroll-color) transparent;
     transition: scrollbar-color 0.2s ease-in-out;

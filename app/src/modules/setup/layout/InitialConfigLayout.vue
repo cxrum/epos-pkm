@@ -33,7 +33,7 @@ const openWorkspace = (id: string) => {
     class="flex h-screen w-full items-center justify-center px-4 surface-settings"
   >
     <div
-      class="flex w-full max-w-xl max-h-152 flex-col gap-4 rounded-xl border border-solid border-(--border) p-4 shadow-2xl surface-context-menu overflow-hidden px-8"
+      class="flex w-full max-w-xl max-h-152 flex-col gap-4 rounded-xl border border-solid border-(--border) p-4 shadow-2xl surface-dialog overflow-hidden px-8"
     >
       <div class="flex flex-col justify-center items-center gap-4">
         <span class="flex flex-col items-center">

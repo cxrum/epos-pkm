@@ -41,11 +41,14 @@
     --surface-contrast-layer: var(--bg-header-contrast);
   }
 
-  .surface-context-menu, .surface-omni-search {
+  .surface-dialog {
     background-color: var(--bg-context-menu);
     --surface-layer: var(--bg-context-menu);
     --surface-contrast-layer: var(--bg-context-menu-contrast);
-
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    min-width: 128px;
+    padding: 8px;
   }
 
   .surface-modal {

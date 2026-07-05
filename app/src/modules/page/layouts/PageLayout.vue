@@ -193,7 +193,7 @@ onUnmounted(() => {
 <template>
   <div class="flex w-full h-full flex-row">
     <div class="flex flex-1 flex-col min-w-0">
-      <nav class="flex w-full flex-col shrink-0 bg-(--bg-canvas) p-1">
+      <nav class="flex w-full flex-col shrink-0 surface-canvas p-1">
         <div class="flex w-full shrink-0 items-center">
           <Breadcrumbs :path="computedPath" @chain-click="handleOnChainClick" />
 
@@ -201,8 +201,8 @@ onUnmounted(() => {
             size="28px"
             interactive
             @click="workSpaceStore.toggleTypeEditor()"
-            class="text-(--icon-color) shrink-0"
-            :class="isTypeEditorOpen ? 'bg-(--hover)' : ''"
+            class="shrink-0"
+            :class="isTypeEditorOpen ? 'active' : ''"
           >
             <TypeIcon />
           </BaseIcon>
@@ -213,7 +213,6 @@ onUnmounted(() => {
                 :ref="referenceRef"
                 size="28px"
                 interactive
-                class="text-(--icon-color)"
                 @click="toggleMenu"
               >
                 <DotsMenu />
@@ -245,7 +244,7 @@ onUnmounted(() => {
     </div>
 
     <div
-      class="h-full w-64 p-2 border-l border-(--border) bg-(--bg-sidebar) overflow-y-auto auto-hide-scroll shrink-0"
+      class="h-full w-64 p-2 border-l border-(--border) surface-sidebar overflow-y-auto auto-hide-scroll shrink-0"
       v-if="isTypeEditorOpen"
     >
       <TypeEditorLayout :controller="editorController" />

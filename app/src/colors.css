@@ -1,4 +1,3 @@
-
 :root {
   --white: #edefef;
   --gray: rgba(237, 239, 239, 0.7);
@@ -11,7 +10,7 @@
   --text-header-color: var(--white);
 
   --icon-color: var(--gray);
-  
+
   --bg-top-layer: #404142;
   --bg-mid-layer: #36393a;
   --bg-bottom-layer: rgba(43, 44, 45, 1);
@@ -36,7 +35,6 @@
   --bg-select: var(--bg-bottom-layer);
 
   --bg-header: var(--bg-mid-layer);
-  --bg-active-tab: color-mix(in oklch, var(--hover) 100%, var(--bg-header));
   --bg-selected-tree-item: color-mix(
     in oklch,
     var(--hover) 50%,
@@ -65,5 +63,4 @@
 
   --surface-layer: var(--bg-background-layer);
   --surface-contrast-layer: var(--bg-background-layer-contrast);
-
 }

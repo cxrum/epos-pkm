@@ -59,15 +59,73 @@
     box-sizing: border-box;
   }
 
+  .active {
+    background-color: var(--hover);
+  }
+
   button {
     font-family: inherit;
     cursor: pointer;
-    transition: background-color 0.2s ease;
+    transition:
+      background-color 0.05s ease,
+      color 0.05s ease;
   }
 
   .base-button {
+    display: inline-flex;
+    justify-content: start;
+    align-items: center;
+    height: fit-content;
+    min-width: 4em;
+    min-height: 2em;
+    padding: 0.2rem 0.5rem 0.2rem 0.5rem;
+    gap: 8px;
+    border-radius: 8px;
     background-color: var(--button-bg, transparent);
     color: var(--button-text-color, var(--text-default-color));
+  }
+
+  .base-button.active {
+    background-color: var(--hover);
+  }
+
+  .base-button.tab {
+    min-width: 10em;
+  }
+
+  .base-button.tab.active {
+    background-color: color-mix(in oklch, var(--hover) 100%, var(--bg-header));
+  }
+
+  .base-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  .tab-cross {
+    color: var(--icon-color);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease-in-out;
+  }
+
+  .tab-cross.active {
+    background: transparent;
+  }
+
+  .tab-cross.active:hover {
+    background: color-mix(in oklch, var(--hover) 100%, var(--bg-header) 20%);
+  }
+
+  .tab:hover .tab-cross,
+  .tab-cross.active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .base-button:disabled {
+    opacity: 50%;
+    cursor: not-allowed;
   }
 
   .base-button:hover {
@@ -130,6 +188,36 @@
 
   input {
     font-family: inherit;
+    background: transparent;
+    color: var(--text-default-color);
+    --tw-outline-style: none;
+    outline: none;
+  }
+
+  input:focus {
+    outline: none;
+  }
+
+  input::placeholder {
+    color: var(--text-secondary-color);
+  }
+
+  .base-input {
+    display: inline-flex;
+    justify-content: start;
+    align-items: center;
+    min-width: 4em;
+    min-height: 2em;
+    padding: 0.2rem 0.5rem 0.2rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background-color: var(--button-bg, transparent);
+    color: var(--button-text-color);
+    cursor: text;
+  }
+
+  .base-input:focus-within {
+    border: 1px solid var(--hover);
   }
 
   .base-block {
@@ -137,7 +225,7 @@
     border-radius: 0.375rem;
     color: var(--text-default-color);
   }
-  
+
   .base-icon {
     display: inline-flex;
     justify-items: center;
@@ -147,9 +235,27 @@
     width: 22px;
     height: 22px;
   }
-  
+
+  .base-icon.dynamic-icon-emoji {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 0.85em;
+    line-height: 1;
+  }
+
+  .base-icon.dynamic-icon-image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
   .hl {
     border-bottom: 1px solid var(--border);
     width: 100%;
+    margin: 4px 0px 4px 0px;
   }
 }
