@@ -5,12 +5,20 @@ export class AuthRepository implements AuthApi {
     return window.authApi.getStatus();
   }
 
+  canPersistSession(): Promise<boolean> {
+    return window.authApi.canPersistSession();
+  }
+
   login(payload: AuthCredentials): Promise<AuthState> {
     return window.authApi.login(payload);
   }
 
   register(payload: AuthCredentials): Promise<AuthState> {
     return window.authApi.register(payload);
+  }
+
+  logout(): Promise<AuthState> {
+    return window.authApi.logout();
   }
 
   skipAuth(neverAskAgain: boolean): Promise<AuthState> {

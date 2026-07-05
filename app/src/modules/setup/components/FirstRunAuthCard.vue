@@ -1,43 +1,14 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, ref } from "vue";
 import BaseButton from "@/shared/components/BaseButton.vue";
 import BaseCheckbox from "@/shared/components/BaseCheckbox.vue";
 import BaseDialog from "@/shared/components/BaseDialog.vue";
-import BaseInput from "@/shared/components/BaseInput.vue";
 import { useAuthStore } from "@/core/store/authStore";
-
-type AuthMode = "login" | "register";
+import AuthForm from "@/shared/components/auth/AuthForm.vue";
 
 const authStore = useAuthStore();
-
-const mode = ref<AuthMode>("login");
-const email = ref("");
-const password = ref("");
 const skipDialogOpen = ref(false);
 const neverAskAgain = ref(false);
-const localError = ref<string | undefined>(undefined);
-
-const title = computed(() =>
-  mode.value === "login" ? "Welcome back" : "Create account",
-);
-
-const subtitle = computed(() =>
-  mode.value === "login"
-    ? "Sign in to enable cross-device data sync."
-    : "Create an account to sync your workspace across devices.",
-);
-
-const formLabel = computed(() =>
-  mode.value === "login" ? "Log in" : "Register",
-);
-
-const switchLabel = computed(() =>
-  mode.value === "login" ? "Need an account?" : "Already have an account?",
-);
-
-const switchActionLabel = computed(() =>
-  mode.value === "login" ? "Register" : "Log in",
-);
 
 const shouldShowAuthPrompt = computed(() => {
   const authState = authStore.authState;
@@ -52,33 +23,6 @@ const shouldShowAuthPrompt = computed(() => {
     !authState.skipPrompt
   );
 });
-
-watch(mode, () => {
-  localError.value = undefined;
-  authStore.clearErrorMsg();
-});
-
-const submit = async () => {
-  localError.value = undefined;
-  authStore.clearErrorMsg();
-
-  if (!email.value.trim() || !password.value.trim()) {
-    localError.value = "Email and password are required.";
-    return;
-  }
-
-  if (mode.value === "login") {
-    await authStore.login({
-      email: email.value.trim(),
-      password: password.value,
-    });
-  } else {
-    await authStore.register({
-      email: email.value.trim(),
-      password: password.value,
-    });
-  }
-};
 
 const openSkipDialog = () => {
   skipDialogOpen.value = true;
@@ -112,96 +56,21 @@ const closeSkipDialog = () => {
 
     <div class="relative flex flex-col gap-4 p-6">
       <template v-if="shouldShowAuthPrompt">
-        <div class="flex flex-col gap-2">
-          <span
-            class="text-xs uppercase tracking-[0.28em] text-(--text-secondary-color)"
-          >
-            First run authentication
-          </span>
-          <h2>{{ title }}</h2>
-          <label>{{ subtitle }}</label>
-        </div>
+        <AuthForm
+          eyebrow="First run authentication"
+          subtitle="Sign in to enable cross-device data sync."
+        />
 
-        <div
-          class="grid gap-2 rounded-xl border border-(--border) bg-black/10 p-1 sm:grid-cols-2"
-        >
+        <div class="flex justify-end">
           <BaseButton
-            :variant="mode === 'login' ? 'accent' : 'default'"
-            class="w-full"
-            @click="mode = 'login'"
+            variant="secondary"
+            class="w-full sm:w-auto"
+            :disabled="authStore.isLoading"
+            @click="openSkipDialog"
           >
-            Login
-          </BaseButton>
-          <BaseButton
-            :variant="mode === 'register' ? 'accent' : 'default'"
-            class="w-full"
-            @click="mode = 'register'"
-          >
-            Register
+            <span class="w-20 text-center">SKIP</span>
           </BaseButton>
         </div>
-
-        <form class="flex flex-col gap-4" @submit.prevent="submit">
-          <BaseInput
-            v-model="email"
-            autocomplete="email"
-            label="Email"
-            placeholder="name@example.com"
-            type="email"
-          />
-
-          <BaseInput
-            v-model="password"
-            autocomplete="current-password"
-            label="Password"
-            placeholder="••••••••"
-            type="password"
-          />
-
-          <div class="flex flex-col gap-2">
-            <p v-if="localError" class="text-(--text-error-color)">
-              {{ localError }}
-            </p>
-            <p v-else-if="authStore.errorMsg" class="text-(--text-error-color)">
-              {{ authStore.errorMsg }}
-            </p>
-
-            <p v-else class="text-(--text-secondary-color)">
-              {{ formLabel }} to keep your account and sync state in the cloud.
-            </p>
-          </div>
-
-          <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <BaseButton
-              :variant="'accent'"
-              class="w-full sm:w-auto"
-              :disabled="authStore.isLoading"
-              type="submit"
-            >
-              <span class="w-20 text-center">{{ formLabel }}</span>
-            </BaseButton>
-
-            <BaseButton
-              variant="secondary"
-              class="w-full sm:w-auto"
-              :disabled="authStore.isLoading"
-              @click="openSkipDialog"
-            >
-              <span class="w-20 text-center">SKIP</span>
-            </BaseButton>
-
-            <span class="sm:ml-auto text-sm text-(--text-secondary-color)">
-              {{ switchLabel }}
-              <button
-                class="ml-1 text-(--text-default-color) underline underline-offset-4"
-                type="button"
-                @click="mode = mode === 'login' ? 'register' : 'login'"
-              >
-                {{ switchActionLabel }}
-              </button>
-            </span>
-          </div>
-        </form>
       </template>
 
       <div

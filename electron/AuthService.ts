@@ -47,6 +47,10 @@ export class AuthService {
     }
   }
 
+  private shouldPersistSession(rememberFor30Days: boolean): boolean {
+    return rememberFor30Days && this.hasSecureStorage();
+  }
+
   private encryptRefreshToken(refreshToken: string): string {
     this.assertSecureStorageAvailable();
     return safeStorage.encryptString(refreshToken).toString("base64");
@@ -77,6 +81,10 @@ export class AuthService {
 
   private async clearSessionTokens(): Promise<void> {
     this.clearRuntimeTokens();
+    await this.clearStoredSession();
+  }
+
+  private async clearStoredSession(): Promise<void> {
     await this.saveSession({
       refreshTokenEncrypted: null,
       tokenType: null,
@@ -166,6 +174,9 @@ export class AuthService {
   private async persistSession(
     pair: TokenPairResponse,
     fallbackEmail?: string,
+    options?: {
+      persistToStorage?: boolean;
+    },
   ): Promise<AuthState> {
     let user: AuthUser = {
       id: pair.id,
@@ -179,13 +190,17 @@ export class AuthService {
     }
 
     this.setRuntimeSession(pair.access_token, user, pair.token_type);
-    await this.saveSession({
-      refreshTokenEncrypted: this.encryptRefreshToken(pair.refresh_token),
-      tokenType: pair.token_type,
-      userId: user.id,
-      userEmail: user.email,
-      skipPrompt: false,
-    });
+    if (options?.persistToStorage) {
+      await this.saveSession({
+        refreshTokenEncrypted: this.encryptRefreshToken(pair.refresh_token),
+        tokenType: pair.token_type,
+        userId: user.id,
+        userEmail: user.email,
+        skipPrompt: false,
+      });
+    } else {
+      await this.clearStoredSession();
+    }
 
     return {
       authenticated: true,
@@ -244,6 +259,11 @@ export class AuthService {
     }
 
     if (session.refreshTokenEncrypted) {
+      if (!this.hasSecureStorage()) {
+        await this.clearSessionTokens();
+        return this.toState(this.getSession(), false);
+      }
+
       try {
         return await this.refreshSession();
       } catch {
@@ -255,8 +275,12 @@ export class AuthService {
     return this.toState(session, false);
   }
 
+  canPersistSession(): Promise<boolean> {
+    return Promise.resolve(this.hasSecureStorage());
+  }
+
   async login(payload: AuthCredentials): Promise<AuthState> {
-    this.assertSecureStorageAvailable();
+    const rememberFor30Days = payload.rememberFor30Days ?? true;
     const body = new URLSearchParams({
       email: payload.email,
       password: payload.password,
@@ -270,11 +294,13 @@ export class AuthService {
       body,
     });
 
-    return await this.persistSession(pair, payload.email);
+    return await this.persistSession(pair, payload.email, {
+      persistToStorage: this.shouldPersistSession(rememberFor30Days),
+    });
   }
 
   async register(payload: AuthCredentials): Promise<AuthState> {
-    this.assertSecureStorageAvailable();
+    const rememberFor30Days = payload.rememberFor30Days ?? true;
     const pair = await this.requestJson<TokenPairResponse>(
       "/v1/users/register",
       {
@@ -286,7 +312,15 @@ export class AuthService {
       },
     );
 
-    return await this.persistSession(pair, payload.email);
+    return await this.persistSession(pair, payload.email, {
+      persistToStorage: this.shouldPersistSession(rememberFor30Days),
+    });
+  }
+
+  async logout(): Promise<AuthState> {
+    await this.clearSessionTokens();
+
+    return this.toState(this.getSession(), false);
   }
 
   async skipAuth(neverAskAgain: boolean): Promise<AuthState> {
