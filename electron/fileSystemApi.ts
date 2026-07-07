@@ -12,16 +12,31 @@ export class JsonNodeFileSystem<
     this.appState = appStateService;
   }
 
+  private normalizePath(
+    targetPath: string,
+    format: "posix" | "os" = "posix",
+  ): string {
+    const normalized = path.normalize(targetPath);
+
+    if (format === "posix" && path.sep === "\\") {
+      return normalized.replace(/\\/g, "/");
+    }
+
+    return normalized;
+  }
+
   private getWorkspacePath(): string {
     const workspacePath = this.appState.getSelectedWorkspacePath();
     if (!workspacePath) {
       throw Error();
     }
-    return workspacePath;
+    return this.normalizePath(workspacePath, "os");
   }
 
   private getFullPath(targetPath: string): string {
-    return path.join(this.getWorkspacePath(), targetPath);
+    let res = path.join(this.getWorkspacePath(), targetPath);
+    res = this.normalizePath(res, "os");
+    return res;
   }
 
   async get(targetPath: string): Promise<T | undefined> {
@@ -74,21 +89,10 @@ export class JsonNodeFileSystem<
     }
   }
 
-  private async getInfo(targetPath: string): Promise<FileInfo> {
-    const fullPath = this.getFullPath(targetPath);
-    const stat = await fs.stat(fullPath);
-    const isDir = stat.isDirectory();
-
-    return {
-      path: targetPath,
-      type: isDir ? "dir" : "file",
-      extension: isDir ? undefined : path.extname(targetPath).toLowerCase(),
-    };
-  }
-
   async isDirectory(targetPath: string): Promise<boolean> {
     const fullPath = this.getFullPath(targetPath);
     const stat = await fs.stat(fullPath);
+
     return stat.isDirectory();
   }
 
@@ -96,31 +100,43 @@ export class JsonNodeFileSystem<
     const fullPath = this.getFullPath(directoryPath);
     const entries = await fs.readdir(fullPath, { withFileTypes: true });
 
-    return entries.map((entry) => {
-      const relativePath = path.join(directoryPath, entry.name);
-      const isDir = entry.isDirectory();
-
-      return {
-        path: relativePath,
-        type: isDir ? "dir" : "file",
-        extension: isDir ? undefined : path.extname(entry.name).toLowerCase(),
-      };
-    });
+    return Promise.all(
+      entries.map((entry) => {
+        const relativeTarget = path.join(directoryPath, entry.name);
+        return this.parse(relativeTarget);
+      }),
+    );
   }
 
   async rename(path: string, newPath: string): Promise<boolean> {
-    const newFileExist = await this.exists(newPath);
-    const current = await this.exists(path);
-
     const fullOldPath = this.getFullPath(path);
     const fullNewPath = this.getFullPath(newPath);
 
-    if (!newFileExist && current) {
-      await fs.rename(fullOldPath, fullNewPath);
+    if (fullOldPath === fullNewPath) {
       return true;
     }
 
-    return false;
+    const currentExists = await this.exists(path);
+    if (!currentExists) {
+      return false;
+    }
+
+    const isCaseOnlyChange =
+      fullOldPath.toLowerCase() === fullNewPath.toLowerCase();
+
+    const newFileExists = await this.exists(newPath);
+
+    if (newFileExists && !isCaseOnlyChange) {
+      return false;
+    }
+
+    try {
+      await fs.rename(fullOldPath, fullNewPath);
+      return true;
+    } catch (error) {
+      console.error(`[FileSystem] Rename error ${path} -> ${newPath}:`, error);
+      return false;
+    }
   }
 
   async tree(rootPath: string): Promise<{ source: string; target: string }[]> {
@@ -150,8 +166,8 @@ export class JsonNodeFileSystem<
           }
 
           treeEdges.push({
-            source: relativeSource,
-            target: relativeTarget,
+            source: this.normalizePath(relativeSource, "posix"),
+            target: this.normalizePath(relativeTarget, "posix"),
           });
 
           if (isDir) {
@@ -178,8 +194,8 @@ export class JsonNodeFileSystem<
 
       for (let index = 0; index < entries.length; index++) {
         const el = entries[index];
-        const absolutePath = path.resolve(currentPath, el.name);
 
+        const absolutePath = path.resolve(currentPath, el.name);
         const relativeTarget = path.relative(fullRootPath, absolutePath);
 
         if (!discovered.has(absolutePath)) {
@@ -199,5 +215,78 @@ export class JsonNodeFileSystem<
     };
 
     return await traverse(fullRootPath);
+  }
+
+  public async renameFile(filePath: string, newTitle: string): Promise<string> {
+    const fullOldPath = this.getFullPath(filePath);
+    const oldRelativeParsed = path.parse(filePath);
+    const oldParsed = path.parse(fullOldPath);
+
+    const fullNewPath = path.format({
+      dir: oldParsed.dir,
+      name: newTitle,
+      ext: ".json",
+    });
+
+    const newParsed = path.parse(fullNewPath);
+    const relativeNewPath = path.join(
+      oldRelativeParsed.dir,
+      newParsed.name + newParsed.ext,
+    );
+
+    if (fullOldPath === fullNewPath) {
+      return relativeNewPath;
+    }
+
+    try {
+      await fs.access(fullOldPath);
+    } catch {
+      return filePath;
+    }
+
+    const isCaseOnlyChange =
+      fullOldPath.toLowerCase() === fullNewPath.toLowerCase();
+
+    if (!isCaseOnlyChange) {
+      try {
+        await fs.access(fullNewPath);
+        return filePath;
+      } catch {}
+    }
+
+    try {
+      await fs.rename(fullOldPath, fullNewPath);
+      return relativeNewPath;
+    } catch (error) {
+      console.error(error);
+      return relativeNewPath;
+    }
+  }
+
+  async parse(targetPath: string): Promise<FileInfo> {
+    const parsed = path.parse(targetPath);
+
+    return {
+      path: path.normalize(targetPath),
+      name: parsed.name,
+      dir: parsed.dir,
+      ext: parsed.ext,
+    };
+  }
+
+  async join(
+    basePath: string | undefined,
+    targetPath: string | undefined,
+  ): Promise<string> {
+    const safeTarget = targetPath || "";
+
+    if (!basePath) {
+      return path.normalize(safeTarget);
+    }
+
+    return path.join(basePath, safeTarget);
+  }
+  async relative(fromPath: string, toPath: string): Promise<string> {
+    return path.relative(fromPath, toPath);
   }
 }

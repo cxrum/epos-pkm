@@ -4,6 +4,8 @@ import { useRouter } from "vue-router";
 import ArrowLeft from "@/assets/icons/ArrowLeft.vue";
 import Cross from "@/assets/icons/Cross.vue";
 import SidebarState from "@/assets/icons/SidebarState.vue";
+import User from "@/assets/icons/User.vue";
+import BaseButton from "@/shared/components/BaseButton.vue";
 import BaseCheckbox from "@/shared/components/BaseCheckbox.vue";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
@@ -12,10 +14,13 @@ import { useAuthStore } from "@/core/store/authStore";
 import { useGlobalSettingsStore } from "@/core/store/globalSettingsStore";
 import { SYNC_SERVER_URL_SETTING_ID } from "@/core/store/globalSettingsStore";
 import type { SettingEntry } from "@/core/types";
+import SettingsAuthDialog from "../components/SettingsAuthDialog.vue";
 
 const globalSettingsStore = useGlobalSettingsStore();
 const authStore = useAuthStore();
 const router = useRouter();
+const authDialogOpen = ref(false);
+const GENERAL_SETTINGS_CATEGORY_ID = "core.category.general";
 
 const categories = computed(() => globalSettingsStore.categories);
 const selectedCategory = ref<string>(categories.value[0]?.id ?? "");
@@ -85,6 +90,49 @@ const handleSettingUpdate = async (
   if (setting.id === SYNC_SERVER_URL_SETTING_ID) {
     await authStore.loadAuthState();
   }
+};
+
+const isAuthenticated = computed(
+  () => authStore.authState?.authenticated ?? false,
+);
+
+const shouldShowAccountPanel = computed(
+  () => selectedCategory.value === GENERAL_SETTINGS_CATEGORY_ID,
+);
+
+const accountEmail = computed(() => authStore.authState?.user?.email ?? "Guest");
+
+const accountDescription = computed(() => {
+  if (authStore.isLoading && !authStore.authState) {
+    return "Checking account status...";
+  }
+
+  if (isAuthenticated.value) {
+    return `Connected as ${accountEmail.value}.`;
+  }
+
+  return "Sign in to enable sync across devices.";
+});
+
+const accountActionLabel = computed(() =>
+  isAuthenticated.value ? "Logout" : "Login",
+);
+
+const accountActionVariant = computed<"secondary" | "accent">(() =>
+  isAuthenticated.value ? "secondary" : "accent",
+);
+
+const handleAccountAction = async () => {
+  if (isAuthenticated.value) {
+    await authStore.logout();
+    return;
+  }
+
+  authDialogOpen.value = true;
+};
+
+const closeAuthDialog = () => {
+  authDialogOpen.value = false;
 };
 
 onMounted(async () => {
@@ -171,6 +219,48 @@ onUnmounted(() => {
               <div class="h-6 shrink-0"></div>
 
               <div
+                v-if="shouldShowAccountPanel"
+                class="mb-4 rounded-2xl border border-(--border) bg-black/10 p-4"
+              >
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div class="flex items-center gap-3">
+                    <BaseIcon size="32px" class="text-(--icon-color)">
+                      <User />
+                    </BaseIcon>
+                    <div class="flex flex-col gap-1">
+                      <h3>Account</h3>
+                      <span class="text-(--text-secondary-color)">
+                        {{ accountDescription }}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div class="sm:ml-auto">
+                    <BaseButton
+                      :variant="accountActionVariant"
+                      :disabled="authStore.isLoading"
+                      @click="handleAccountAction"
+                    >
+                      {{ accountActionLabel }}
+                    </BaseButton>
+                  </div>
+                </div>
+
+                <p
+                  v-if="authStore.errorMsg"
+                  class="mt-3 text-sm text-(--text-error-color)"
+                >
+                  {{ authStore.errorMsg }}
+                </p>
+                <p
+                  v-else-if="authStore.noticeMsg"
+                  class="mt-3 text-sm text-(--text-secondary-color)"
+                >
+                  {{ authStore.noticeMsg }}
+                </p>
+              </div>
+
+              <div
                 v-if="globalSettingsStore.isLoading"
                 class="rounded-2xl border border-(--border) bg-black/10 p-4 text-(--text-secondary-color)"
               >
@@ -211,6 +301,12 @@ onUnmounted(() => {
       </div>
     </div>
   </Teleport>
+
+  <SettingsAuthDialog
+    :open="authDialogOpen"
+    @close="closeAuthDialog"
+    @authenticated="closeAuthDialog"
+  />
 </template>
 
 <style scoped>

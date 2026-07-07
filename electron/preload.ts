@@ -1,6 +1,6 @@
 import { contextBridge, ipcRenderer } from "electron";
 import { AppStateApi } from "../app/appState";
-import { FileSystemApi } from "../app/fileSystemApiContract";
+import { FileInfo, FileSystemApi } from "../app/fileSystemApiContract";
 import { title } from "process";
 import type { AuthApi, AuthCredentials } from "./auth/types";
 
@@ -20,6 +20,13 @@ const fileSystemApi: FileSystemApi = {
   list: (path: string) => ipcRenderer.invoke("fs:list", path),
   tree: (path: string) => ipcRenderer.invoke("fs:tree", path),
   getAllFlat: (path: string) => ipcRenderer.invoke("fs:getAllFlat", path),
+  join: (basePath: string | undefined, targetPath: string) =>
+    ipcRenderer.invoke("fs:join", basePath, targetPath),
+  relative: (fromPath: string, toPath: string) =>
+    ipcRenderer.invoke("fs:relative", fromPath, toPath),
+  parse: (targetPath: string) => ipcRenderer.invoke("fs:parse", targetPath),
+  renameFile: (filePath: string, newTitle: string) =>
+    ipcRenderer.invoke("fs:renameFile", filePath, newTitle),
 };
 
 const appStateApi: AppStateApi = {
@@ -45,9 +52,11 @@ const authApi: AuthApi = {
   getStatus: () => ipcRenderer.invoke("auth:getStatus"),
   getAccessToken: () => ipcRenderer.invoke("auth:getAccessToken"),
   getSyncKey: () => ipcRenderer.invoke("auth:getSyncKey"),
+  canPersistSession: () => ipcRenderer.invoke("auth:canPersistSession"),
   login: (payload: AuthCredentials) => ipcRenderer.invoke("auth:login", payload),
   register: (payload: AuthCredentials) =>
     ipcRenderer.invoke("auth:register", payload),
+  logout: () => ipcRenderer.invoke("auth:logout"),
   skipAuth: (neverAskAgain: boolean) =>
     ipcRenderer.invoke("auth:skip", neverAskAgain),
 };

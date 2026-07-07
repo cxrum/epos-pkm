@@ -26,6 +26,7 @@ export class AuthService {
   private accessToken: string | null = null;
   private currentUser: AuthUser | null = null;
   private currentTokenType: string | null = null;
+  private currentSyncKey: string | null = null;
 
   constructor(resolveApiBaseUrl: () => Promise<string> | string = () =>
     DEFAULT_SYNC_SERVER_URL) {
@@ -48,6 +49,10 @@ export class AuthService {
     }
   }
 
+  private shouldPersistSession(rememberFor30Days: boolean): boolean {
+    return rememberFor30Days && this.hasSecureStorage();
+  }
+
   private encryptRefreshToken(refreshToken: string): string {
     this.assertSecureStorageAvailable();
     return safeStorage.encryptString(refreshToken).toString("base64");
@@ -60,6 +65,28 @@ export class AuthService {
 
     this.assertSecureStorageAvailable();
     return safeStorage.decryptString(Buffer.from(encrypted, "base64"));
+  }
+
+  private deriveSyncKey(user: AuthUser, secret: string): string {
+    const salt = createHash("sha256")
+      .update(`epos-pkm-sync:${user.id}`)
+      .digest();
+
+    return pbkdf2Sync(secret, salt, 210000, 32, "sha256").toString("base64");
+  }
+
+  private resolveStoredSyncKey(session: StoredAuthSession): string | null {
+    if (this.currentSyncKey) {
+      return this.currentSyncKey;
+    }
+
+    if (!session.syncKeyEncrypted || !this.hasSecureStorage()) {
+      return null;
+    }
+
+    return safeStorage.decryptString(
+      Buffer.from(session.syncKeyEncrypted, "base64"),
+    );
   }
 
   private async saveSession(session: Partial<StoredAuthSession>): Promise<void> {
@@ -76,44 +103,24 @@ export class AuthService {
     this.currentTokenType = null;
   }
 
-  private deriveSyncKey(user: AuthUser, secret: string): string {
-    const salt = createHash("sha256")
-      .update(`epos-pkm-sync:${user.id}`)
-      .digest();
-    return pbkdf2Sync(secret, salt, 210000, 32, "sha256").toString("base64");
+  private clearRuntimeSyncKey(): void {
+    this.currentSyncKey = null;
   }
 
-  private encryptAndStoreSyncKey(user: AuthUser, secret: string): void {
-    this.assertSecureStorageAvailable();
-    const syncKey = this.deriveSyncKey(user, secret);
-    authConfig.set("auth", {
-      ...this.getSession(),
-      syncKeyEncrypted: safeStorage.encryptString(syncKey).toString("base64"),
-    });
-  }
-
-  getSyncKey(): string | null {
-    const encrypted = this.getSession().syncKeyEncrypted;
-    if (!encrypted) {
-      return null;
-    }
-
-    this.assertSecureStorageAvailable();
-    return safeStorage.decryptString(Buffer.from(encrypted, "base64"));
-  }
-
-  getAccessToken(): string | null {
-    return this.accessToken;
-  }
-
-  private async clearSessionTokens(): Promise<void> {
-    this.clearRuntimeTokens();
+  private async clearStoredSession(): Promise<void> {
     await this.saveSession({
       refreshTokenEncrypted: null,
       tokenType: null,
       userId: null,
       userEmail: null,
+      syncKeyEncrypted: null,
     });
+  }
+
+  private async clearSessionTokens(): Promise<void> {
+    this.clearRuntimeTokens();
+    this.clearRuntimeSyncKey();
+    await this.clearStoredSession();
   }
 
   private async requestJson<T>(
@@ -194,10 +201,18 @@ export class AuthService {
     this.currentTokenType = tokenType;
   }
 
+  private setRuntimeSyncKey(syncKey: string): void {
+    this.currentSyncKey = syncKey;
+  }
+
   private async persistSession(
     pair: TokenPairResponse,
     fallbackEmail?: string,
-    syncSecret?: string,
+    options?: {
+      persistToStorage?: boolean;
+      syncSecret?: string;
+      syncKey?: string;
+    },
   ): Promise<AuthState> {
     let user: AuthUser = {
       id: pair.id,
@@ -211,16 +226,30 @@ export class AuthService {
     }
 
     this.setRuntimeSession(pair.access_token, user, pair.token_type);
-    if (syncSecret) {
-      this.encryptAndStoreSyncKey(user, syncSecret);
+
+    const syncKey =
+      options?.syncKey ??
+      (options?.syncSecret ? this.deriveSyncKey(user, options.syncSecret) : null);
+
+    if (syncKey) {
+      this.setRuntimeSyncKey(syncKey);
     }
-    await this.saveSession({
-      refreshTokenEncrypted: this.encryptRefreshToken(pair.refresh_token),
-      tokenType: pair.token_type,
-      userId: user.id,
-      userEmail: user.email,
-      skipPrompt: false,
-    });
+
+    if (options?.persistToStorage) {
+      await this.saveSession({
+        refreshTokenEncrypted: this.encryptRefreshToken(pair.refresh_token),
+        tokenType: pair.token_type,
+        userId: user.id,
+        userEmail: user.email,
+        syncKeyEncrypted:
+          syncKey && this.hasSecureStorage()
+            ? safeStorage.encryptString(syncKey).toString("base64")
+            : null,
+        skipPrompt: false,
+      });
+    } else {
+      await this.clearStoredSession();
+    }
 
     return {
       authenticated: true,
@@ -268,7 +297,10 @@ export class AuthService {
       }),
     });
 
-    return await this.persistSession(pair, session.userEmail ?? undefined);
+    return await this.persistSession(pair, session.userEmail ?? undefined, {
+      persistToStorage: true,
+      syncKey: this.resolveStoredSyncKey(session) ?? undefined,
+    });
   }
 
   async getStatus(): Promise<AuthState> {
@@ -279,6 +311,11 @@ export class AuthService {
     }
 
     if (session.refreshTokenEncrypted) {
+      if (!this.hasSecureStorage()) {
+        await this.clearSessionTokens();
+        return this.toState(this.getSession(), false);
+      }
+
       try {
         return await this.refreshSession();
       } catch {
@@ -290,8 +327,31 @@ export class AuthService {
     return this.toState(session, false);
   }
 
+  canPersistSession(): Promise<boolean> {
+    return Promise.resolve(this.hasSecureStorage());
+  }
+
+  getAccessToken(): string | null {
+    return this.accessToken;
+  }
+
+  getSyncKey(): string | null {
+    if (this.currentSyncKey) {
+      return this.currentSyncKey;
+    }
+
+    const session = this.getSession();
+    const encrypted = session.syncKeyEncrypted;
+    if (!encrypted || !this.hasSecureStorage()) {
+      return null;
+    }
+
+    this.currentSyncKey = safeStorage.decryptString(Buffer.from(encrypted, "base64"));
+    return this.currentSyncKey;
+  }
+
   async login(payload: AuthCredentials): Promise<AuthState> {
-    this.assertSecureStorageAvailable();
+    const rememberFor30Days = payload.rememberFor30Days ?? true;
     const body = new URLSearchParams({
       email: payload.email,
       password: payload.password,
@@ -305,11 +365,14 @@ export class AuthService {
       body,
     });
 
-    return await this.persistSession(pair, payload.email, payload.password);
+    return await this.persistSession(pair, payload.email, {
+      persistToStorage: this.shouldPersistSession(rememberFor30Days),
+      syncSecret: payload.password,
+    });
   }
 
   async register(payload: AuthCredentials): Promise<AuthState> {
-    this.assertSecureStorageAvailable();
+    const rememberFor30Days = payload.rememberFor30Days ?? true;
     const pair = await this.requestJson<TokenPairResponse>(
       "/v1/users/register",
       {
@@ -321,7 +384,16 @@ export class AuthService {
       },
     );
 
-    return await this.persistSession(pair, payload.email, payload.password);
+    return await this.persistSession(pair, payload.email, {
+      persistToStorage: this.shouldPersistSession(rememberFor30Days),
+      syncSecret: payload.password,
+    });
+  }
+
+  async logout(): Promise<AuthState> {
+    await this.clearSessionTokens();
+
+    return this.toState(this.getSession(), false);
   }
 
   async skipAuth(neverAskAgain: boolean): Promise<AuthState> {

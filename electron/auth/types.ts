@@ -1,6 +1,7 @@
 export interface AuthCredentials {
   email: string;
   password: string;
+  rememberFor30Days?: boolean;
 }
 
 export interface AuthUser {
@@ -27,7 +28,9 @@ export interface AuthApi {
   getStatus(): Promise<AuthState>;
   getAccessToken(): Promise<string | null>;
   getSyncKey(): Promise<string | null>;
+  canPersistSession(): Promise<boolean>;
   login(payload: AuthCredentials): Promise<AuthState>;
   register(payload: AuthCredentials): Promise<AuthState>;
+  logout(): Promise<AuthState>;
   skipAuth(neverAskAgain: boolean): Promise<AuthState>;
 }
