@@ -20,6 +20,7 @@ export const useSetupStore = defineStore("setup", () => {
   const workspacesRootPath = ref<string>("");
   const isLoading = ref<boolean>(false);
   const errorMsg = ref<string | undefined>(undefined);
+  const warningMsg = ref<string | undefined>(undefined);
 
   const loadWorkspaces = async () => {
     isLoading.value = true;
@@ -40,6 +41,25 @@ export const useSetupStore = defineStore("setup", () => {
       }
 
       workspaces.value = _res;
+      const titleCounts = new Map<string, number>();
+      for (const workspace of _res) {
+        const normalizedTitle = workspace.title.trim().toLowerCase();
+        if (!normalizedTitle) {
+          continue;
+        }
+
+        titleCounts.set(
+          normalizedTitle,
+          (titleCounts.get(normalizedTitle) ?? 0) + 1,
+        );
+      }
+
+      const hasDuplicateTitles = Array.from(titleCounts.values()).some(
+        (count) => count > 1,
+      );
+      warningMsg.value = hasDuplicateTitles
+        ? "Two workspaces share the same name. Rename one or merge them under a single id."
+        : undefined;
       clearErrorMsg();
     } catch {
       errorMsg.value = "Cannot load workspace list";
@@ -127,6 +147,7 @@ export const useSetupStore = defineStore("setup", () => {
     workspacesRootPath,
     isLoading,
     errorMsg,
+    warningMsg,
 
     loadWorkspaces,
     createWorkspace,

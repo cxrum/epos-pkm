@@ -9,6 +9,7 @@ const { appStateRepositoryMock } = vi.hoisted(() => ({
     selectWorkspacesRoot: vi.fn(),
     clearSelectedWorkspace: vi.fn(),
     createWorkspace: vi.fn(),
+    upsertWorkspace: vi.fn(),
     selectWorkspace: vi.fn(),
   },
 }));

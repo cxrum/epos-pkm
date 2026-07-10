@@ -121,6 +121,12 @@ const cancelWorkspaceDraft = (id: string) => {
         <p class="text-(--text-error-color)">
           {{ stateStore.errorMsg }}
         </p>
+        <p
+          v-if="stateStore.warningMsg"
+          class="text-(--text-secondary-color)"
+        >
+          {{ stateStore.warningMsg }}
+        </p>
       </div>
     </div>
   </div>

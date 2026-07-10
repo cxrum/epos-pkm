@@ -256,6 +256,39 @@ export class RawAppStateService implements AppStateApi {
     }
   }
 
+  private async ensureWorkspaceArtifacts(
+    absolutePath: string,
+    localConfig: WorkspaceConf,
+  ): Promise<void> {
+    const workspaceRootObject = {
+      id: "-1",
+      typeId: "sys:workspace",
+      title: "root",
+      content: {},
+      order: [],
+      properties: {
+        isContainer: {
+          id: "isContainer",
+          title: "isContainer",
+          type: "boolean",
+          value: true,
+        },
+      },
+    };
+
+    await fs.mkdir(absolutePath, { recursive: true });
+    await this.saveWorkspaceConf(absolutePath, localConfig);
+
+    const rootFilePath = path.join(absolutePath, "root.json");
+    if (!(await this.pathExists(rootFilePath))) {
+      await fs.writeFile(
+        rootFilePath,
+        JSON.stringify(workspaceRootObject, null, 2),
+        "utf-8",
+      );
+    }
+  }
+
   private mapWorkspaceToLocal(w: WorkspaceRecord): WorkspaceConf {
     return {
       id: w.id,
@@ -588,33 +621,12 @@ export class RawAppStateService implements AppStateApi {
       title: normalizedTitle,
       id: newWorkspace.id,
     };
-    const workspaceRootObject = {
-      id: "-1",
-      typeId: "sys:workspace",
-      title: "root",
-      content: {},
-      order: [],
-      properties: {
-        isContainer: {
-          id: "isContainer",
-          title: "isContainer",
-          type: "boolean",
-          value: true,
-        },
-      },
-    };
 
     try {
-      await fs.mkdir(newWorkspace.absolutePath, { recursive: true });
-      await this.saveWorkspaceConf(newWorkspace.absolutePath, localConfig);
-      const rootFilePath = path.join(newWorkspace.absolutePath, "root.json");
-      if (!(await this.pathExists(rootFilePath))) {
-        await fs.writeFile(
-          rootFilePath,
-          JSON.stringify(workspaceRootObject, null, 2),
-          "utf-8",
-        );
-      }
+      await this.ensureWorkspaceArtifacts(
+        newWorkspace.absolutePath,
+        localConfig,
+      );
 
       await this.saveConfig(this.config);
 
@@ -624,6 +636,79 @@ export class RawAppStateService implements AppStateApi {
       } as WorkspaceConf;
     } catch (error) {
       throw new Error("Failed to create workspace");
+    }
+  }
+
+  public async upsertWorkspace(
+    workspace: WorkspaceConf,
+  ): Promise<WorkspaceConf | undefined> {
+    if (!this.config) {
+      this.config = await this.loadConfig();
+    }
+
+    const normalizedRootPath = this.config.workspacesRootPath;
+    if (!normalizedRootPath) {
+      throw new Error("Workspace root path is not set");
+    }
+
+    const normalizedTitle = workspace.title.trim().length
+      ? workspace.title.trim()
+      : "Untitled";
+    const existing = await this.syncWorkspaces();
+    const match = existing.find((entry) => entry.id === workspace.id);
+
+    if (match) {
+      if (match.title !== normalizedTitle) {
+        await this.saveWorkspaceConf(match.absolutePath, {
+          id: match.id,
+          title: normalizedTitle,
+        });
+      }
+
+      return {
+        id: match.id,
+        title: normalizedTitle,
+      };
+    }
+
+    const sanitizedTitle = normalizedTitle
+      .trim()
+      .replace(/[<>:"|?*\\/]+/g, "-")
+      .replace(/\s+/g, " ")
+      .replace(/^\.+$/, "")
+      .trim();
+    const workspaceFolderName = sanitizedTitle.length
+      ? sanitizedTitle
+      : "Untitled";
+
+    let workspaceAbsolutePath = path.join(
+      normalizedRootPath,
+      workspaceFolderName,
+    );
+    let suffix = 1;
+
+    while (await this.pathExists(workspaceAbsolutePath)) {
+      workspaceAbsolutePath = path.join(
+        normalizedRootPath,
+        `${workspaceFolderName}-${suffix}`,
+      );
+      suffix += 1;
+    }
+
+    try {
+      await this.ensureWorkspaceArtifacts(workspaceAbsolutePath, {
+        id: workspace.id,
+        title: normalizedTitle,
+      });
+      await this.saveConfig(this.config);
+
+      return {
+        id: workspace.id,
+        title: normalizedTitle,
+      };
+    } catch (error) {
+      console.error("Failed to upsert workspace", error);
+      throw error;
     }
   }
 }

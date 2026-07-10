@@ -2,6 +2,7 @@ import * as Y from "yjs";
 import { IpcFileSystem } from "@/core/infra/storage/storageRepository";
 import type { WorkspaceEntry } from "../../../appState";
 import type { AuthState } from "../../../authApi";
+import { syncWorkspaceCatalog } from "./workspaceCatalogSync";
 
 type WorkspaceSnapshot = {
   state: Record<string, unknown>;
@@ -309,7 +310,7 @@ async function syncWorkspace(
     return;
   }
 
-  const state = syncStates.get(workspace.relativePath) ?? {
+  const state = syncStates.get(workspace.id) ?? {
     snapshot: createEmptySnapshot(),
     cursor: null,
   };
@@ -320,7 +321,7 @@ async function syncWorkspace(
   const pullResponse = await fetchSyncState(
     syncServerUrl,
     accessToken,
-    workspace.relativePath,
+    workspace.id,
     state.cursor,
   );
 
@@ -345,7 +346,7 @@ async function syncWorkspace(
       const pushResponse = await pushSyncUpdate(
         syncServerUrl,
         accessToken,
-        workspace.relativePath,
+        workspace.id,
         encrypted,
       );
       state.cursor = pushResponse.cursor;
@@ -358,7 +359,7 @@ async function syncWorkspace(
   }
 
   state.snapshot = cloneSnapshot(snapshot);
-  syncStates.set(workspace.relativePath, state);
+  syncStates.set(workspace.id, state);
 }
 
 export async function runWorkspaceSyncTick(): Promise<void> {
@@ -377,6 +378,12 @@ export async function runWorkspaceSyncTick(): Promise<void> {
     .replace(/\/+$/, "");
   if (!syncServerUrl) {
     return;
+  }
+
+  try {
+    await syncWorkspaceCatalog(authState, syncServerUrl);
+  } catch (error) {
+    console.error("Catalog sync failed:", error);
   }
 
   const workspaces = await window.appState.getWorkspaces();
@@ -405,6 +412,11 @@ export function startWorkspaceSyncLoop(): void {
   window.setInterval(() => {
     void runWorkspaceSyncTick();
   }, POLL_INTERVAL_MS);
+}
+
+export function resetWorkspaceSyncState(): void {
+  syncStates.clear();
+  syncStarted = false;
 }
 
 export {

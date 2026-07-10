@@ -37,6 +37,9 @@ export function setupAppState(stateService: RawAppStateService) {
       return stateService.createWorkspace(title);
     },
   );
+  ipcMain.handle("app-state:upsertWorkspace", (_, workspace) => {
+    return stateService.upsertWorkspace(workspace);
+  });
 
   ipcMain.handle("dialog:openDirectory", async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

@@ -31,6 +31,9 @@ export class AppStateRepository implements AppStateApi {
   createWorkspace(title: string): Promise<WorkspaceConf | undefined> {
     return window.appState.createWorkspace(title);
   }
+  upsertWorkspace(workspace: WorkspaceConf): Promise<WorkspaceConf | undefined> {
+    return window.appState.upsertWorkspace(workspace);
+  }
   public async getWorkspaces(): Promise<WorkspaceEntry[]> {
     return window.appState.getWorkspaces();
   }

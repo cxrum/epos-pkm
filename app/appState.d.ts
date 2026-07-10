@@ -29,5 +29,6 @@ export interface AppStateApi {
   clearSelectedWorkspace(): Promise<void>;
   getSelectedWorkspace(): Promise<WorkspaceSelection | undefined>;
   createWorkspace(title: string): Promise<WorkspaceConf | undefined>;
+  upsertWorkspace(workspace: WorkspaceConf): Promise<WorkspaceConf | undefined>;
   getLocalWorkspace(id: string): Promise<WorkspaceConf | undefined>;
 }

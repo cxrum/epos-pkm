@@ -47,6 +47,8 @@ const appStateApi: AppStateApi = {
   hotReload: () => ipcRenderer.invoke("app-state:hotReload"),
   getSelectedWorkspace: () => ipcRenderer.invoke("app-state:selectedWorkspace"),
   createWorkspace: (title) => ipcRenderer.invoke("app-state:createWorkspace", title),
+  upsertWorkspace: (workspace) =>
+    ipcRenderer.invoke("app-state:upsertWorkspace", workspace),
 };
 
 contextBridge.exposeInMainWorld("electronFs", fileSystemApi);
