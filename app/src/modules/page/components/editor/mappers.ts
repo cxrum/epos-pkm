@@ -1,11 +1,51 @@
 import type { JSONContent } from "@tiptap/core";
 import type { EpObjectId } from "@/core/types";
 import {
-  isHeadingInlineEntity,
   type EpInlineObjectEntity,
   type EpObjectEntity,
 } from "@/core/domain/type";
 import { mapEpTypeToTiptapType } from "./helpers";
+
+export const domainPropertyToTiptap = (
+  tiptapType: string,
+  props: Record<string, any> = {},
+): Record<string, any> => {
+  const attrs: Record<string, any> = {};
+
+  if (tiptapType === "heading" && props.level) {
+    attrs.level = props.level.value;
+  } else if (tiptapType === "codeBlock" && props.codeLanguage) {
+    attrs.language = props.codeLanguage.value;
+  }
+
+  return attrs;
+};
+
+export const tipTapPropertyToDomain = (
+  nodeType: string,
+  attrs: Record<string, any> = {},
+  existingProps: Record<string, any> = {},
+): Record<string, any> => {
+  const props = { ...existingProps };
+
+  if (nodeType === "heading") {
+    props.level = {
+      id: "level",
+      title: "level",
+      type: "number",
+      value: attrs.level || 1,
+    };
+  } else if (nodeType === "codeBlock") {
+    props.codeLanguage = {
+      id: "codeLanguage",
+      title: "Code language",
+      type: "text",
+      value: attrs.language || "",
+    };
+  }
+
+  return props;
+};
 
 export interface MappedArray {
   order: EpObjectId[];
@@ -30,6 +70,7 @@ export const entitiesToTiptapDoc = (
     content: sorted.map((entity) => {
       const tiptapType = mapEpTypeToTiptapType(entity.typeId);
       const isCustomBlock = tiptapType === "epBlock";
+      const mappedAttrs = domainPropertyToTiptap(tiptapType, entity.props);
 
       const node: JSONContent = {
         type: tiptapType,
@@ -39,12 +80,9 @@ export const entitiesToTiptapDoc = (
           physicalRelativePath: entity.physicalRelativePath,
           objectPath: entity.objectPath,
           props: entity.props,
+          ...mappedAttrs,
         },
       };
-
-      if (tiptapType === "heading" && isHeadingInlineEntity(entity)) {
-        node.attrs!.level = entity.props.level.value;
-      }
 
       if (isCustomBlock) {
         node.attrs!.domainContent = entity.content;
@@ -76,28 +114,29 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
     const id = isNewNode ? crypto.randomUUID() : node.attrs?.id;
     order.push(id);
 
-    let props = node.attrs?.props || {};
+    const props = tipTapPropertyToDomain(
+      node.type || "",
+      node.attrs || {},
+      node.attrs?.props || {},
+    );
+
     let entityContent: any = [];
 
-    const isTextBlock = node.type === "paragraph" || node.type === "heading";
+    const isTextBlock =
+      node.type === "paragraph" ||
+      node.type === "heading" ||
+      node.type === "codeBlock";
 
     if (isTextBlock) {
-      if (node.type === "heading") {
-        if (!resolvedTypeId) resolvedTypeId = "def:heading";
-
-        entityContent = node.content || [];
-        const levelProperty = {
-          id: "level",
-          title: "level",
-          type: "number",
-          value: node.attrs?.level || 1,
-        };
-        props = { ...props, level: levelProperty };
-      } else if (node.type === "paragraph") {
-        if (!resolvedTypeId) resolvedTypeId = "def:text";
-
-        entityContent = node.content || [];
+      if (node.type === "heading" && !resolvedTypeId) {
+        resolvedTypeId = "def:heading";
+      } else if (node.type === "paragraph" && !resolvedTypeId) {
+        resolvedTypeId = "def:text";
+      } else if (node.type === "codeBlock" && !resolvedTypeId) {
+        resolvedTypeId = "def:code";
       }
+
+      entityContent = node.content || [];
     } else {
       entityContent = node.attrs?.domainContent || {};
     }

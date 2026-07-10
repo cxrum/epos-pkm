@@ -1,31 +1,23 @@
 <template>
-  <NodeViewWrapper>
-    <div
-      class="ep-block-wrapper"
-      :class="['my-custom-block', { 'is-focused': isSelected }]"
+  <BaseBlockLayout :is-selected="isSelected">
+    <component
+      :is="resolvedComponent"
+      :node-attributes="node.attrs"
+      :update-attributes="updateAttributes"
     >
-      <div
-        class="custom-drag-handle"
-        contenteditable="false"
-        data-drag-handle
-      ></div>
-      <component
-        :is="resolvedComponent"
-        :node-attributes="node.attrs"
-        :update-attributes="updateAttributes"
-      >
-        <NodeViewContent v-if="isTextEditable" />
-      </component>
-    </div>
-  </NodeViewWrapper>
+      <NodeViewContent v-if="isTextEditable" />
+    </component>
+  </BaseBlockLayout>
 </template>
+
 <script setup lang="ts">
 import { computed, inject } from "vue";
-import { nodeViewProps, NodeViewWrapper, NodeViewContent } from "@tiptap/vue-3";
+import { nodeViewProps, NodeViewContent } from "@tiptap/vue-3";
 
 import PageLinkBlock from "./blocks/PageLinkBlock.vue";
 import UnknownBlock from "./blocks/UnknownBlock.vue";
 import { EditorControllerKey } from "../contract.ts";
+import BaseBlockLayout from "./BaseBlockLayout.vue"
 
 const props = defineProps(nodeViewProps);
 

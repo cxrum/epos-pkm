@@ -6,7 +6,7 @@ export const EpObjectAttributesExtension = Extension.create({
   addGlobalAttributes() {
     return [
       {
-        types: ["paragraph", "heading", "image", "taskList"],
+        types: ["paragraph", "heading", "image", "taskList", "codeBlock"],
         attributes: {
           id: {
             default: null,
@@ -17,9 +17,6 @@ export const EpObjectAttributesExtension = Extension.create({
             parseHTML: (element) => element.getAttribute("data-ep-id"),
           },
           typeId: { default: null },
-          physicalRelativePath: { default: "" },
-          objectPath: { default: [] },
-          props: { default: {} },
         },
       },
     ];
