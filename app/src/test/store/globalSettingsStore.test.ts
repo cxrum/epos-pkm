@@ -22,6 +22,7 @@ describe("useGlobalSettingsStore", () => {
 
   it("loads the current sync server url into settings", async () => {
     appStateRepositoryMock.hotReload.mockResolvedValue({
+      workspacesRootPath: "",
       selectedWorkspace: "",
       customSyncServerUrl: "https://sync.example.com",
     });
@@ -38,6 +39,7 @@ describe("useGlobalSettingsStore", () => {
 
   it("persists a custom sync server url and clears it when the field is emptied", async () => {
     appStateRepositoryMock.hotReload.mockResolvedValue({
+      workspacesRootPath: "",
       selectedWorkspace: "",
       customSyncServerUrl: null,
     });

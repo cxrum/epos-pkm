@@ -3,6 +3,10 @@ export interface WorkspaceConf {
   title: string;
 }
 
+export interface WorkspaceSelection extends WorkspaceConf {
+  relativePath: string;
+}
+
 export interface WorkspaceEntry {
   id: string;
   relativePath: string;
@@ -20,7 +24,7 @@ export interface AppStateApi {
   setSyncServerUrl(url: string | null): Promise<string>;
   hotReload(): Promise<AppConfig>;
   selectWorkspace(id: string): Promise<WorkspaceConf>;
-  getSelectedWorkspace(): Promise<WorkspaceConf | undefined>;
+  getSelectedWorkspace(): Promise<WorkspaceSelection | undefined>;
   createWorkspace(
     title: string,
     _path: string,

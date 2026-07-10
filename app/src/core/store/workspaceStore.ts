@@ -5,7 +5,7 @@ import {
   bootstrapWorkspaceServices,
   workspaceStateRepository,
 } from "../di/global";
-import type { WorkspaceConf } from "../../../appState";
+import type { WorkspaceSelection } from "../../../appState";
 import type { SavedTab, WorkspaceLocalState } from "../domain/workspace";
 
 export const useWorkspaceStore = defineStore("workspace", () => {
@@ -16,7 +16,7 @@ export const useWorkspaceStore = defineStore("workspace", () => {
   const isLoading = ref<boolean>(false);
 
   const isInitialized = ref<boolean>(false);
-  const selectedWorkspace = ref<WorkspaceConf | undefined>();
+  const selectedWorkspace = ref<WorkspaceSelection | undefined>();
 
   async function loadAppState() {
     await appStateRepository.hotReload();

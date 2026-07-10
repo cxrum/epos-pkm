@@ -1,27 +1,49 @@
 import type { FileSystemApi } from "../../../fileSystemApiContract";
+import type { WorkspaceSelection } from "../../../appState";
 import type { WorkspaceRepositoryContract } from "../domain/repositories/workspaceRepository";
 import type {
   SavedTab,
   WorkspaceLocalConfigEntity,
   WorkspaceLocalState,
 } from "../domain/workspace";
+import { IpcFileSystem } from "./storage/storageRepository";
 
 export class WorkspaceStateRepository implements WorkspaceRepositoryContract {
-  private readonly fileSystemApi: FileSystemApi<WorkspaceLocalConfigEntity>;
-  private readonly PATH: string = "./.workspace";
+  private readonly getSelectedWorkspace:
+    | (() => Promise<WorkspaceSelection | undefined>)
+    | (() => WorkspaceSelection | undefined);
+  private readonly PATH: string = ".workspace";
 
   private config: WorkspaceLocalConfigEntity | undefined;
 
-  constructor(userStorageApi: FileSystemApi<WorkspaceLocalConfigEntity>) {
-    this.fileSystemApi = userStorageApi;
+  constructor(
+    getSelectedWorkspace:
+      | (() => Promise<WorkspaceSelection | undefined>)
+      | (() => WorkspaceSelection | undefined),
+  ) {
+    this.getSelectedWorkspace = getSelectedWorkspace;
   }
   getDefaultWorkspaceState = (): WorkspaceLocalState => ({
     savedTabs: [],
     lastActiveTab: undefined,
   });
 
+  private async getFileSystemApi(): Promise<
+    FileSystemApi<WorkspaceLocalConfigEntity>
+  > {
+    const selectedWorkspace = await this.getSelectedWorkspace();
+    if (!selectedWorkspace?.relativePath) {
+      throw Error("Workspace not selected");
+    }
+
+    return new IpcFileSystem<WorkspaceLocalConfigEntity>(
+      selectedWorkspace.relativePath,
+    );
+  }
+
   async load(): Promise<WorkspaceLocalConfigEntity> {
-    let root = await this.fileSystemApi.get(this.PATH);
+    const fileSystemApi = await this.getFileSystemApi();
+    let root = await fileSystemApi.get(this.PATH);
 
     if (!root) {
       throw Error("Workspace config not found");
@@ -39,7 +61,8 @@ export class WorkspaceStateRepository implements WorkspaceRepositoryContract {
     if (!this.config) {
       this.config = await this.load();
     }
-    await this.fileSystemApi.save(this.PATH, this.config);
+    const fileSystemApi = await this.getFileSystemApi();
+    await fileSystemApi.save(this.PATH, this.config);
     this.config = await this.load();
   }
 

@@ -7,6 +7,7 @@ import {
   AppStateApi,
   WorkspaceConf,
   WorkspaceEntry,
+  WorkspaceSelection,
 } from "../app/appState";
 import { randomUUID } from "crypto";
 
@@ -36,7 +37,6 @@ export class RawAppStateService implements AppStateApi {
   private configPath: string;
   private config: RawAppConfig | null = null;
   private readonly defaultSyncServerUrl: string;
-  private selectedWorkspaceAbsolutePath: string | undefined;
 
   constructor(defaultSyncServerUrl: string) {
     this.configPath = path.join(app.getPath("userData"), "config.json");
@@ -343,14 +343,8 @@ export class RawAppStateService implements AppStateApi {
       )
     ) {
       this.config.selectedWorkspace = "";
-      this.selectedWorkspaceAbsolutePath = undefined;
       configChanged = true;
     }
-
-    const selectedWorkspace = validWorkspaces.find(
-      (workspace) => workspace.id === this.config!.selectedWorkspace,
-    );
-    this.selectedWorkspaceAbsolutePath = selectedWorkspace?.absolutePath;
 
     if (configChanged) {
       await this.saveConfig(this.config);
@@ -398,7 +392,7 @@ export class RawAppStateService implements AppStateApi {
     };
   }
 
-  public async getSelectedWorkspace(): Promise<WorkspaceConf | undefined> {
+  public async getSelectedWorkspace(): Promise<WorkspaceSelection | undefined> {
     const validWorkspaces = await this.syncWorkspaces();
     const res = validWorkspaces.find(
       (it) => it.id === this.config!.selectedWorkspace,
@@ -406,11 +400,19 @@ export class RawAppStateService implements AppStateApi {
     if (!res) {
       return undefined;
     }
-    return this.mapWorkspaceToLocal(res);
+    return {
+      id: res.id,
+      title: res.title,
+      relativePath: res.relativePath,
+    };
   }
 
-  public getSelectedWorkspacePath(): string | undefined {
-    return this.selectedWorkspaceAbsolutePath;
+  public getWorkspacesRootPath(): string | undefined {
+    if (!this.config) {
+      return undefined;
+    }
+
+    return this.config.workspacesRootPath || undefined;
   }
 
   public async loadWorkspace(rootPath: string): Promise<WorkspaceConf> {

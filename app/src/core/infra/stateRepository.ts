@@ -3,6 +3,7 @@ import type {
   AppStateApi,
   WorkspaceConf,
   WorkspaceEntry,
+  WorkspaceSelection,
 } from "../../../appState";
 
 export class AppStateRepository implements AppStateApi {
@@ -35,7 +36,7 @@ export class AppStateRepository implements AppStateApi {
     return window.appState.selectWorkspace(id);
   }
 
-  public async getSelectedWorkspace(): Promise<WorkspaceConf | undefined> {
+  public async getSelectedWorkspace(): Promise<WorkspaceSelection | undefined> {
     return window.appState.getSelectedWorkspace();
   }
 }

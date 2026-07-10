@@ -10,21 +10,17 @@ import type {
 import { AppStateRepository } from "../infra/stateRepository";
 import { AuthRepository } from "../infra/authRepository";
 import { WorkspaceStateRepository } from "../infra/workspaceRepository";
-import type { WorkspaceLocalConfigEntity } from "../domain/workspace";
 import { SystemRoot } from "./type";
 
 const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>(
   "/workspace",
-);
-const workspaceStateApi = new IpcFileSystem<WorkspaceLocalConfigEntity>(
-  undefined,
 );
 const typesStorageApi = new IpcFileSystem<RawEptTypeHierarchyNode>("/types");
 
 export const appStateRepository = new AppStateRepository();
 export const authRepository = new AuthRepository();
 export const workspaceStateRepository = new WorkspaceStateRepository(
-  workspaceStateApi,
+  () => appStateRepository.getSelectedWorkspace(),
 );
 
 const typingRepository = new TypingRepository(typesStorageApi, SystemRoot());
