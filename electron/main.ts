@@ -2,6 +2,7 @@ import {
   app,
   BrowserWindow,
   BrowserWindowConstructorOptions,
+  Menu,
   ipcMain,
   screen,
 } from "electron";
@@ -72,6 +73,45 @@ async function createWindow() {
   if (isDev) {
     mainWindow.webContents.openDevTools();
   }
+
+  const menu = Menu.buildFromTemplate([
+    {
+      label: "File",
+      submenu: [
+        {
+          label: "Select Workspaces",
+          accelerator: "CmdOrCtrl+Shift+O",
+          click: () => {
+            BrowserWindow.getFocusedWindow()?.webContents.send(
+              "app:open-workspace-chooser",
+            );
+          },
+        },
+        { type: "separator" },
+        {
+          role: "quit",
+          label: "Quit",
+          accelerator: "CmdOrCtrl+Q",
+        },
+      ],
+    },
+    {
+      label: "View",
+      submenu: [
+        {
+          role: "reload",
+          label: "Reload",
+        },
+        {
+          role: "toggleDevTools",
+          label: "Toggle Developer Tools",
+          accelerator: "CmdOrCtrl+Shift+I",
+        },
+      ],
+    },
+  ]);
+
+  Menu.setApplicationMenu(menu);
 }
 
 app.whenReady().then(async () => {

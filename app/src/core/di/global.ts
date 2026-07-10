@@ -13,7 +13,7 @@ import { WorkspaceStateRepository } from "../infra/workspaceRepository";
 import { SystemRoot } from "./type";
 
 const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>(
-  "/workspace",
+  () => appStateRepository.getSelectedWorkspace().then((workspace) => workspace?.relativePath),
 );
 const typesStorageApi = new IpcFileSystem<RawEptTypeHierarchyNode>("/types");
 

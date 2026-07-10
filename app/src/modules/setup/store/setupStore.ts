@@ -1,5 +1,5 @@
-import { defineStore } from "pinia";
 import { ref } from "vue";
+import { defineStore } from "pinia";
 import { appStateRepository } from "@/core/di/global";
 
 interface Workspace {
@@ -8,58 +8,113 @@ interface Workspace {
   relativePath: string;
 }
 
+interface WorkspaceDraft {
+  id: string;
+  title: string;
+  isDraft: true;
+}
+
 export const useSetupStore = defineStore("setup", () => {
   const workspaces = ref<Workspace[]>([]);
+  const draftWorkspaces = ref<WorkspaceDraft[]>([]);
+  const workspacesRootPath = ref<string>("");
   const isLoading = ref<boolean>(false);
   const errorMsg = ref<string | undefined>(undefined);
 
   const loadWorkspaces = async () => {
     isLoading.value = true;
-    const _w = await appStateRepository.getWorkspaces();
-    const _res: Workspace[] = [];
+    try {
+      workspacesRootPath.value = await appStateRepository.getWorkspacesRootPath();
+      const _w = await appStateRepository.getWorkspaces();
+      const _res: Workspace[] = [];
 
-    for (const it of _w) {
-      const local = await appStateRepository.getLocalWorkspace(it.id);
-      if (local) {
-        _res.push({
-          id: local.id,
-          title: local.title,
-          relativePath: it.relativePath,
-        });
+      for (const it of _w) {
+        const local = await appStateRepository.getLocalWorkspace(it.id);
+        if (local) {
+          _res.push({
+            id: local.id,
+            title: local.title,
+            relativePath: it.relativePath,
+          });
+        }
       }
-    }
 
-    workspaces.value = _res;
-    isLoading.value = false;
+      workspaces.value = _res;
+      clearErrorMsg();
+    } catch {
+      errorMsg.value = "Cannot load workspace list";
+    } finally {
+      isLoading.value = false;
+    }
   };
 
-  const loadWorkspace = async (_path: string) => {
+  const selectRootPath = async () => {
     isLoading.value = true;
     try {
-      await appStateRepository.loadWorkspace(_path);
+      const path = await window.electronAPI.selectDirectory();
+      if (!path) {
+        return;
+      }
+
+      await appStateRepository.selectWorkspacesRoot(path);
       await loadWorkspaces();
       clearErrorMsg();
     } catch {
-      errorMsg.value = "Cannot load workspace";
+      errorMsg.value = "Cannot change workspace root";
+    } finally {
+      isLoading.value = false;
     }
-    isLoading.value = false;
   };
 
-  const createWorkspace = async (title: string, _path: string) => {
+  const beginWorkspaceDraft = () => {
+    draftWorkspaces.value.push({
+      id: crypto.randomUUID(),
+      title: "Untitled",
+      isDraft: true,
+    });
+  };
+
+  const cancelWorkspaceDraft = (draftId: string) => {
+    draftWorkspaces.value = draftWorkspaces.value.filter(
+      (item) => item.id !== draftId,
+    );
+  };
+
+  const commitWorkspaceDraft = async (draftId: string) => {
+    const draft = draftWorkspaces.value.find((item) => item.id === draftId);
+    if (!draft) {
+      return;
+    }
+
     isLoading.value = true;
     try {
-      await appStateRepository.createWorkspace(title, _path);
+      await appStateRepository.createWorkspace(
+        draft.title.trim().length ? draft.title.trim() : "Untitled",
+      );
+      draftWorkspaces.value = draftWorkspaces.value.filter(
+        (item) => item.id !== draftId,
+      );
       await loadWorkspaces();
       clearErrorMsg();
     } catch {
-      errorMsg.value = "Cannot load workspace";
+      errorMsg.value = "Cannot create workspace";
+    } finally {
+      isLoading.value = false;
     }
+  };
 
-    isLoading.value = false;
+  const createWorkspace = async (title: string) => {
+    const draftId = crypto.randomUUID();
+    draftWorkspaces.value.push({ id: draftId, title, isDraft: true });
+    await commitWorkspaceDraft(draftId);
   };
 
   const selectWorkspace = async (id: string) => {
     await appStateRepository.selectWorkspace(id);
+  };
+
+  const returnToChooser = async () => {
+    await appStateRepository.clearSelectedWorkspace();
   };
 
   const clearErrorMsg = () => {
@@ -68,13 +123,19 @@ export const useSetupStore = defineStore("setup", () => {
 
   return {
     workspaces,
+    draftWorkspaces,
+    workspacesRootPath,
     isLoading,
     errorMsg,
 
     loadWorkspaces,
     createWorkspace,
-    loadWorkspace,
+    commitWorkspaceDraft,
+    selectRootPath,
+    beginWorkspaceDraft,
+    cancelWorkspaceDraft,
     clearErrorMsg,
     selectWorkspace,
+    returnToChooser,
   };
 });

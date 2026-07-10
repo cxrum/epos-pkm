@@ -10,6 +10,9 @@ export class AppStateRepository implements AppStateApi {
   getLocalWorkspace(id: string): Promise<WorkspaceConf | undefined> {
     return window.appState.getLocalWorkspace(id);
   }
+  getWorkspacesRootPath(): Promise<string> {
+    return window.appState.getWorkspacesRootPath();
+  }
   getSyncServerUrl(): Promise<string> {
     return window.appState.getSyncServerUrl();
   }
@@ -19,14 +22,14 @@ export class AppStateRepository implements AppStateApi {
   hotReload(): Promise<AppConfig> {
     return window.appState.hotReload();
   }
-  loadWorkspace(_path: string): Promise<WorkspaceConf> {
-    return window.appState.loadWorkspace(_path);
+  selectWorkspacesRoot(path: string): Promise<WorkspaceConf | undefined> {
+    return window.appState.selectWorkspacesRoot(path);
   }
-  createWorkspace(
-    title: string,
-    _path: string,
-  ): Promise<WorkspaceConf | undefined> {
-    return window.appState.createWorkspace(title, _path);
+  clearSelectedWorkspace(): Promise<void> {
+    return window.appState.clearSelectedWorkspace();
+  }
+  createWorkspace(title: string): Promise<WorkspaceConf | undefined> {
+    return window.appState.createWorkspace(title);
   }
   public async getWorkspaces(): Promise<WorkspaceEntry[]> {
     return window.appState.getWorkspaces();

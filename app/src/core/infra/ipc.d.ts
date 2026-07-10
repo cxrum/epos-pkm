@@ -9,6 +9,7 @@ declare global {
     authApi: AuthApi;
     electronAPI: {
       selectDirectory: () => Promise<string | null>;
+      onOpenWorkspaceChooser: (handler: () => void) => () => void;
     };
   }
 }

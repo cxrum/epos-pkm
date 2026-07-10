@@ -33,17 +33,20 @@ const appStateApi: AppStateApi = {
   getLocalWorkspace: (id: string) =>
     ipcRenderer.invoke("app-state:getLocalWorkspace", id),
   getWorkspaces: () => ipcRenderer.invoke("app-state:getWorkspaces"),
+  getWorkspacesRootPath: () =>
+    ipcRenderer.invoke("app-state:getWorkspacesRootPath"),
   getSyncServerUrl: () => ipcRenderer.invoke("app-state:getSyncServerUrl"),
   setSyncServerUrl: (url: string | null) =>
     ipcRenderer.invoke("app-state:setSyncServerUrl", url),
   selectWorkspace: (id: string) =>
     ipcRenderer.invoke("app-state:selectWorkspace", id),
+  selectWorkspacesRoot: (path: string) =>
+    ipcRenderer.invoke("app-state:selectWorkspacesRoot", path),
+  clearSelectedWorkspace: () =>
+    ipcRenderer.invoke("app-state:clearSelectedWorkspace"),
   hotReload: () => ipcRenderer.invoke("app-state:hotReload"),
   getSelectedWorkspace: () => ipcRenderer.invoke("app-state:selectedWorkspace"),
-  createWorkspace: (title, _path) =>
-    ipcRenderer.invoke("app-state:createWorkspace", title, _path),
-  loadWorkspace: (_path) =>
-    ipcRenderer.invoke("app-state:loadWorkspace", _path),
+  createWorkspace: (title) => ipcRenderer.invoke("app-state:createWorkspace", title),
 };
 
 contextBridge.exposeInMainWorld("electronFs", fileSystemApi);
@@ -64,4 +67,9 @@ const authApi: AuthApi = {
 contextBridge.exposeInMainWorld("authApi", authApi);
 contextBridge.exposeInMainWorld("electronAPI", {
   selectDirectory: () => ipcRenderer.invoke("dialog:openDirectory"),
+  onOpenWorkspaceChooser: (handler: () => void) => {
+    const listener = () => handler();
+    ipcRenderer.on("app:open-workspace-chooser", listener);
+    return () => ipcRenderer.removeListener("app:open-workspace-chooser", listener);
+  },
 });

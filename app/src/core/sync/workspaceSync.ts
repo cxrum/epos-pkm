@@ -247,6 +247,9 @@ async function fetchSyncState(
 ): Promise<{ updates: { cursor: string; payload: string }[] }> {
   const url = new URL("/v1/sync/pull", syncServerUrl);
   url.searchParams.set("workspace_id", workspaceId);
+  // after_cursor means "give me only updates newer than this remote cursor".
+  // The client stores the last cursor it has already applied and uses it here
+  // to request only incremental changes from the server.
   if (afterCursor) {
     url.searchParams.set("after_cursor", afterCursor);
   }
@@ -306,7 +309,7 @@ async function syncWorkspace(
     return;
   }
 
-  const state = syncStates.get(workspace.id) ?? {
+  const state = syncStates.get(workspace.relativePath) ?? {
     snapshot: createEmptySnapshot(),
     cursor: null,
   };
@@ -317,7 +320,7 @@ async function syncWorkspace(
   const pullResponse = await fetchSyncState(
     syncServerUrl,
     accessToken,
-    workspace.id,
+    workspace.relativePath,
     state.cursor,
   );
 
@@ -342,7 +345,7 @@ async function syncWorkspace(
       const pushResponse = await pushSyncUpdate(
         syncServerUrl,
         accessToken,
-        workspace.id,
+        workspace.relativePath,
         encrypted,
       );
       state.cursor = pushResponse.cursor;
@@ -355,7 +358,7 @@ async function syncWorkspace(
   }
 
   state.snapshot = cloneSnapshot(snapshot);
-  syncStates.set(workspace.id, state);
+  syncStates.set(workspace.relativePath, state);
 }
 
 export async function runWorkspaceSyncTick(): Promise<void> {

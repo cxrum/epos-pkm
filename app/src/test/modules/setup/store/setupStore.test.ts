@@ -5,7 +5,9 @@ const { appStateRepositoryMock } = vi.hoisted(() => ({
   appStateRepositoryMock: {
     getWorkspaces: vi.fn(),
     getLocalWorkspace: vi.fn(),
-    loadWorkspace: vi.fn(),
+    getWorkspacesRootPath: vi.fn(),
+    selectWorkspacesRoot: vi.fn(),
+    clearSelectedWorkspace: vi.fn(),
     createWorkspace: vi.fn(),
     selectWorkspace: vi.fn(),
   },
@@ -24,6 +26,9 @@ describe("useSetupStore", () => {
   });
 
   it("loads workspace entries with relative paths", async () => {
+    appStateRepositoryMock.getWorkspacesRootPath.mockResolvedValue(
+      "/home/user/Epos/Workspaces",
+    );
     appStateRepositoryMock.getWorkspaces.mockResolvedValue([
       { id: "workspace-a", relativePath: "projects/a" },
       { id: "workspace-b", relativePath: "projects/b" },
@@ -42,5 +47,17 @@ describe("useSetupStore", () => {
       { id: "workspace-a", title: "Alpha", relativePath: "projects/a" },
       { id: "workspace-b", title: "Beta", relativePath: "projects/b" },
     ]);
+    expect(store.workspacesRootPath).toBe("/home/user/Epos/Workspaces");
+  });
+
+  it("creates a focused untitled draft workspace row and removes it on cancel", async () => {
+    const store = useSetupStore();
+
+    store.beginWorkspaceDraft();
+    expect(store.draftWorkspaces).toHaveLength(1);
+    expect(store.draftWorkspaces[0]?.title).toBe("Untitled");
+
+    store.cancelWorkspaceDraft(store.draftWorkspaces[0]!.id);
+    expect(store.draftWorkspaces).toHaveLength(0);
   });
 });

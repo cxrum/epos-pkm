@@ -43,6 +43,10 @@ export class RawAppStateService implements AppStateApi {
     this.defaultSyncServerUrl = defaultSyncServerUrl.replace(/\/+$/, "");
   }
 
+  private getDefaultWorkspacesRootPath(): string {
+    return path.join(app.getPath("documents"), "Epos", "Workspaces");
+  }
+
   private mapConfig(raw: RawAppConfig): AppConfig {
     return {
       workspacesRootPath: raw.workspacesRootPath,
@@ -63,7 +67,7 @@ export class RawAppStateService implements AppStateApi {
   private applyDefaults(raw: Partial<RawAppConfig>): RawAppConfig {
     return {
       workspacesRootPath: this.normalizeWorkspacePath(
-        raw.workspacesRootPath ?? "",
+        raw.workspacesRootPath ?? this.getDefaultWorkspacesRootPath(),
       ),
       selectedWorkspace: raw.selectedWorkspace ?? "",
       customSyncServerUrl: this.normalizeSyncServerUrl(
@@ -361,6 +365,14 @@ export class RawAppStateService implements AppStateApi {
     }));
   }
 
+  public async getWorkspacesRootPath(): Promise<string> {
+    if (!this.config) {
+      this.config = await this.loadConfig();
+    }
+
+    return this.config.workspacesRootPath;
+  }
+
   public async getLocalWorkspace(
     id: string,
   ): Promise<WorkspaceConf | undefined> {
@@ -392,6 +404,19 @@ export class RawAppStateService implements AppStateApi {
     };
   }
 
+  public async clearSelectedWorkspace(): Promise<void> {
+    if (!this.config) {
+      this.config = await this.loadConfig();
+    }
+
+    if (!this.config.selectedWorkspace) {
+      return;
+    }
+
+    this.config.selectedWorkspace = "";
+    await this.saveConfig(this.config);
+  }
+
   public async getSelectedWorkspace(): Promise<WorkspaceSelection | undefined> {
     const validWorkspaces = await this.syncWorkspaces();
     const res = validWorkspaces.find(
@@ -407,21 +432,98 @@ export class RawAppStateService implements AppStateApi {
     };
   }
 
-  public getWorkspacesRootPath(): string | undefined {
+  public getWorkspacesRootPathSync(): string | undefined {
     if (!this.config) {
-      return undefined;
+      return this.getDefaultWorkspacesRootPath();
     }
 
     return this.config.workspacesRootPath || undefined;
   }
 
-  public async loadWorkspace(rootPath: string): Promise<WorkspaceConf> {
+  public async selectWorkspacesRoot(
+    rootPath: string,
+  ): Promise<WorkspaceConf | undefined> {
     if (!this.config) {
       this.config = await this.loadConfig();
     }
 
-    this.config.workspacesRootPath = this.normalizeWorkspacePath(rootPath);
-    await this.saveConfig(this.config);
+    const normalizedRootPath = this.normalizeWorkspacePath(rootPath);
+    if (!normalizedRootPath) {
+      throw new Error("Workspace root path is empty");
+    }
+
+    const previousRootPath = this.config.workspacesRootPath;
+    if (previousRootPath === normalizedRootPath) {
+      const workspaces = await this.syncWorkspaces();
+      const selectedWorkspace = workspaces.find(
+        (workspace) => workspace.id === this.config!.selectedWorkspace,
+      );
+      if (selectedWorkspace) {
+        return {
+          id: selectedWorkspace.id,
+          title: selectedWorkspace.title,
+        };
+      }
+
+      const firstWorkspace = workspaces[0];
+      if (firstWorkspace) {
+        return {
+          id: firstWorkspace.id,
+          title: firstWorkspace.title,
+        };
+      }
+
+      return undefined;
+    }
+
+    if (previousRootPath) {
+      const relativeToCurrent = path.relative(previousRootPath, normalizedRootPath);
+      if (
+        relativeToCurrent &&
+        !relativeToCurrent.startsWith("..") &&
+        !path.isAbsolute(relativeToCurrent)
+      ) {
+        throw new Error("Selected root cannot be inside the current root");
+      }
+    }
+
+    try {
+      await fs.mkdir(normalizedRootPath, { recursive: true });
+
+      if (previousRootPath && (await this.pathExists(previousRootPath))) {
+        const previousWorkspaces = await this.scanWorkspaces(previousRootPath);
+
+        for (const workspace of previousWorkspaces) {
+          const relativeToWorkspace = path.relative(
+            workspace.absolutePath,
+            normalizedRootPath,
+          );
+          if (
+            relativeToWorkspace &&
+            !relativeToWorkspace.startsWith("..") &&
+            !path.isAbsolute(relativeToWorkspace)
+          ) {
+            throw new Error(
+              "Selected root cannot be inside an existing workspace",
+            );
+          }
+        }
+
+        const targetEntries = await fs.readdir(normalizedRootPath);
+        if (targetEntries.length > 0) {
+          throw new Error("Selected root must be empty");
+        }
+
+        await fs.rmdir(normalizedRootPath);
+        await fs.rename(previousRootPath, normalizedRootPath);
+      }
+
+      this.config.workspacesRootPath = normalizedRootPath;
+      await this.saveConfig(this.config);
+    } catch (error) {
+      console.error("Failed to move workspace root", error);
+      throw error;
+    }
 
     const workspaces = await this.syncWorkspaces();
     const selectedWorkspace = workspaces.find(
@@ -435,38 +537,29 @@ export class RawAppStateService implements AppStateApi {
       };
     }
 
-    const firstWorkspace = workspaces[0];
-    if (firstWorkspace) {
-      return {
-        id: firstWorkspace.id,
-        title: firstWorkspace.title,
-      };
-    }
-
-    return {
-      id: "",
-      title: "",
-    };
+    return undefined;
   }
 
-  public async createWorkspace(
-    title: string,
-    rootPath: string,
-  ): Promise<WorkspaceConf> {
+  public async createWorkspace(title: string): Promise<WorkspaceConf> {
     if (!this.config) {
       this.config = await this.loadConfig();
     }
 
-    const normalizedRootPath = this.normalizeWorkspacePath(rootPath);
-    this.config.workspacesRootPath = normalizedRootPath;
+    const normalizedRootPath = this.config.workspacesRootPath;
+    if (!normalizedRootPath) {
+      throw new Error("Workspace root path is not set");
+    }
 
-    const sanitizedTitle = title
+    const normalizedTitle = title.trim().length ? title.trim() : "Untitled";
+    const sanitizedTitle = normalizedTitle
       .trim()
       .replace(/[<>:"|?*\\/]+/g, "-")
       .replace(/\s+/g, " ")
       .replace(/^\.+$/, "")
       .trim();
-    const workspaceFolderName = sanitizedTitle.length ? sanitizedTitle : "workspace";
+    const workspaceFolderName = sanitizedTitle.length
+      ? sanitizedTitle
+      : "Untitled";
 
     let workspaceAbsolutePath = path.join(
       normalizedRootPath,
@@ -492,13 +585,36 @@ export class RawAppStateService implements AppStateApi {
     };
 
     const localConfig: WorkspaceConf = {
-      title: title,
+      title: normalizedTitle,
       id: newWorkspace.id,
+    };
+    const workspaceRootObject = {
+      id: "-1",
+      typeId: "sys:workspace",
+      title: "root",
+      content: {},
+      order: [],
+      properties: {
+        isContainer: {
+          id: "isContainer",
+          title: "isContainer",
+          type: "boolean",
+          value: true,
+        },
+      },
     };
 
     try {
       await fs.mkdir(newWorkspace.absolutePath, { recursive: true });
       await this.saveWorkspaceConf(newWorkspace.absolutePath, localConfig);
+      const rootFilePath = path.join(newWorkspace.absolutePath, "root.json");
+      if (!(await this.pathExists(rootFilePath))) {
+        await fs.writeFile(
+          rootFilePath,
+          JSON.stringify(workspaceRootObject, null, 2),
+          "utf-8",
+        );
+      }
 
       await this.saveConfig(this.config);
 

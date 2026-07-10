@@ -5,10 +5,26 @@ import type {
 import type { Edge } from "../utils";
 
 export class IpcFileSystem<T extends any> implements FileSystemApi<T> {
-  private readonly basePath: string | undefined;
+  private readonly basePath:
+    | string
+    | undefined
+    | (() => string | undefined | Promise<string | undefined>);
 
-  constructor(basePath: string | undefined) {
+  constructor(
+    basePath:
+      | string
+      | undefined
+      | (() => string | undefined | Promise<string | undefined>),
+  ) {
     this.basePath = basePath;
+  }
+
+  private async getBasePath(): Promise<string | undefined> {
+    if (typeof this.basePath === "function") {
+      return await this.basePath();
+    }
+
+    return this.basePath;
   }
 
   async relative(fromPath: string, toPath: string): Promise<string> {
@@ -27,16 +43,17 @@ export class IpcFileSystem<T extends any> implements FileSystemApi<T> {
   }
 
   async renameFile(filePath: string, newTitle: string): Promise<string> {
+    const basePath = await this.getBasePath();
     const resPath = await window.electronFs.renameFile(
       await this.resolvePath(filePath),
       newTitle,
     );
-    const res = await window.electronFs.relative(this.basePath ?? "", resPath);
+    const res = await window.electronFs.relative(basePath ?? "", resPath);
     return res;
   }
 
   private async resolvePath(targetPath: string): Promise<string> {
-    const cleanTarget = await this.join(this.basePath, targetPath);
+    const cleanTarget = await this.join(await this.getBasePath(), targetPath);
     return cleanTarget;
   }
 

@@ -3,6 +3,9 @@ import { RawAppStateService } from "../AppStateService";
 
 export function setupAppState(stateService: RawAppStateService) {
   ipcMain.handle("app-state:getWorkspaces", () => stateService.getWorkspaces());
+  ipcMain.handle("app-state:getWorkspacesRootPath", () =>
+    stateService.getWorkspacesRootPathSync(),
+  );
   ipcMain.handle("app-state:getSyncServerUrl", () =>
     stateService.getSyncServerUrl(),
   );
@@ -17,6 +20,12 @@ export function setupAppState(stateService: RawAppStateService) {
   ipcMain.handle("app-state:getLocalWorkspace", (_, id: string) => {
     return stateService.getLocalWorkspace(id);
   });
+  ipcMain.handle("app-state:selectWorkspacesRoot", (_, rootPath: string) => {
+    return stateService.selectWorkspacesRoot(rootPath);
+  });
+  ipcMain.handle("app-state:clearSelectedWorkspace", () =>
+    stateService.clearSelectedWorkspace(),
+  );
 
   ipcMain.handle("app-state:hotReload", () => stateService.hotReload());
   ipcMain.handle("app-state:selectedWorkspace", () =>
@@ -24,13 +33,10 @@ export function setupAppState(stateService: RawAppStateService) {
   );
   ipcMain.handle(
     "app-state:createWorkspace",
-    (_, title: string, _path: string) => {
-      return stateService.createWorkspace(title, _path);
+    (_, title: string) => {
+      return stateService.createWorkspace(title);
     },
   );
-  ipcMain.handle("app-state:loadWorkspace", (_, _path: string) => {
-    return stateService.loadWorkspace(_path);
-  });
 
   ipcMain.handle("dialog:openDirectory", async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

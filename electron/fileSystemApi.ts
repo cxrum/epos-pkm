@@ -26,7 +26,7 @@ export class JsonNodeFileSystem<
   }
 
   private getWorkspaceRootPath(): string {
-    const workspaceRootPath = this.appState.getWorkspacesRootPath();
+    const workspaceRootPath = this.appState.getWorkspacesRootPathSync();
     if (!workspaceRootPath) {
       throw Error();
     }
