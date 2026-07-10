@@ -22,7 +22,11 @@ import { useEditor, EditorContent, Editor } from "@tiptap/vue-3";
 import { Placeholder } from "@tiptap/extensions";
 import { EpObjectAttributesExtension } from "../extension/customObjectExtension";
 import type { EpContainerObjectEntity } from "@/core/domain/type";
-import { domainPropertyToTiptap, entitiesToTiptapDoc, tiptapDocToEntities } from "../mappers";
+import {
+  domainPropertyToTiptap,
+  entitiesToTiptapDoc,
+  tiptapDocToEntities,
+} from "../mappers";
 import { EpBaseBlock, EpCodeBlock } from "../nodes/EpBlockExtension";
 import type { EditorControllerContract } from "../contract";
 import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
@@ -171,7 +175,10 @@ const updateTipTapNodeAttributes = (
       }
     }
 
-    const tiptapProperties = domainPropertyToTiptap(targetNodeType, updatedProps);
+    const tiptapProperties = domainPropertyToTiptap(
+      targetNodeType,
+      updatedProps,
+    );
 
     editor.view.dispatch(
       editor.state.tr.setNodeMarkup(targetNodePos, undefined, {
