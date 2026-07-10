@@ -24,6 +24,7 @@ interface MeResponse {
 export class AuthService {
   private readonly resolveApiBaseUrl: () => Promise<string> | string;
   private accessToken: string | null = null;
+  private accessTokenExpiresAt: number | null = null;
   private currentUser: AuthUser | null = null;
   private currentTokenType: string | null = null;
   private currentSyncKey: string | null = null;
@@ -99,6 +100,7 @@ export class AuthService {
 
   private clearRuntimeTokens(): void {
     this.accessToken = null;
+    this.accessTokenExpiresAt = null;
     this.currentUser = null;
     this.currentTokenType = null;
   }
@@ -195,10 +197,79 @@ export class AuthService {
     accessToken: string,
     user: AuthUser,
     tokenType: string,
+    accessTokenExpiresAt: number | null,
   ): void {
     this.accessToken = accessToken;
+    this.accessTokenExpiresAt = accessTokenExpiresAt;
     this.currentUser = user;
     this.currentTokenType = tokenType;
+  }
+
+  private parseTokenExpiry(token: string): number | null {
+    try {
+      const [, payload] = token.split(".");
+      if (!payload) {
+        return null;
+      }
+
+      const normalized = payload.replace(/-/g, "+").replace(/_/g, "/");
+      const padding = "=".repeat((4 - (normalized.length % 4)) % 4);
+      const decoded = JSON.parse(
+        Buffer.from(`${normalized}${padding}`, "base64").toString("utf-8"),
+      ) as { exp?: unknown };
+
+      if (typeof decoded.exp !== "number") {
+        return null;
+      }
+
+      return decoded.exp * 1000;
+    } catch {
+      return null;
+    }
+  }
+
+  private isRuntimeAccessTokenExpired(): boolean {
+    if (!this.accessToken || this.accessTokenExpiresAt === null) {
+      return false;
+    }
+
+    const refreshSkewMs = 60_000;
+    return Date.now() >= this.accessTokenExpiresAt - refreshSkewMs;
+  }
+
+  private async ensureAccessToken(): Promise<string | null> {
+    if (this.accessToken && !this.isRuntimeAccessTokenExpired()) {
+      return this.accessToken;
+    }
+
+    const session = this.getSession();
+    const refreshToken = this.decryptRefreshToken(session.refreshTokenEncrypted);
+
+    if (!refreshToken) {
+      return this.isRuntimeAccessTokenExpired() ? null : this.accessToken;
+    }
+
+    try {
+      const pair = await this.requestJson<TokenPairResponse>("/v1/auth/refresh", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          refresh_token: refreshToken,
+        }),
+      });
+
+      const syncKey = this.resolveStoredSyncKey(session) ?? undefined;
+      await this.persistSession(pair, session.userEmail ?? undefined, {
+        persistToStorage: true,
+        syncKey,
+      });
+      return this.accessToken;
+    } catch {
+      await this.clearSessionTokens();
+      return null;
+    }
   }
 
   private setRuntimeSyncKey(syncKey: string): void {
@@ -225,7 +296,13 @@ export class AuthService {
       // Keep the login/register flow usable even if profile lookup is unavailable.
     }
 
-    this.setRuntimeSession(pair.access_token, user, pair.token_type);
+    this.accessTokenExpiresAt = this.parseTokenExpiry(pair.access_token);
+    this.setRuntimeSession(
+      pair.access_token,
+      user,
+      pair.token_type,
+      this.accessTokenExpiresAt,
+    );
 
     const syncKey =
       options?.syncKey ??
@@ -306,7 +383,7 @@ export class AuthService {
   async getStatus(): Promise<AuthState> {
     const session = this.getSession();
 
-    if (this.accessToken && this.currentUser) {
+    if (this.accessToken && this.currentUser && !this.isRuntimeAccessTokenExpired()) {
       return this.toState(session, true);
     }
 
@@ -331,8 +408,8 @@ export class AuthService {
     return Promise.resolve(this.hasSecureStorage());
   }
 
-  getAccessToken(): string | null {
-    return this.accessToken;
+  async getAccessToken(): Promise<string | null> {
+    return await this.ensureAccessToken();
   }
 
   getSyncKey(): string | null {

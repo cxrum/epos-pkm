@@ -129,8 +129,16 @@ export const useSetupStore = defineStore("setup", () => {
     await commitWorkspaceDraft(draftId);
   };
 
-  const selectWorkspace = async (id: string) => {
-    await appStateRepository.selectWorkspace(id);
+  const selectWorkspace = async (id: string): Promise<boolean> => {
+    try {
+      await loadWorkspaces();
+      await appStateRepository.selectWorkspace(id);
+      clearErrorMsg();
+      return true;
+    } catch {
+      errorMsg.value = "Cannot open workspace";
+      return false;
+    }
   };
 
   const returnToChooser = async () => {

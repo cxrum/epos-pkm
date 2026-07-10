@@ -12,6 +12,24 @@ type WorkspaceSnapshot = {
 type SyncEnvelope = {
   iv: string;
   ciphertext: string;
+  compressed?: boolean;
+};
+
+type WorkspaceFileOp =
+  | {
+      op: "set";
+      path: string;
+      value: unknown;
+    }
+  | {
+      op: "remove";
+      path: string;
+    };
+
+type WorkspaceBatchPayload = {
+  kind: "workspace-file-batch";
+  version: 1;
+  ops: WorkspaceFileOp[];
 };
 
 type WorkspaceSyncState = {
@@ -20,6 +38,7 @@ type WorkspaceSyncState = {
 };
 
 const POLL_INTERVAL_MS = 30_000;
+const MAX_BATCH_BYTES = 24_000;
 const syncStates = new Map<string, WorkspaceSyncState>();
 let syncStarted = false;
 
@@ -46,6 +65,53 @@ function fromBase64(value: string): Uint8Array {
     bytes[index] = binary.charCodeAt(index);
   }
   return bytes;
+}
+
+async function streamToBytes(stream: ReadableStream<Uint8Array>): Promise<Uint8Array> {
+  const chunks: Uint8Array[] = [];
+  const reader = stream.getReader();
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    if (value) {
+      chunks.push(value);
+    }
+  }
+
+  const length = chunks.reduce((sum, chunk) => sum + chunk.length, 0);
+  const result = new Uint8Array(length);
+  let offset = 0;
+
+  for (const chunk of chunks) {
+    result.set(chunk, offset);
+    offset += chunk.length;
+  }
+
+  return result;
+}
+
+async function compressBytes(bytes: Uint8Array): Promise<Uint8Array> {
+  if (typeof CompressionStream === "undefined") {
+    return bytes;
+  }
+
+  return await streamToBytes(
+    new Blob([bytes]).stream().pipeThrough(new CompressionStream("gzip")),
+  );
+}
+
+async function decompressBytes(bytes: Uint8Array): Promise<Uint8Array> {
+  if (typeof DecompressionStream === "undefined") {
+    return bytes;
+  }
+
+  return await streamToBytes(
+    new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip")),
+  );
 }
 
 function stableSerialize(value: unknown): string {
@@ -157,6 +223,114 @@ function applySnapshotDelta(
   return changed;
 }
 
+function applyWorkspaceOps(
+  snapshot: WorkspaceSnapshot,
+  ops: WorkspaceFileOp[],
+): void {
+  for (const op of ops) {
+    if (op.op === "remove") {
+      if (op.path === ".workspace") {
+        snapshot.state = {};
+      } else {
+        delete snapshot.files[op.path];
+      }
+      continue;
+    }
+
+    if (op.path === ".workspace") {
+      snapshot.state = (op.value ?? {}) as Record<string, unknown>;
+      continue;
+    }
+
+    snapshot.files[op.path] = op.value;
+  }
+}
+
+function buildWorkspaceOps(
+  baseSnapshot: WorkspaceSnapshot,
+  currentSnapshot: WorkspaceSnapshot,
+): WorkspaceFileOp[] {
+  const ops: WorkspaceFileOp[] = [];
+
+  if (stableSerialize(baseSnapshot.state) !== stableSerialize(currentSnapshot.state)) {
+    if (Object.keys(currentSnapshot.state).length === 0) {
+      ops.push({ op: "remove", path: ".workspace" });
+    } else {
+      ops.push({
+        op: "set",
+        path: ".workspace",
+        value: currentSnapshot.state,
+      });
+    }
+  }
+
+  const allFileKeys = new Set([
+    ...Object.keys(baseSnapshot.files),
+    ...Object.keys(currentSnapshot.files),
+  ]);
+
+  for (const path of Array.from(allFileKeys).sort((left, right) =>
+    left.localeCompare(right),
+  )) {
+    if (stableSerialize(baseSnapshot.files[path]) === stableSerialize(currentSnapshot.files[path])) {
+      continue;
+    }
+
+    if (currentSnapshot.files[path] === undefined) {
+      ops.push({ op: "remove", path });
+      continue;
+    }
+
+    ops.push({
+      op: "set",
+      path,
+      value: currentSnapshot.files[path],
+    });
+  }
+
+  return ops;
+}
+
+function estimateBatchSize(batch: WorkspaceBatchPayload): number {
+  return new TextEncoder().encode(JSON.stringify(batch)).length;
+}
+
+function buildWorkspaceBatches(
+  ops: WorkspaceFileOp[],
+): WorkspaceBatchPayload[] {
+  const batches: WorkspaceBatchPayload[] = [];
+  let currentBatch: WorkspaceBatchPayload = {
+    kind: "workspace-file-batch",
+    version: 1,
+    ops: [],
+  };
+
+  for (const op of ops) {
+    const candidate = {
+      ...currentBatch,
+      ops: [...currentBatch.ops, op],
+    };
+
+    if (currentBatch.ops.length > 0 && estimateBatchSize(candidate) > MAX_BATCH_BYTES) {
+      batches.push(currentBatch);
+      currentBatch = {
+        kind: "workspace-file-batch",
+        version: 1,
+        ops: [op],
+      };
+      continue;
+    }
+
+    currentBatch = candidate;
+  }
+
+  if (currentBatch.ops.length > 0) {
+    batches.push(currentBatch);
+  }
+
+  return batches;
+}
+
 async function deriveKey(syncKey: string): Promise<CryptoKey> {
   const rawKey = fromBase64(syncKey);
   return await crypto.subtle.importKey(
@@ -168,28 +342,25 @@ async function deriveKey(syncKey: string): Promise<CryptoKey> {
   );
 }
 
-async function encryptUpdate(
-  syncKey: string,
-  update: Uint8Array,
-): Promise<string> {
+async function encryptUpdate(syncKey: string, update: Uint8Array): Promise<string> {
   const key = await deriveKey(syncKey);
   const iv = crypto.getRandomValues(new Uint8Array(12));
+  const supportsCompression = typeof CompressionStream !== "undefined";
+  const compressed = await compressBytes(update);
   const ciphertext = new Uint8Array(
-    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, update),
+    await crypto.subtle.encrypt({ name: "AES-GCM", iv }, key, compressed),
   );
 
   const envelope: SyncEnvelope = {
     iv: toBase64(iv),
     ciphertext: toBase64(ciphertext),
+    compressed: supportsCompression,
   };
 
   return JSON.stringify(envelope);
 }
 
-async function decryptUpdate(
-  syncKey: string,
-  payload: string,
-): Promise<Uint8Array> {
+async function decryptUpdate(syncKey: string, payload: string): Promise<Uint8Array> {
   const envelope = JSON.parse(payload) as SyncEnvelope;
   const key = await deriveKey(syncKey);
   const plaintext = await crypto.subtle.decrypt(
@@ -198,7 +369,36 @@ async function decryptUpdate(
     fromBase64(envelope.ciphertext),
   );
 
-  return new Uint8Array(plaintext);
+  const decrypted = new Uint8Array(plaintext);
+  if (!envelope.compressed) {
+    return decrypted;
+  }
+
+  return await decompressBytes(decrypted);
+}
+
+function tryParseWorkspaceBatch(payload: Uint8Array): WorkspaceBatchPayload | null {
+  try {
+    const text = new TextDecoder().decode(payload);
+    const parsed = JSON.parse(text) as Partial<WorkspaceBatchPayload>;
+
+    if (
+      parsed &&
+      parsed.kind === "workspace-file-batch" &&
+      parsed.version === 1 &&
+      Array.isArray(parsed.ops)
+    ) {
+      return {
+        kind: "workspace-file-batch",
+        version: 1,
+        ops: parsed.ops as WorkspaceFileOp[],
+      };
+    }
+  } catch {
+    // Fall back to legacy Yjs payloads.
+  }
+
+  return null;
 }
 
 async function readWorkspaceSnapshot(
@@ -316,7 +516,7 @@ async function syncWorkspace(
   };
 
   const currentSnapshot = await readWorkspaceSnapshot(workspace.relativePath);
-  const remoteDoc = snapshotToDoc(state.snapshot);
+  const pulledSnapshot = cloneSnapshot(state.snapshot);
 
   const pullResponse = await fetchSyncState(
     syncServerUrl,
@@ -327,38 +527,50 @@ async function syncWorkspace(
 
   for (const update of pullResponse.updates) {
     const decrypted = await decryptUpdate(syncKey, update.payload);
-    Y.applyUpdate(remoteDoc, decrypted);
+    const batch = tryParseWorkspaceBatch(decrypted);
+
+    if (batch) {
+      applyWorkspaceOps(pulledSnapshot, batch.ops);
+    } else {
+      const remoteDoc = snapshotToDoc(pulledSnapshot);
+      Y.applyUpdate(remoteDoc, decrypted);
+      const mergedRemoteSnapshot = docToSnapshot(remoteDoc);
+      pulledSnapshot.state = mergedRemoteSnapshot.state;
+      pulledSnapshot.files = mergedRemoteSnapshot.files;
+    }
+
     state.cursor = update.cursor;
   }
 
-  const baseSnapshot = docToSnapshot(remoteDoc);
-  const remoteStateVector = Y.encodeStateVector(remoteDoc);
-  const hasLocalChanges = applySnapshotDelta(
-    remoteDoc,
-    baseSnapshot,
-    currentSnapshot,
-  );
+  const localOps = buildWorkspaceOps(state.snapshot, currentSnapshot);
+  let finalCursor = state.cursor;
 
-  if (hasLocalChanges) {
-    const localUpdate = Y.encodeStateAsUpdate(remoteDoc, remoteStateVector);
-    if (localUpdate.length > 0) {
-      const encrypted = await encryptUpdate(syncKey, localUpdate);
+  if (localOps.length > 0) {
+    const batches = buildWorkspaceBatches(localOps);
+    for (const batch of batches) {
+      const encrypted = await encryptUpdate(
+        syncKey,
+        new TextEncoder().encode(JSON.stringify(batch)),
+      );
       const pushResponse = await pushSyncUpdate(
         syncServerUrl,
         accessToken,
         workspace.id,
         encrypted,
       );
-      state.cursor = pushResponse.cursor;
+      finalCursor = pushResponse.cursor;
     }
   }
 
-  const snapshot = docToSnapshot(remoteDoc);
-  if (stableSerialize(snapshot) !== stableSerialize(currentSnapshot)) {
-    await writeWorkspaceSnapshot(workspace.relativePath, snapshot);
+  const mergedSnapshot = cloneSnapshot(pulledSnapshot);
+  applyWorkspaceOps(mergedSnapshot, localOps);
+
+  if (stableSerialize(mergedSnapshot) !== stableSerialize(currentSnapshot)) {
+    await writeWorkspaceSnapshot(workspace.relativePath, mergedSnapshot);
   }
 
-  state.snapshot = cloneSnapshot(snapshot);
+  state.snapshot = cloneSnapshot(mergedSnapshot);
+  state.cursor = finalCursor;
   syncStates.set(workspace.id, state);
 }
 
@@ -430,6 +642,9 @@ export {
   snapshotToDoc,
   stableSerialize,
   writeWorkspaceSnapshot,
+  applyWorkspaceOps,
+  buildWorkspaceOps,
+  buildWorkspaceBatches,
 };
 
 export type { WorkspaceSnapshot };

@@ -19,8 +19,10 @@ const handleSelectRoot = async () => {
 };
 
 const openWorkspace = async (id: string) => {
-  await stateStore.selectWorkspace(id);
-  await router.push({ name: "workspace" });
+  const opened = await stateStore.selectWorkspace(id);
+  if (opened) {
+    await router.push({ name: "workspace" });
+  }
 };
 
 const addWorkspaceDraft = () => {

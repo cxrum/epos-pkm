@@ -1,7 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import * as Y from "yjs";
 import {
   applySnapshotDelta,
+  buildWorkspaceBatches,
+  buildWorkspaceOps,
+  decryptUpdate,
   docToSnapshot,
+  encryptUpdate,
   resetWorkspaceSyncState,
   runWorkspaceSyncTick,
   snapshotToDoc,
@@ -13,10 +18,15 @@ describe("workspace sync helpers", () => {
   const localWorkspaces = [
     { id: "local-workspace-id", relativePath: "projects/a" },
   ];
+  const syncKey = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=";
+  let remoteContentUpdates: { cursor: string; payload: string }[] = [];
+  let remoteCatalogUpdates: { cursor: string; payload: string }[] = [];
 
   beforeEach(() => {
     resetWorkspaceSyncState();
     resetCatalogSyncState();
+    remoteContentUpdates = [];
+    remoteCatalogUpdates = [];
     localWorkspaces.splice(0, localWorkspaces.length, {
       id: "local-workspace-id",
       relativePath: "projects/a",
@@ -29,14 +39,10 @@ describe("workspace sync helpers", () => {
           user: { id: "user-1" },
         }),
         getAccessToken: vi.fn().mockResolvedValue("token"),
-        getSyncKey: vi.fn().mockResolvedValue(
-          "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA=",
-        ),
+        getSyncKey: vi.fn().mockResolvedValue(syncKey),
       },
       appState: {
-        getWorkspaces: vi.fn().mockImplementation(async () => [
-          ...localWorkspaces,
-        ]),
+        getWorkspaces: vi.fn().mockImplementation(async () => [...localWorkspaces]),
         getSelectedWorkspace: vi.fn().mockResolvedValue({
           id: "local-workspace-id",
           title: "Workspace",
@@ -47,13 +53,18 @@ describe("workspace sync helpers", () => {
           if (!localWorkspaces.some((item) => item.id === workspace.id)) {
             localWorkspaces.push({
               id: workspace.id,
-              relativePath: workspace.id === "remote-workspace"
-                ? "remote/workspace"
-                : `projects/${workspace.id}`,
+              relativePath:
+                workspace.id === "remote-workspace"
+                  ? "remote/workspace"
+                  : `projects/${workspace.id}`,
             });
           }
           return workspace;
         }),
+        getLocalWorkspace: vi.fn().mockImplementation(async (id: string) => ({
+          id,
+          title: id === "local-workspace-id" ? "Workspace" : "Remote Workspace",
+        })),
       },
       electronFs: {
         join: vi.fn().mockImplementation((base: string, target: string) =>
@@ -62,8 +73,10 @@ describe("workspace sync helpers", () => {
         relative: vi.fn().mockImplementation((from: string, to: string) =>
           to.startsWith(`${from}/`) ? to.slice(from.length + 1) : to,
         ),
-        getAllFlat: vi.fn().mockResolvedValue({}),
-        get: vi.fn().mockResolvedValue(undefined),
+        getAllFlat: vi.fn().mockResolvedValue({
+          "root.json": { id: "-1", title: "root" },
+        }),
+        get: vi.fn().mockResolvedValue({ id: "local-workspace-id", title: "Workspace" }),
         save: vi.fn(),
         remove: vi.fn(),
         exists: vi.fn().mockResolvedValue(false),
@@ -76,6 +89,7 @@ describe("workspace sync helpers", () => {
         renameFile: vi.fn(),
       },
     });
+
     vi.stubGlobal(
       "fetch",
       vi.fn().mockImplementation(async (input: RequestInfo | URL) => {
@@ -84,15 +98,7 @@ describe("workspace sync helpers", () => {
         if (url.includes("/v1/sync/catalog/pull")) {
           return {
             ok: true,
-            json: async () => ({
-              updates: [
-                {
-                  cursor: "catalog-cursor-1",
-                  workspace_id: "remote-workspace",
-                  title: "Remote Workspace",
-                },
-              ],
-            }),
+            json: async () => ({ updates: remoteCatalogUpdates }),
           } as Response;
         }
 
@@ -106,7 +112,7 @@ describe("workspace sync helpers", () => {
         if (url.includes("/v1/sync/pull")) {
           return {
             ok: true,
-            json: async () => ({ updates: [] }),
+            json: async () => ({ updates: remoteContentUpdates }),
           } as Response;
         }
 
@@ -167,15 +173,57 @@ describe("workspace sync helpers", () => {
     );
   });
 
-  it("pulls sync updates using the workspace id as workspace_id", async () => {
-    await runWorkspaceSyncTick();
+  it("builds bounded batches for workspace file ops", () => {
+    const ops = Array.from({ length: 20 }, (_, index) => ({
+      op: "set" as const,
+      path: `root/file-${index}.json`,
+      value: { id: String(index), title: `File ${index}`, body: "x".repeat(3000) },
+    }));
 
-    const fetchMock = vi.mocked(globalThis.fetch);
-    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("/v1/sync/catalog/pull"))).toBe(true);
-    expect(fetchMock.mock.calls.some(([url]) => String(url).includes("workspace_id=local-workspace-id"))).toBe(true);
+    const batches = buildWorkspaceBatches(ops);
+    expect(batches.length).toBeGreaterThan(1);
+    expect(batches.flatMap((batch) => batch.ops)).toHaveLength(20);
   });
 
-  it("materializes remote catalog workspaces before content sync", async () => {
+  it("pulls catalog and content updates using encrypted payloads", async () => {
+    remoteCatalogUpdates = [
+      {
+        cursor: "catalog-cursor-1",
+        payload: await encryptUpdate(
+          syncKey,
+          new TextEncoder().encode(
+            JSON.stringify({
+              kind: "workspace-catalog-batch",
+              version: 1,
+              entries: [{ id: "remote-workspace", title: "Remote Workspace" }],
+            }),
+          ),
+        ),
+      },
+    ];
+
+    remoteContentUpdates = [
+      {
+        cursor: "content-cursor-1",
+        payload: await encryptUpdate(
+          syncKey,
+          new TextEncoder().encode(
+            JSON.stringify({
+              kind: "workspace-file-batch",
+              version: 1,
+              ops: [
+                {
+                  op: "set",
+                  path: "root/Task.json",
+                  value: { id: "task-1", title: "Task" },
+                },
+              ],
+            }),
+          ),
+        ),
+      },
+    ];
+
     await runWorkspaceSyncTick();
 
     const appState = vi.mocked(globalThis.window.appState);
@@ -183,8 +231,33 @@ describe("workspace sync helpers", () => {
       id: "remote-workspace",
       title: "Remote Workspace",
     });
+
+    const saveCalls = vi.mocked(window.electronFs.save).mock.calls.map(
+      ([path]) => path,
+    );
+    expect(saveCalls).toContain("projects/a/root/Task.json");
+
+    const fetchMock = vi.mocked(globalThis.fetch);
     expect(
-      localWorkspaces.some((workspace) => workspace.id === "remote-workspace"),
+      fetchMock.mock.calls.some(([url]) =>
+        String(url).includes("/v1/sync/catalog/pull"),
+      ),
     ).toBe(true);
+    expect(
+      fetchMock.mock.calls.some(([url, init]) =>
+        String(url).includes("/v1/sync/push") &&
+        Boolean(init && typeof init === "object" && "body" in init),
+      ),
+    ).toBe(true);
+  });
+
+  it("decrypts opaque payloads", async () => {
+    const payload = await encryptUpdate(
+      syncKey,
+      new TextEncoder().encode("hello world"),
+    );
+
+    const decrypted = await decryptUpdate(syncKey, payload);
+    expect(new TextDecoder().decode(decrypted)).toBe("hello world");
   });
 });
