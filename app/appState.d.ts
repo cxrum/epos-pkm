@@ -5,10 +5,11 @@ export interface WorkspaceConf {
 
 export interface WorkspaceEntry {
   id: string;
-  absolutePath: string;
+  relativePath: string;
 }
 
 export interface AppConfig {
+  workspacesRootPath: string;
   selectedWorkspace: string;
   customSyncServerUrl: string | null;
 }

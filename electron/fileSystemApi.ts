@@ -25,16 +25,16 @@ export class JsonNodeFileSystem<
     return normalized;
   }
 
-  private getWorkspacePath(): string {
-    const workspacePath = this.appState.getSelectedWorkspacePath();
-    if (!workspacePath) {
+  private getWorkspaceRootPath(): string {
+    const workspaceRootPath = this.appState.getSelectedWorkspacePath();
+    if (!workspaceRootPath) {
       throw Error();
     }
-    return this.normalizePath(workspacePath, "os");
+    return this.normalizePath(workspaceRootPath, "os");
   }
 
   private getFullPath(targetPath: string): string {
-    let res = path.join(this.getWorkspacePath(), targetPath);
+    let res = path.join(this.getWorkspaceRootPath(), targetPath);
     res = this.normalizePath(res, "os");
     return res;
   }
@@ -141,7 +141,7 @@ export class JsonNodeFileSystem<
 
   async tree(rootPath: string): Promise<{ source: string; target: string }[]> {
     const fullRootPath = this.getFullPath(rootPath);
-    const workspacePath = this.getWorkspacePath();
+    const workspacePath = this.getWorkspaceRootPath();
 
     const traverse = async (
       currentPath: string,

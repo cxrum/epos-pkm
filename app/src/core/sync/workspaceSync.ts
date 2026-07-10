@@ -201,9 +201,11 @@ async function decryptUpdate(
 }
 
 async function readWorkspaceSnapshot(
-  workspacePath: string,
+  workspaceRelativePath: string,
 ): Promise<WorkspaceSnapshot> {
-  const fsApi = new IpcFileSystem<Record<string, unknown>>(workspacePath);
+  const fsApi = new IpcFileSystem<Record<string, unknown>>(
+    workspaceRelativePath,
+  );
   const files = await fsApi.getAllFlat("");
   const workspaceState = await fsApi.get(".workspace");
 
@@ -214,10 +216,12 @@ async function readWorkspaceSnapshot(
 }
 
 async function writeWorkspaceSnapshot(
-  workspacePath: string,
+  workspaceRelativePath: string,
   snapshot: WorkspaceSnapshot,
 ): Promise<void> {
-  const fsApi = new IpcFileSystem<Record<string, unknown>>(workspacePath);
+  const fsApi = new IpcFileSystem<Record<string, unknown>>(
+    workspaceRelativePath,
+  );
   const existing = await fsApi.getAllFlat("");
   const existingPaths = new Set(Object.keys(existing));
   const targetPaths = new Set(Object.keys(snapshot.files));
@@ -307,7 +311,7 @@ async function syncWorkspace(
     cursor: null,
   };
 
-  const currentSnapshot = await readWorkspaceSnapshot(workspace.absolutePath);
+  const currentSnapshot = await readWorkspaceSnapshot(workspace.relativePath);
   const remoteDoc = snapshotToDoc(state.snapshot);
 
   const pullResponse = await fetchSyncState(
@@ -347,7 +351,7 @@ async function syncWorkspace(
 
   const snapshot = docToSnapshot(remoteDoc);
   if (stableSerialize(snapshot) !== stableSerialize(currentSnapshot)) {
-    await writeWorkspaceSnapshot(workspace.absolutePath, snapshot);
+    await writeWorkspaceSnapshot(workspace.relativePath, snapshot);
   }
 
   state.snapshot = cloneSnapshot(snapshot);

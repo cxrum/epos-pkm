@@ -16,19 +16,19 @@ onMounted(async () => {
 const handleLoadExist = async () => {
   const path = await window.electronAPI.selectDirectory();
   if (path) {
-    stateStore.loadWorkspace(path);
+    await stateStore.loadWorkspace(path);
   }
 };
 
 const handleCreateNew = async () => {
   const path = await window.electronAPI.selectDirectory();
   if (path) {
-    stateStore.createWorkspace("Undefined", path);
+    await stateStore.createWorkspace("Workspace", path);
   }
 };
 
 const openWorkspace = (id: string) => {
-  stateStore.selectWorkspace(id);
+  void stateStore.selectWorkspace(id);
   router.push({ name: "workspace" });
 };
 </script>
@@ -54,7 +54,8 @@ const openWorkspace = (id: string) => {
           <div class="flex flex-col gap-1">
             <p>Workspace storage</p>
             <label>
-              Set up a local workspace folder. This stays on the device.
+              Set up a local directory that contains one or more workspaces.
+              This stays on the device.
             </label>
           </div>
         </div>
@@ -63,7 +64,7 @@ const openWorkspace = (id: string) => {
           <span class="flex flex-row gap-2 items-center rounded-xl border border-(--border) p-4">
             <span class="max-w-2/3">
               <p>Create new workspace</p>
-              <label>Create a new workspace under the selected folder</label>
+              <label>Create a new workspace under the selected directory</label>
             </span>
             <span class="flex-1"></span>
             <BaseButton @click="handleCreateNew" variant="accent">
@@ -75,8 +76,7 @@ const openWorkspace = (id: string) => {
             <span class="max-w-2/3">
               <p>Add existing workspace</p>
               <label
-                >Add an existing workspace. Folder must contain a '.workspace'
-                file</label
+                >Select a directory and list any contained workspaces</label
               >
             </span>
             <span class="flex-1"></span>
@@ -104,13 +104,14 @@ const openWorkspace = (id: string) => {
               {{ value.title }}
             </p>
             <label>
-              {{ value.absolutePath }}
+              {{ value.relativePath }}
             </label>
           </span>
         </div>
         <div v-else class="flex flex-1 justify-center py-16">
           <label>
-            Nothing here. Try load your existing workspace or create it.
+            Nothing here. Try selecting a directory or create a new workspace
+            inside it.
           </label>
         </div>
         <p class="text-(--text-error-color)">

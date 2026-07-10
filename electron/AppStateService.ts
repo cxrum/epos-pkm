@@ -1,7 +1,7 @@
 import { app } from "electron";
 import * as path from "path";
 import * as fs from "fs/promises";
-import { existsSync } from "fs";
+import { existsSync, type Dirent } from "fs";
 import {
   AppConfig,
   AppStateApi,
@@ -10,22 +10,33 @@ import {
 } from "../app/appState";
 import { randomUUID } from "crypto";
 
-interface Workspace {
+interface LegacyWorkspaceEntry {
   id: string;
   absolutePath: string;
+}
+
+interface WorkspaceRecord {
+  id: string;
+  absolutePath: string;
+  relativePath: string;
   title: string;
 }
 
 interface RawAppConfig {
-  workspaces: WorkspaceEntry[];
+  workspacesRootPath: string;
   selectedWorkspace: string;
   customSyncServerUrl: string | null;
+}
+
+interface LegacyRawAppConfig extends Partial<RawAppConfig> {
+  workspaces?: LegacyWorkspaceEntry[];
 }
 
 export class RawAppStateService implements AppStateApi {
   private configPath: string;
   private config: RawAppConfig | null = null;
   private readonly defaultSyncServerUrl: string;
+  private selectedWorkspaceAbsolutePath: string | undefined;
 
   constructor(defaultSyncServerUrl: string) {
     this.configPath = path.join(app.getPath("userData"), "config.json");
@@ -34,6 +45,7 @@ export class RawAppStateService implements AppStateApi {
 
   private mapConfig(raw: RawAppConfig): AppConfig {
     return {
+      workspacesRootPath: raw.workspacesRootPath,
       selectedWorkspace: raw.selectedWorkspace,
       customSyncServerUrl: raw.customSyncServerUrl,
     };
@@ -50,7 +62,9 @@ export class RawAppStateService implements AppStateApi {
 
   private applyDefaults(raw: Partial<RawAppConfig>): RawAppConfig {
     return {
-      workspaces: raw.workspaces ?? [],
+      workspacesRootPath: this.normalizeWorkspacePath(
+        raw.workspacesRootPath ?? "",
+      ),
       selectedWorkspace: raw.selectedWorkspace ?? "",
       customSyncServerUrl: this.normalizeSyncServerUrl(
         raw.customSyncServerUrl ?? null,
@@ -58,12 +72,93 @@ export class RawAppStateService implements AppStateApi {
     };
   }
 
+  private normalizeWorkspacePath(targetPath: string): string {
+    if (!targetPath.trim()) {
+      return "";
+    }
+
+    return path.resolve(targetPath.trim());
+  }
+
+  private toPosixRelativePath(targetPath: string): string {
+    const normalized = path.normalize(targetPath);
+    if (normalized === "") {
+      return ".";
+    }
+
+    return normalized.replace(/\\/g, "/");
+  }
+
+  private getLegacyWorkspaceRoot(
+    workspaces: LegacyWorkspaceEntry[],
+  ): string {
+    const absolutePaths = workspaces
+      .map((workspace) => path.resolve(workspace.absolutePath))
+      .filter((workspacePath) => workspacePath.length > 0);
+
+    if (absolutePaths.length === 0) {
+      return "";
+    }
+
+    if (absolutePaths.length === 1) {
+      return path.dirname(absolutePaths[0]);
+    }
+
+    const segments = absolutePaths[0].split(path.sep);
+
+    for (const absolutePath of absolutePaths.slice(1)) {
+      const currentSegments = absolutePath.split(path.sep);
+      let commonLength = 0;
+
+      while (
+        commonLength < segments.length &&
+        commonLength < currentSegments.length &&
+        segments[commonLength] === currentSegments[commonLength]
+      ) {
+        commonLength += 1;
+      }
+
+      segments.splice(commonLength);
+
+      if (segments.length === 0) {
+        break;
+      }
+    }
+
+    if (segments.length === 0) {
+      return "";
+    }
+
+    return segments.join(path.sep);
+  }
+
+  private migrateLegacyConfig(raw: LegacyRawAppConfig): RawAppConfig {
+    if (raw.workspacesRootPath) {
+      return this.applyDefaults(raw);
+    }
+
+    const rootPath = this.getLegacyWorkspaceRoot(raw.workspaces ?? []);
+    return this.applyDefaults({
+      ...raw,
+      workspacesRootPath: rootPath,
+    });
+  }
+
   private async loadConfig(): Promise<RawAppConfig> {
     if (existsSync(this.configPath)) {
       try {
         const rawData = await fs.readFile(this.configPath, "utf-8");
-        const parsed = JSON.parse(rawData) as Partial<RawAppConfig>;
-        return this.applyDefaults(parsed);
+        const parsed = JSON.parse(rawData) as LegacyRawAppConfig;
+        const migrated = this.migrateLegacyConfig(parsed);
+
+        if (
+          JSON.stringify(parsed) !==
+          JSON.stringify(migrated)
+        ) {
+          await this.saveConfig(migrated);
+        }
+
+        return migrated;
       } catch (error) {
         console.error("File read error. Created a new config:", error);
       }
@@ -157,57 +252,107 @@ export class RawAppStateService implements AppStateApi {
     }
   }
 
-  private mapWorkspaceToLocal(w: Workspace): WorkspaceConf {
+  private mapWorkspaceToLocal(w: WorkspaceRecord): WorkspaceConf {
     return {
       id: w.id,
       title: w.title,
     };
   }
 
-  private mapWorkspaceToLocalMap(w: Workspace[]): WorkspaceConf[] {
-    return w.map((it) => this.mapWorkspaceToLocal(it));
+  private async pathExists(targetPath: string): Promise<boolean> {
+    try {
+      await fs.access(targetPath);
+      return true;
+    } catch {
+      return false;
+    }
   }
 
-  private mapWorkspaceToGlobal(w: Workspace): WorkspaceEntry {
-    return {
-      id: w.id,
-      absolutePath: w.absolutePath,
+  private async scanWorkspaces(
+    rootPath: string,
+  ): Promise<WorkspaceRecord[]> {
+    const normalizedRoot = this.normalizeWorkspacePath(rootPath);
+    if (!normalizedRoot) {
+      return [];
+    }
+
+    const discovered: WorkspaceRecord[] = [];
+
+    const traverse = async (currentPath: string): Promise<void> => {
+      let entries: Dirent[];
+      try {
+        entries = await fs.readdir(currentPath, { withFileTypes: true });
+      } catch {
+        return;
+      }
+
+      const localConfig = await this.readLocalConfig(currentPath);
+      if (localConfig) {
+        const relativePath = path.relative(normalizedRoot, currentPath);
+        discovered.push({
+          id: localConfig.id,
+          absolutePath: currentPath,
+          relativePath: this.toPosixRelativePath(
+            relativePath === "" ? "." : relativePath,
+          ),
+          title: localConfig.title,
+        });
+        return;
+      }
+
+      for (const entry of entries) {
+        if (!entry.isDirectory()) {
+          continue;
+        }
+
+        await traverse(path.join(currentPath, entry.name));
+      }
     };
+
+    await traverse(normalizedRoot);
+
+    discovered.sort((left, right) =>
+      left.relativePath.localeCompare(right.relativePath),
+    );
+
+    return discovered;
   }
 
-  private mapWorkspaceToGlobalMap(w: Workspace[]): WorkspaceEntry[] {
-    return w.map((it) => this.mapWorkspaceToGlobal(it));
-  }
-
-  private async syncWorkspaces(): Promise<Workspace[]> {
+  private async syncWorkspaces(): Promise<WorkspaceRecord[]> {
     if (!this.config) {
       this.config = await this.loadConfig();
     }
 
-    const validWorkspaces: Workspace[] = [];
-    const WorkspaceEntrys: WorkspaceEntry[] = [];
-    let configChanged = false;
-
-    for (const raw of this.config.workspaces) {
-      const localConfig = await this.readLocalConfig(raw.absolutePath);
-
-      if (localConfig) {
-        validWorkspaces.push({
-          id: raw.id,
-          absolutePath: raw.absolutePath,
-          title: localConfig.title,
-        });
-        WorkspaceEntrys.push(raw);
-      } else {
-        configChanged = true;
-        if (this.config.selectedWorkspace === raw.id) {
-          this.config.selectedWorkspace = "";
-        }
+    const rootPath = this.config.workspacesRootPath;
+    if (!rootPath) {
+      if (this.config.selectedWorkspace) {
+        this.config.selectedWorkspace = "";
+        await this.saveConfig(this.config);
       }
+
+      return [];
     }
 
+    const validWorkspaces = await this.scanWorkspaces(rootPath);
+    let configChanged = false;
+
+    if (
+      this.config.selectedWorkspace &&
+      !validWorkspaces.some(
+        (workspace) => workspace.id === this.config!.selectedWorkspace,
+      )
+    ) {
+      this.config.selectedWorkspace = "";
+      this.selectedWorkspaceAbsolutePath = undefined;
+      configChanged = true;
+    }
+
+    const selectedWorkspace = validWorkspaces.find(
+      (workspace) => workspace.id === this.config!.selectedWorkspace,
+    );
+    this.selectedWorkspaceAbsolutePath = selectedWorkspace?.absolutePath;
+
     if (configChanged) {
-      this.config.workspaces = WorkspaceEntrys;
       await this.saveConfig(this.config);
     }
 
@@ -216,7 +361,10 @@ export class RawAppStateService implements AppStateApi {
 
   public async getWorkspaces(): Promise<WorkspaceEntry[]> {
     const res = await this.syncWorkspaces();
-    return this.mapWorkspaceToGlobalMap(res);
+    return res.map((workspace) => ({
+      id: workspace.id,
+      relativePath: workspace.relativePath,
+    }));
   }
 
   public async getLocalWorkspace(
@@ -227,7 +375,10 @@ export class RawAppStateService implements AppStateApi {
       return undefined;
     }
 
-    return this.mapWorkspaceToLocal(res);
+    return {
+      id: res.id,
+      title: res.title,
+    };
   }
 
   public async selectWorkspace(id: string): Promise<WorkspaceConf> {
@@ -241,7 +392,10 @@ export class RawAppStateService implements AppStateApi {
     this.config!.selectedWorkspace = id;
     await this.saveConfig(this.config!);
 
-    return this.mapWorkspaceToLocal(workspace);
+    return {
+      id: workspace.id,
+      title: workspace.title,
+    };
   }
 
   public async getSelectedWorkspace(): Promise<WorkspaceConf | undefined> {
@@ -256,60 +410,83 @@ export class RawAppStateService implements AppStateApi {
   }
 
   public getSelectedWorkspacePath(): string | undefined {
-    if (!this.config) {
-      return undefined;
-    }
-
-    const workspace = this.config.workspaces.find(
-      (it) => it.id === this.config!.selectedWorkspace,
-    );
-
-    return workspace?.absolutePath;
+    return this.selectedWorkspaceAbsolutePath;
   }
 
-  public async loadWorkspace(absolutePath: string): Promise<WorkspaceConf> {
-    const _path = path.join(absolutePath);
-    const localConfig = await this.readLocalConfig(_path);
-
-    if (!localConfig) {
-      throw new Error("INVALID_WORKSPACE");
-    }
-
+  public async loadWorkspace(rootPath: string): Promise<WorkspaceConf> {
     if (!this.config) {
       this.config = await this.loadConfig();
     }
 
-    let WorkspaceEntry = this.config.workspaces.find(
-      (w) => w.absolutePath === absolutePath,
-    );
-
-    if (!WorkspaceEntry) {
-      WorkspaceEntry = {
-        id: randomUUID(),
-        absolutePath: absolutePath,
-      };
-      this.config.workspaces.push(WorkspaceEntry);
-    }
-
+    this.config.workspacesRootPath = this.normalizeWorkspacePath(rootPath);
     await this.saveConfig(this.config);
 
+    const workspaces = await this.syncWorkspaces();
+    const selectedWorkspace = workspaces.find(
+      (workspace) => workspace.id === this.config!.selectedWorkspace,
+    );
+
+    if (selectedWorkspace) {
+      return {
+        id: selectedWorkspace.id,
+        title: selectedWorkspace.title,
+      };
+    }
+
+    const firstWorkspace = workspaces[0];
+    if (firstWorkspace) {
+      return {
+        id: firstWorkspace.id,
+        title: firstWorkspace.title,
+      };
+    }
+
     return {
-      id: WorkspaceEntry.id,
-      title: localConfig.title,
+      id: "",
+      title: "",
     };
   }
 
   public async createWorkspace(
     title: string,
-    absolutePath: string,
+    rootPath: string,
   ): Promise<WorkspaceConf> {
     if (!this.config) {
       this.config = await this.loadConfig();
     }
 
-    const newWorkspace: WorkspaceEntry = {
+    const normalizedRootPath = this.normalizeWorkspacePath(rootPath);
+    this.config.workspacesRootPath = normalizedRootPath;
+
+    const sanitizedTitle = title
+      .trim()
+      .replace(/[<>:"|?*\\/]+/g, "-")
+      .replace(/\s+/g, " ")
+      .replace(/^\.+$/, "")
+      .trim();
+    const workspaceFolderName = sanitizedTitle.length ? sanitizedTitle : "workspace";
+
+    let workspaceAbsolutePath = path.join(
+      normalizedRootPath,
+      workspaceFolderName,
+    );
+    let suffix = 1;
+
+    while (await this.pathExists(workspaceAbsolutePath)) {
+      workspaceAbsolutePath = path.join(
+        normalizedRootPath,
+        `${workspaceFolderName}-${suffix}`,
+      );
+      suffix += 1;
+    }
+
+    const newWorkspace: WorkspaceRecord = {
       id: randomUUID(),
-      absolutePath: absolutePath,
+      absolutePath: workspaceAbsolutePath,
+      relativePath: this.toPosixRelativePath(
+        path.relative(normalizedRootPath, workspaceAbsolutePath) || ".",
+      ),
+      title,
     };
 
     const localConfig: WorkspaceConf = {
@@ -318,9 +495,9 @@ export class RawAppStateService implements AppStateApi {
     };
 
     try {
+      await fs.mkdir(newWorkspace.absolutePath, { recursive: true });
       await this.saveWorkspaceConf(newWorkspace.absolutePath, localConfig);
 
-      this.config.workspaces.push(newWorkspace);
       await this.saveConfig(this.config);
 
       return {

@@ -5,7 +5,7 @@ import { appStateRepository } from "@/core/di/global";
 interface Workspace {
   id: string;
   title: string;
-  absolutePath: string;
+  relativePath: string;
 }
 
 export const useSetupStore = defineStore("setup", () => {
@@ -24,7 +24,7 @@ export const useSetupStore = defineStore("setup", () => {
         _res.push({
           id: local.id,
           title: local.title,
-          absolutePath: it.absolutePath,
+          relativePath: it.relativePath,
         });
       }
     }
