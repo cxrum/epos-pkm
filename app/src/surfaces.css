@@ -56,4 +56,33 @@
     --surface-layer: var(--bg-settings);
     --surface-contrast-layer: var(--bg-settings-contrast);
   }
+
+  .surface-content-code-block {
+    background-color: var(--bg-code-block);
+    --surface-layer: var(--bg-code-block);
+    --surface-contrast-layer: var(--bg-code-block-contrast);
+  }
+
+  .surface-content-code-block.code-block pre {
+    padding: 8px;
+    border: 2px solid var(--border);
+    border-radius: 8px;
+    background-color: transparent;
+  }
+
+  .surface-content-code-block.code-block pre,
+  .surface-content-code-block.code-block code {
+    font-family:
+      ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+      "Courier New", monospace !important;
+    font-size: 14px !important;
+    line-height: 1.5 !important;
+    color: #d4d4d4;
+  }
+
+  .surface-content-code-block.code-block pre span {
+    font-family: inherit !important;
+    font-size: inherit !important;
+    line-height: inherit !important;
+  }
 }

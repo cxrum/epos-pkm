@@ -9,7 +9,6 @@ import {
 } from "vue";
 import Accordion from "@/shared/components/Accordion.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
-import BaseSelect from "@/shared/components/BaseSelect.vue";
 import type { EpPropertyId, EpTypeId, Icon } from "@/core/types";
 import type { ValuedPropertyEntry } from "@/core/application/type";
 import { useObjectEditorStore } from "../store/objectEditorStore";
@@ -67,7 +66,17 @@ const inheritedProperties = computed(() => {
 const handlers = reactive(new Map<EpPropertyId, WritableComputedRef<any>>());
 
 const updateStringValue = (val: string, propId: EpPropertyId) => {
-  console.log(`[Text] Оновлюємо ${propId}:`, val);
+  const focusedObject = objectEditorStore.focusedObject;
+  if (!focusedObject) return;
+  if (val === "" || val === null) {
+    return;
+  }
+
+  props.controller.updateDraftObjectProperty(
+    focusedObject.id,
+    propId,
+    val,
+  );
 };
 
 const updateNumberValue = async (
@@ -136,6 +145,15 @@ const createPropertyHandler = (
       return undefined;
   }
 };
+
+const resolveInputFieldType  = (type: string)=>{
+  switch(type){
+    case "number":
+      return "number"
+    default:
+      return "text"
+  }
+}
 
 watch(
   () => objectEditorStore.valuedProperties,
@@ -229,12 +247,12 @@ watch(
             handlers.has(entry.propertyScheme.id) &&
             ['text', 'number'].includes(entry.propertyScheme.type)
           "
-          v-model="handlers.get(entry.propertyScheme.id).value"
+          v-model="handlers.get(entry.propertyScheme.id)!.value"
           class="w-full"
           :err-msg="
             objectEditorStore.propertyFieldError.get(entry.propertyScheme.id)
           "
-          type="number"
+          :type="resolveInputFieldType(entry.propertyScheme.type)"
         ></BaseInput>
 
         <p v-else class="flex">

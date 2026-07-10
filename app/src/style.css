@@ -1,11 +1,12 @@
 @import "tailwindcss";
 
+@import "/src/colors.css";
 @import "/src/surfaces.css";
 @import "/src/base.css";
-@import "/src/colors.css";
 
 @import "/src/shared/components/tree/style.css";
 @import "/src/modules/page/components/editor/nodes/blocks/style.css";
+@import "highlight.js/styles/github-dark.css";
 
 :root {
   --scroll-color: var(--gray);
@@ -50,7 +51,6 @@
       0px 4px 10px rgba(51, 51, 51, 0.08);
   }
 }
-
 @layer utilities {
   .no-scrollbar::-webkit-scrollbar {
     display: none;
@@ -83,6 +83,7 @@
   .auto-hide-scroll::-webkit-scrollbar {
     width: 6px;
     height: 6px;
+    background-color: transparent;
   }
 
   .scroll::-webkit-scrollbar-track,
@@ -94,6 +95,8 @@
   .auto-hide-scroll::-webkit-scrollbar-thumb {
     background-color: transparent;
     border-radius: 9999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
   }
 
   .scroll:hover::-webkit-scrollbar-thumb,

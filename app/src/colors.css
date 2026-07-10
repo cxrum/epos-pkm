@@ -14,6 +14,7 @@
   --bg-top-layer: #404142;
   --bg-mid-layer: #36393a;
   --bg-bottom-layer: rgba(43, 44, 45, 1);
+  --bg-bottom-layer-800: rgba(38, 38, 40, 1);
 
   --bg-top-layer-contrast: var(--bg-bottom-layer);
   --bg-mid-layer-contrast: var(--bg-bottom-layer);
@@ -29,6 +30,9 @@
   --bg-sidebar-contrast: var(--bg-mid-layer-contrast);
   --bg-settings: var(--bg-bottom-layer);
   --bg-settings-contrast: var(--bg-bottom-layer-contrast);
+
+  --bg-code-block: var(--bg-bottom-layer-800);
+  --bg-code-block-contrast: var(--bg-bottom-layer-contrast);
 
   --bg-btn: var(--bg-bottom-layer);
   --bg-btn-accent: var(--accent);
