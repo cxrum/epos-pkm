@@ -45,7 +45,7 @@ const globalNavigationStore = useGlobalNavigation();
 const objectEditorStore = useObjectEditorStore();
 
 const editorController = useBaseEditorController(applicationBus);
-const commandLineController = useBaseCommandLineController(applicationBus);
+const commandLineController = useBaseCommandLineController();
 
 provide(EditorControllerKey, editorController);
 provide(CommandLineControllerKey, commandLineController);

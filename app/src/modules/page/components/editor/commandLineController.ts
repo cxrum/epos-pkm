@@ -4,57 +4,58 @@ import type {
   CommandType,
   FilteredCommandType,
 } from "./extension/commandLine/commandLineControllerContract";
-import type { Emitter } from "mitt";
-import type { ApplicationEvents } from "@/bus/application";
-import type { EpTypeEntity, UserTypeEntity } from "@/core/domain/type";
+import type { UserTypeEntity } from "@/core/domain/type";
+import type { EpTypeId } from "@/core/types";
+import { SYSTEM_BLOCK_CONFIG } from "./helpers";
 
-const SYSTEM_LIST: CommandType[] = [
-  {
-    id: "heading-1",
-    title: "Heading 1",
-    typeId: "def:heading",
-    command: () => {
-      console.log("HEADER 1");
-    },
-  },
-  {
-    id: "heading-2",
-    title: "Heading 2",
-    typeId: "def:heading",
-    command: () => {
-      console.log("HEADER 2");
-    },
-  },
-  {
-    id: "heading-3",
-    title: "Heading 3",
-    typeId: "def:heading",
-    command: () => {
-      console.log("HEADER 3");
-    },
-  },
-  {
-    id: "heading-4",
-    title: "Heading 4",
-    typeId: "def:heading",
-    command: () => {
-      console.log("HEADER 4");
-    },
-  },
-  {
-    id: "heading-5",
-    title: "Heading 5",
-    typeId: "def:heading",
-    command: () => {
-      console.log("HEADER 5");
-    },
-  },
-];
+export function useBaseCommandLineController(): CommandControllerContract {
+  const SYSTEM_LIST: CommandType[] = SYSTEM_BLOCK_CONFIG.flatMap((config) =>
+    config.variants.map((variantProps) => {
+      const variantValues = Object.values(variantProps).map(
+        (prop: any) => prop.value,
+      );
+      const hasVariants = variantValues.length > 0;
 
-export function useBaseCommandLineController(
-  applicationBus: Emitter<ApplicationEvents>,
-): CommandControllerContract {
+      const suffix = hasVariants ? `-${variantValues.join("-")}` : "";
+      const titleSuffix = hasVariants ? ` ${variantValues.join(" ")}` : "";
+
+      return {
+        id: `${config.baseId}${suffix}`,
+        title: `${config.titlePrefix}${titleSuffix}`,
+        typeId: config.typeId,
+        command: (props) => {
+          replaceNodeWithObject(props.editor, config.typeId, variantProps);
+        },
+      };
+    }),
+  );
+
   let items: CommandType[] = [...SYSTEM_LIST];
+
+  const replaceNodeWithObject = (
+    editor: Editor,
+    objectTypeId: EpTypeId,
+    props: Record<string, any>,
+  ) => {
+    const newId = crypto.randomUUID();
+
+    editor
+      .chain()
+      .command(({ tr, state }) => {
+        const { $from } = state.selection;
+
+        tr.delete($from.before(), $from.after());
+
+        return true;
+      })
+      .insertInlineObject({
+        id: newId,
+        typeId: objectTypeId,
+        props: props,
+      })
+      .focus()
+      .run();
+  };
 
   const extendList = (list: UserTypeEntity[]): void => {
     const res: CommandType[] = [];

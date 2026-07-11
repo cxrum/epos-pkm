@@ -16,6 +16,7 @@ export interface EditorControllerContract {
     propertyId: EpPropertyId,
     newValue: any,
   ): void;
+  createObject(object: EpInlineObjectEntity, postition?: number): void;
   updateDraftContent(content: EpObjectEntity[], order: EpObjectId[]): void;
   setInitialData(obj: EpContainerObjectEntity): void;
   setObjectId(id: EpObjectId): void;

@@ -1,9 +1,25 @@
 import { Node, mergeAttributes } from "@tiptap/core";
 import { VueNodeViewRenderer } from "@tiptap/vue-3";
 import EpBlockDispatcher from "./EpBlockDispatcher.vue";
-import { CodeBlockLowlight } from '@tiptap/extension-code-block-lowlight'
+import { CodeBlockLowlight } from "@tiptap/extension-code-block-lowlight";
 import CodeBlock from "./blocks/CodeBlock.vue";
-import { lowlight } from 'lowlight'
+import { lowlight } from "lowlight";
+import type { EpObjectId } from "@/core/types.ts";
+import { mapEpTypeToTiptapType } from "../helpers.ts";
+import { domainPropertyToTiptap, tipTapPropertyToDomain } from "../mappers.ts";
+
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    epCustomCommands: {
+      insertInlineObject: (options: {
+        id: EpObjectId;
+        typeId: string;
+        props?: Record<string, any>;
+        tiptapType?: string;
+      }) => ReturnType;
+    };
+  }
+}
 
 export const EpBaseBlock = Node.create({
   name: "epBlock",
@@ -34,10 +50,30 @@ export const EpBaseBlock = Node.create({
   addNodeView() {
     return VueNodeViewRenderer(EpBlockDispatcher);
   },
+
+  addCommands() {
+    return {
+      insertInlineObject:
+        (options) =>
+        ({ commands }) => {
+          const { id, typeId, props = {} } = options;
+          const resType = mapEpTypeToTiptapType(typeId);
+          const tipTapProperty = domainPropertyToTiptap(resType, props);
+          return commands.insertContent({
+            type: resType,
+            attrs: {
+              id: id,
+              typeId: typeId,
+              props: props,
+              ...tipTapProperty,
+            },
+          });
+        },
+    };
+  },
 });
 
 export const EpCodeBlock = CodeBlockLowlight.extend({
-  
   addAttributes() {
     return {
       ...this.parent?.(),
@@ -47,9 +83,9 @@ export const EpCodeBlock = CodeBlockLowlight.extend({
   },
 
   addNodeView() {
-    return VueNodeViewRenderer(CodeBlock)
+    return VueNodeViewRenderer(CodeBlock);
   },
 }).configure({
   lowlight,
-  defaultLanguage: 'javascript'
-})
+  defaultLanguage: "plaintext",
+});

@@ -1,5 +1,6 @@
 import type { EpObjectEntity } from "@/core/domain/type";
 import type { EpObjectId } from "@/core/types";
+import type { CommandType } from "./extension/commandLine/commandLineControllerContract";
 
 export const mapEpTypeToTiptapType = (typeId: string): string => {
   if (typeId === "def:text") return "paragraph";
@@ -17,3 +18,37 @@ export const mapObjectEntitiesToContent = (
   });
   return res;
 };
+
+export type BlockConfig = {
+  baseId: string;
+  typeId: string;
+  titlePrefix: string;
+  variants: Record<string, any>[];
+};
+
+export const SYSTEM_BLOCK_CONFIG: BlockConfig[] = [
+  {
+    baseId: "heading",
+    typeId: "def:heading",
+    titlePrefix: "Heading",
+    variants: [
+      { level: { value: 1 } },
+      { level: { value: 2 } },
+      { level: { value: 3 } },
+      { level: { value: 4 } },
+      { level: { value: 5 } },
+    ],
+  },
+  {
+    baseId: "text",
+    typeId: "def:text",
+    titlePrefix: "Text",
+    variants: [{}],
+  },
+  {
+    baseId: "code",
+    typeId: "def:code",
+    titlePrefix: "Code Block",
+    variants: [{}],
+  },
+];

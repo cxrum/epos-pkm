@@ -3,6 +3,7 @@ import type { EditorControllerContract } from "./contract";
 import type { EpObjectId, EpPropertyId } from "@/core/types"; // Додано EpPropertyId
 import type {
   EpContainerObjectEntity,
+  EpInlineObjectEntity,
   EpObjectEntity,
 } from "@/core/domain/type";
 import { mapObjectEntitiesToContent } from "./helpers";
@@ -64,6 +65,11 @@ export function useBaseEditorController(
     });
   };
 
+  const createObject = (
+    object: EpInlineObjectEntity,
+    postition?: number,
+  ): void => {};
+
   return {
     focusedObjectId,
     initialData,
@@ -72,6 +78,7 @@ export function useBaseEditorController(
     updateDraftContent,
     updateDraftObjectProperty,
     setInitialData,
+    createObject,
     setObjectId,
     clearSelection,
   };
