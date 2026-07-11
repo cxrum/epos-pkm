@@ -32,18 +32,10 @@ const handleWrapperClick = () => {
     <span v-if="label">
       {{ label }}
     </span>
-    <div
-      class="inline-flex items-center border border-(--border) p-1 rounded-md text-(--text-secondary-color) transition-colors cursor-text focus-within:border-(--hovered)"
-      @click="handleWrapperClick"
-    >
+    <div class="base-input" @click="handleWrapperClick">
       <slot name="prefix"></slot>
 
-      <input
-        ref="inputRef"
-        v-model="model"
-        v-bind="$attrs"
-        class="px-2 bg-transparent outline-none w-full"
-      />
+      <input ref="inputRef" v-model="model" v-bind="$attrs" />
 
       <slot name="suffix"></slot>
 

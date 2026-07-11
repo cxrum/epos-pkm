@@ -54,34 +54,15 @@ const computedIcon = computed<Component>(() => {
 </script>
 
 <template>
-  <span v-if="emojiIcon" class="dynamic-icon-emoji">
+  <span v-if="emojiIcon" class="base-icon dynamic-icon-emoji">
     {{ emojiIcon.emoji }}
   </span>
   <img
     v-else-if="linkIcon"
     :src="linkIcon.link"
     :alt="imageAlt"
-    class="dynamic-icon-image"
+    class="base-icon dynamic-icon-image"
   />
   <component v-else-if="props.icon?.type === 'default'" :is="computedIcon" />
   <DocumentIcon v-else />
 </template>
-
-<style scoped>
-.dynamic-icon-emoji {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  height: 100%;
-  font-size: 0.85em;
-  line-height: 1;
-}
-
-.dynamic-icon-image {
-  display: block;
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-}
-</style>

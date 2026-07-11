@@ -17,7 +17,7 @@ import { nodeViewProps, NodeViewContent } from "@tiptap/vue-3";
 import PageLinkBlock from "./blocks/PageLinkBlock.vue";
 import UnknownBlock from "./blocks/UnknownBlock.vue";
 import { EditorControllerKey } from "../contract.ts";
-import BaseBlockLayout from "./BaseBlockLayout.vue"
+import BaseBlockLayout from "./BaseBlockLayout.vue";
 
 const props = defineProps(nodeViewProps);
 
@@ -49,15 +49,3 @@ const isSelected = computed(() => {
   return controller.focusedObjectId.value === props.node.attrs.id;
 });
 </script>
-
-<style scoped>
-.ep-block-wrapper {
-  display: inline-flex;
-  align-items: center;
-  width: 100%;
-}
-.ep-block-wrapper .is-focused {
-  border-color: #42b883;
-  box-shadow: 0 0 0 2px rgba(66, 184, 131, 0.2);
-}
-</style>

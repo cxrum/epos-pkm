@@ -66,7 +66,7 @@ onClickOutside(omniSearchRef, (event: Event) => {
   <div class="flex h-screen w-screen overflow-hidden">
     <aside
       :class="isSidebarOpen ? 'w-64' : 'w-14'"
-      class="flex flex-col h-full border-r border-(--border) bg-(--bg-sidebar) transition-all duration-150 ease-in-out"
+      class="flex flex-col h-full border-r border-(--border) surface-sidebar transition-all duration-150 ease-in-out"
     >
       <BaseIcon
         size="32px"
@@ -78,7 +78,7 @@ onClickOutside(omniSearchRef, (event: Event) => {
       </BaseIcon>
 
       <SidebarNavigationView
-        class="p-2 flex-1 overflow-y-auto auto-hide-scroll"
+        class="p-2 flex-1 overflow-y-auto scroll auto-hide-scroll"
       />
 
       <div

@@ -224,15 +224,11 @@ watch(
         :id="entry.propertyScheme.id"
         class="flex flex-row items-center"
       >
-        <BaseIcon size="24px">
-          <DynamicIcon
-            :icon="entry.propertyScheme.icon"
-            class="text-(--icon-color)"
-          />
+        <BaseIcon>
+          <DynamicIcon :icon="entry.propertyScheme.icon" />
         </BaseIcon>
 
         <BaseIcon
-          size="24px"
           class="opacity-50"
           v-if="
             entry.propertyScheme.isSystem && !entry.propertyScheme.isChangeable
@@ -274,8 +270,8 @@ watch(
         class="flex flex-col py-2"
       >
         <span class="flex flex-row">
-          <BaseIcon size="24px">
-            <DynamicIcon :icon="group.icon" class="text-(--icon-color)" />
+          <BaseIcon>
+            <DynamicIcon :icon="group.icon" />
           </BaseIcon>
           <p class="text-(--text-secondary-color)">{{ group.title }}:</p>
         </span>
@@ -286,11 +282,8 @@ watch(
           :id="entry.propertyScheme.id"
           class="flex flex-row items-center"
         >
-          <BaseIcon size="24px">
-            <DynamicIcon
-              :icon="entry.propertyScheme.icon"
-              class="text-(--icon-color)"
-            />
+          <BaseIcon>
+            <DynamicIcon :icon="entry.propertyScheme.icon" />
           </BaseIcon>
 
           <p class="flex pe-2">
@@ -298,7 +291,6 @@ watch(
           </p>
 
           <BaseIcon
-            size="24px"
             class="opacity-50"
             v-if="
               entry.propertyScheme.isSystem &&

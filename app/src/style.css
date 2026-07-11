@@ -1,81 +1,15 @@
 @import "tailwindcss";
+
+@import "/src/colors.css";
+@import "/src/surfaces.css";
+@import "/src/base.css";
+
 @import "/src/shared/components/tree/style.css";
 @import "/src/modules/page/components/editor/nodes/blocks/style.css";
-@import 'highlight.js/styles/github-dark.css';
+@import "highlight.js/styles/github-dark.css";
 
 :root {
-  --white: #edefef;
-  --gray: rgba(237, 239, 239, 0.7);
-  --accent: rgba(37, 122, 136, 1);
-
-  --text-default-color: var(--white);
-  --text-secondary-color: var(--gray);
-  --text-on-accent-color: var(--white);
-  --text-error-color: rgba(199, 82, 82, 1);
-  --text-header-color: var(--white);
-
-  --icon-color: var(--gray);
-
-  --bg-top-layer: #404142;
-  --bg-mid-layer: #36393a;
-  --bg-bottom-layer: rgba(43, 44, 45, 1);
-  --bg-bottom-layer-800: rgba(38, 38, 40, 1);
-
-  --bg-top-layer-contrast: var(--bg-bottom-layer);
-  --bg-mid-layer-contrast: var(--bg-bottom-layer);
-  --bg-bottom-layer-contrast: var(--bg-top-layer);
-
-
-  --bg-canvas: var(--bg-bottom-layer);
-  --bg-block-default: var(--bg-mid-layer);
-
-  --border: rgba(237, 239, 239, 0.15);
-
-  --hover: rgba(172, 213, 219, 0.2);
-
-  --accent-hover: color-mix(
-    in oklch,
-    rgba(91, 100, 102, 0.7) 70%,
-    var(--accent)
-  );
-  --option-hover: color-mix(
-    in oklch,
-    var(--hover) 100%,
-    var(--bg-bottom-layer)
-  );
-
-  --surface-layer: var(--bg-background-layer);
-  --surface-contrast-layer: var(--bg-background-layer-contrast);
-
-
-  --bg-btn: var(--bg-bottom-layer);
-  --bg-btn-accent: var(--accent);
-  --bg-select: var(--bg-bottom-layer);
-
-  --bg-context-menu: var(--bg-top-layer);
-  --bg-context-menu-contrast: var(--bg-top-layer-contrast);
-  --bg-sidebar: var(--bg-mid-layer);
-  --bg-sidebar-contrast: var(--bg-mid-layer-contrast);
-  --bg-settings: var(--bg-bottom-layer);
-  --bg-settings-contrast: var(--bg-bottom-layer-contrast);
-  
-  --bg-code-block: var(--bg-bottom-layer-800);
-  --bg-code-block-contrast: var(--bg-bottom-layer-contrast);
-
-  --bg-btn: var(--bg-bottom-layer);
-  --bg-btn-accent: var(--accent);
-  --bg-select: var(--bg-bottom-layer);
-
-  --bg-header: var(--bg-mid-layer);
-  --bg-active-tab: color-mix(in oklch, var(--hover) 100%, var(--bg-header));
-  --bg-selected-tree-item: color-mix(
-    in oklch,
-    var(--hover) 50%,
-    var(--bg-sidebar)
-  );
-
-  --bg-omnisearh: var(--bg-mid-layer);
-
+  --scroll-color: var(--gray);
   --fixel: fixel;
   --heading: fixel;
   --mono: ui-monospace, Consolas, monospace;
@@ -90,228 +24,7 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-@layer base {
-  *:focus:not(:focus-visible) {
-    outline: none;
-  }
-
-  *:focus-visible {
-    outline: 2px solid var(--accent-hover);
-    outline-offset: 2px;
-  }
-
-  h1,
-  h2,
-  h3,
-  h4,
-  h5 {
-    font-family: var(--heading);
-    font-weight: 600;
-    color: var(--text-header-color);
-  }
-
-  h1 {
-    font-size: 32px;
-    letter-spacing: -1.68px;
-  }
-  h2 {
-    font-size: 24px;
-    letter-spacing: -0.24px;
-  }
-  h3 {
-    font-size: 20px;
-  }
-  h4 {
-    font-size: 18px;
-  }
-  h5 {
-    font-size: 16px;
-  }
-
-  p,
-  span {
-    margin: 0;
-    font-weight: 400;
-    font-size: 16px;
-    font-family: var(--fixel);
-    color: var(--text-default-color);
-  }
-
-  label {
-    margin: 0;
-    font-weight: 400;
-    font-size: 14px;
-    font-family: var(--fixel);
-    color: var(--text-secondary-color);
-  }
-
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  button {
-    font-family: inherit;
-    cursor: pointer;
-    transition: background-color 0.2s ease;
-  }
-
-  .base-button {
-    background-color: var(--button-bg, transparent);
-    color: var(--button-text-color, var(--text-default-color));
-  }
-
-  .base-button:hover {
-    background-color: var(
-      --button-hover-bg,
-      color-mix(in srgb, var(--hover) 100%, var(--surface-contrast-layer))
-    );
-  }
-
-  .base-button > .base-icon {
-    color: var(--button-icon-color, var(--icon-color));
-  }
-
-  .button-variant-default {
-    --button-bg: transparent;
-    --button-hover-bg: color-mix(in srgb, var(--hover) 80%, transparent);
-    --button-text-color: var(--text-default-color);
-  }
-
-  .button-variant-secondary {
-    --button-bg: var(--surface-contrast-layer);
-    --button-hover-bg: color-mix(
-      in srgb,
-      var(--hover) 100%,
-      var(--surface-contrast-layer)
-    );
-    --button-text-color: var(--text-default-color);
-  }
-
-  .button-variant-accent {
-    --button-bg: var(--bg-btn-accent);
-    --button-hover-bg: var(--accent-hover);
-    --button-text-color: var(--text-on-accent-color);
-    --button-icon-color: var(--text-on-accent-color);
-  }
-
-  button,
-  a,
-  .clickable {
-    transition: transform 0.1s ease;
-    cursor: pointer;
-  }
-
-  .clickable:hover {
-    background-color: color-mix(
-      in srgb,
-      var(--hover) 80%,
-      var(--bg-bottom-layer)
-    );
-  }
-
-  button:active:not(:disabled),
-  button.keyboard-active:not(:disabled),
-  a:active:not(:disabled),
-  a.keyboard-active:not(:disabled),
-  .clickable:active:not(:disabled),
-  .clickable.keyboard-active:not(:disabled) {
-    transform: scale(0.95);
-  }
-
-  input {
-    font-family: inherit;
-  }
-
-  .base-block {
-    padding: 0.25rem 0.5rem;
-    border-radius: 0.375rem;
-    color: var(--text-default-color);
-  }
-}
-
 @layer components {
-  .surface-top-layer {
-    background-color: var(--bg-top-layer);
-    --surface-layer: var(--bg-top-layer);
-    --surface-contrast-layer: var(--bg-top-layer-contrast);
-  }
-
-  .surface-mid-layer {
-    background-color: var(--bg-mid-layer);
-    --surface-layer: var(--bg-mid-layer);
-    --surface-contrast-layer: var(--bg-mid-layer-contrast);
-  }
-
-  .surface-bottom-layer {
-    background-color: var(--bg-bottom-layer);
-    --surface-layer: var(--bg-bottom-layer);
-    --surface-contrast-layer: var(--bg-bottom-layer-contrast);
-  }
-
-  .surface-sidebar {
-    background-color: var(--bg-sidebar);
-    --surface-layer: var(--bg-sidebar);
-    --surface-contrast-layer: var(--bg-sidebar-contrast);
-  }
-
-  .surface-settings {
-    background-color: var(--bg-settings);
-    --surface-layer: var(--bg-settings);
-    --surface-contrast-layer: var(--bg-settings-contrast);
-  }
-
-  .surface-canvas {
-    background-color: var(--bg-canvas);
-    --surface-layer: var(--bg-canvas);
-    --surface-contrast-layer: var(--bg-canvas-contrast);
-  }
-
-  .surface-header {
-    background-color: var(--bg-header);
-    --surface-layer: var(--bg-header);
-    --surface-contrast-layer: var(--bg-header-contrast);
-  }
-
-  .surface-context-menu {
-    background-color: var(--bg-context-menu);
-    --surface-layer: var(--bg-context-menu);
-    --surface-contrast-layer: var(--bg-context-menu-contrast);
-  }
-.surface-content-code-block {
-    background-color: var(--bg-code-block);
-    --surface-layer: var(--bg-code-block);
-    --surface-contrast-layer: var(--bg-code-block-contrast);
-  }
-
-  .surface-content-code-block.code-block pre {
-    padding: 8px;
-    border: 2px solid var(--border);
-    border-radius: 8px;
-    background-color: transparent;
-  }
-
-  .surface-content-code-block.code-block pre,
-  .surface-content-code-block.code-block code {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important;
-    font-size: 14px !important;
-    line-height: 1.5 !important;
-    color: #d4d4d4;
-  }
-
-  .surface-content-code-block.code-block pre span {
-    font-family: inherit !important;
-    font-size: inherit !important;
-    line-height: inherit !important;
-  }
-
-  .surface-modal {
-    background-color: var(--bg-settings);
-    --surface-layer: var(--bg-settings);
-    --surface-contrast-layer: var(--bg-settings-contrast);
-  }
-
   .accent {
     background-color: var(--accent);
   }
@@ -320,24 +33,10 @@
     background-color: var(--accent-hover);
   }
 
-  .no-scrollbar::-webkit-scrollbar {
-    display: none;
-  }
-
-  .no-scrollbar {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
-
   .prevent-select {
     -webkit-user-select: none; /* Safari */
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
-  }
-
-  .hl {
-    border-bottom: 1px solid var(--border);
-    width: 100%;
   }
 
   .float-shadow {
@@ -351,24 +50,23 @@
       0px 3px 8px rgba(51, 51, 51, 0.07),
       0px 4px 10px rgba(51, 51, 51, 0.08);
   }
-
-  .base-icon {
-    display: inline-flex;
-    justify-items: center;
-    border-radius: 0.5rem;
-    color: var(--icon-color);
-    flex-shrink: 0;
-    width: 22px;
-    height: 22px;
-  }
 }
 @layer utilities {
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
   .scroll {
-    position: absolute;
-    overflow-y: auto; 
-    
+    overflow-y: auto;
+    overflow-x: hidden;
+
     scrollbar-width: thin;
-    scrollbar-color: var(--color-gray-400, #9ca3af) transparent;
+    scrollbar-color: var(--scroll-color) transparent;
     transition: scrollbar-color 0.2s ease-in-out;
   }
 
@@ -378,14 +76,14 @@
 
   .auto-hide-scroll:hover,
   .auto-hide-scroll:focus-within {
-    scrollbar-color: var(--color-gray-400, #9ca3af) transparent;
+    scrollbar-color: var(--scroll-color) transparent;
   }
 
   .scroll::-webkit-scrollbar,
   .auto-hide-scroll::-webkit-scrollbar {
     width: 6px;
     height: 6px;
-    background-color: transparent; 
+    background-color: transparent;
   }
 
   .scroll::-webkit-scrollbar-track,

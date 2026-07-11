@@ -75,11 +75,12 @@ defineExpose({
         <ChevronRight :class="isOpen ? '' : '-rotate-90'" />
       </base-icon>
 
-      <span
-        class="whitespace-nowrap text-(--text-secondary-color) truncate flex-1 text-left"
+      <p
+        class="whitespace-nowrap truncate flex-1 text-(--text-secondary-color) text-left"
       >
         {{ label }}
-      </span>
+      </p>
+
       <base-icon
         size="24px"
         ref="menuButtonRef"
