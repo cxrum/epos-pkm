@@ -28,10 +28,51 @@ export function useBaseCommandLineController(
     },
   ];
 
-  const fetchFiltered = async (query: string): Promise<CommandType[]> => {
-    return stubItems.filter((item) =>
-      item.title.toLowerCase().startsWith(query.toLowerCase()),
-    );
+  const getMatchIndices = (text: string, query: string): [number, number][] => {
+    const escapedQuery = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+    const regex = new RegExp(escapedQuery, "gi");
+    return [...text.matchAll(regex)].map((m) => [
+      m.index!,
+      m.index! + m[0].length,
+    ]);
+  };
+
+  const fetchFiltered = async (
+    query: string,
+  ): Promise<FilteredCommandType[]> => {
+    const normalizedQuery = query.trim();
+
+    if (!normalizedQuery) {
+      return stubItems.map((item) => ({
+        ...item,
+        matchIndices: { title: [], id: [], typeId: [] },
+      }));
+    }
+
+    const results: FilteredCommandType[] = [];
+
+    for (const item of stubItems) {
+      const titleMatches = getMatchIndices(item.title, normalizedQuery);
+      const idMatches = getMatchIndices(item.id, normalizedQuery);
+      const typeIdMatches = getMatchIndices(item.typeId, normalizedQuery);
+
+      if (
+        titleMatches.length > 0 ||
+        idMatches.length > 0 ||
+        typeIdMatches.length > 0
+      ) {
+        results.push({
+          ...item,
+          matchIndices: {
+            title: titleMatches,
+            id: idMatches,
+            typeId: typeIdMatches,
+          },
+        });
+      }
+    }
+
+    return results;
   };
 
   const execute = (

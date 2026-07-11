@@ -9,8 +9,16 @@ export interface CommandType {
   command: (props: { editor: Editor; typeProps: Record<string, any> }) => void;
 }
 
+export type FilteredCommandType = CommandType & {
+  matchIndices: {
+    title: [number, number][];
+    id: [number, number][];
+    typeId: [number, number][];
+  };
+};
+
 export interface CommandControllerContract {
-  fetchFiltered(query: string): Promise<CommandType[]>;
+  fetchFiltered(query: string): Promise<FilteredCommandType[]>;
   parse(commandLine: string): string | undefined;
   execute(
     id: string,
