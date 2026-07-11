@@ -32,6 +32,8 @@ import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.v
 import { applicationBus } from "@/bus/application.ts";
 import { useObjectEditorStore } from "../store/objectEditorStore.ts";
 import { EditorControllerKey } from "../components/editor/contract.ts";
+import { useBaseCommandLineController } from "../components/editor/commandLineController.ts";
+import { CommandLineControllerKey } from "../components/editor/extension/commandLine/commandLineControllerContract.ts";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -43,7 +45,10 @@ const globalNavigationStore = useGlobalNavigation();
 const objectEditorStore = useObjectEditorStore();
 
 const editorController = useBaseEditorController(applicationBus);
+const commandLineController = useBaseCommandLineController(applicationBus);
+
 provide(EditorControllerKey, editorController);
+provide(CommandLineControllerKey, commandLineController);
 
 const currentPageEntity = ref<EpContainerObjectEntity>();
 const title = ref<string>();

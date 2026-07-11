@@ -14,7 +14,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, toRaw, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  toRaw,
+  onBeforeUnmount,
+  inject,
+} from "vue";
 import { DragHandle } from "@tiptap/extension-drag-handle-vue-3";
 import NodeRange from "@tiptap/extension-node-range";
 import StarterKit from "@tiptap/starter-kit";
@@ -34,6 +42,8 @@ import type { ApplicationEvents } from "@/bus/application";
 import type { Emitter } from "mitt";
 import type { EpObjectId } from "@/core/types";
 import { NodeSelection } from "@tiptap/pm/state";
+import { CommandLineParser } from "../extension/commandLine/CommandLineParserExtension";
+import { CommandLineControllerKey } from "../extension/commandLine/commandLineControllerContract";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },
@@ -66,6 +76,12 @@ const nestedOptions = computed(() => {
   return rtl.value ? NESTED_CONFIG_RTL : NESTED_CONFIG_LTR;
 });
 
+const commandLineController = inject(CommandLineControllerKey);
+
+if (!commandLineController) {
+  console.error("Command line controler wasnt injected.");
+}
+
 const editor = useEditor({
   editable: editable.value,
   content: entitiesToTiptapDoc(
@@ -80,6 +96,9 @@ const editor = useEditor({
     EpBaseBlock,
     Placeholder.configure({
       placeholder: "Press '/' for commands, or type to write...",
+    }),
+    CommandLineParser.configure({
+      controller: commandLineController,
     }),
     NodeRange.configure({
       key: null,
