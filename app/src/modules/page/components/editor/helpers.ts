@@ -4,6 +4,7 @@ import type { EpObjectId } from "@/core/types";
 export const mapEpTypeToTiptapType = (typeId: string): string => {
   if (typeId === "def:text") return "paragraph";
   if (typeId === "def:heading") return "heading";
+  if (typeId === "def:code") return "codeBlock";
   return "epBlock";
 };
 
