@@ -1,9 +1,13 @@
 <template>
-  <div class="command-menu">
+  <div
+    ref="listRef"
+    class="surface-shadow surface-dialog surface-command-line scroll"
+  >
     <button
       v-for="(item, index) in items"
       :key="index"
-      :class="{ 'is-selected': index === selectedIndex }"
+      :class="index === selectedIndex ? 'active' : ''"
+      class="base-button"
       @mouseenter="onHover(index)"
       @click="onClick(index)"
     >
@@ -18,6 +22,7 @@
 </template>
 
 <script setup lang="ts">
+import { ref, watch, nextTick } from "vue";
 import type {
   CommandType,
   FilteredCommandType,
@@ -29,6 +34,33 @@ const props = defineProps<{
   selectedIndex: number;
   onUpdateIndex: (index: number) => void;
 }>();
+
+const listRef = ref<HTMLElement | null>(null);
+
+watch(
+  () => props.selectedIndex,
+  async (newIndex) => {
+    await nextTick();
+
+    const container = listRef.value;
+    if (!container) return;
+
+    const activeElement = container.children[newIndex] as HTMLElement;
+    if (!activeElement) return;
+
+    const containerTop = container.scrollTop;
+    const containerBottom = containerTop + container.clientHeight;
+
+    const elemTop = activeElement.offsetTop;
+    const elemBottom = elemTop + activeElement.offsetHeight;
+
+    if (elemTop < containerTop) {
+      container.scrollTop = elemTop;
+    } else if (elemBottom > containerBottom) {
+      container.scrollTop = elemBottom - container.clientHeight;
+    }
+  },
+);
 
 const onHover = (index: number) => {
   props.onUpdateIndex(index);
@@ -66,26 +98,6 @@ const formatTitle = (text: string, indices: [number, number][]) => {
 </script>
 
 <style scoped>
-.command-menu {
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  display: flex;
-  flex-direction: column;
-  padding: 4px;
-  min-width: 150px;
-}
-.command-menu button {
-  padding: 8px;
-  text-align: left;
-  background: transparent;
-  border: none;
-  cursor: pointer;
-  border-radius: 2px;
-}
-.command-menu button.is-selected {
-  background: #f0f0f0;
-}
 .highlight {
   font-weight: 600;
   color: #3b82f6;

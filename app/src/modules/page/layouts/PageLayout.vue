@@ -228,6 +228,7 @@ onUnmounted(() => {
 
       <div
         v-if="editorController.initialData.value"
+        id="page"
         class="flex flex-col gap-2 w-full h-full page scroll overflow-y-auto auto-hide-scroll"
       >
         <h1>{{ title }}</h1>

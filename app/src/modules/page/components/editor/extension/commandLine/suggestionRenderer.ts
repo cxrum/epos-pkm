@@ -30,15 +30,20 @@ export const renderItems = () => {
       if (!props.clientRect) {
         return;
       }
-
       popup = tippy("body", {
-        getReferenceClientRect: props.clientRect,
+        getReferenceClientRect: () =>
+          props.editor.view.dom.getBoundingClientRect(),
         appendTo: () => document.body,
         content: component.element as Element,
         showOnCreate: true,
         interactive: true,
         trigger: "manual",
         placement: "bottom-start",
+        maxWidth: "none",
+        onMount(instance) {
+          const editorWidth = props.editor.view.dom.clientWidth;
+          instance.popper.style.width = `${editorWidth}px`;
+        },
       });
     },
 

@@ -1,4 +1,8 @@
 @layer components {
+  .surface-shadow {
+    box-shadow: 0px 4px 10px 0px rgba(0, 0, 0, 0.25);
+  }
+
   .surface-top-layer {
     background-color: var(--bg-top-layer);
     --surface-layer: var(--bg-top-layer);
@@ -84,5 +88,14 @@
     font-family: inherit !important;
     font-size: inherit !important;
     line-height: inherit !important;
+  }
+
+  .surface-command-line {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+    max-height: 128px;
+    box-sizing: border-box;
   }
 }
