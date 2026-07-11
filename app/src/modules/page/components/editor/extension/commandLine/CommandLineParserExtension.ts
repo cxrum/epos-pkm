@@ -9,6 +9,14 @@ export interface CommandParserOptions {
 
 export const CommandParserPluginKey = new PluginKey("commandParser");
 
+declare module "@tiptap/core" {
+  interface Commands<ReturnType> {
+    commandLineParser: {
+      parseCommand: (command: string) => ReturnType;
+    };
+  }
+}
+
 export const CommandLineParser = Extension.create<CommandParserOptions>({
   name: "commandLineParser",
 
