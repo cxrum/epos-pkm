@@ -40,6 +40,12 @@ export function setupAppState(stateService: RawAppStateService) {
   ipcMain.handle("app-state:upsertWorkspace", (_, workspace) => {
     return stateService.upsertWorkspace(workspace);
   });
+  ipcMain.handle("app-state:renameWorkspace", (_, id: string, title: string) => {
+    return stateService.renameWorkspace(id, title);
+  });
+  ipcMain.handle("app-state:deleteWorkspace", (_, id: string) => {
+    return stateService.deleteWorkspace(id);
+  });
 
   ipcMain.handle("dialog:openDirectory", async () => {
     const { canceled, filePaths } = await dialog.showOpenDialog({

@@ -129,6 +129,36 @@ export const useSetupStore = defineStore("setup", () => {
     await commitWorkspaceDraft(draftId);
   };
 
+  const renameWorkspace = async (id: string, title: string): Promise<boolean> => {
+    isLoading.value = true;
+    try {
+      await appStateRepository.renameWorkspace(id, title);
+      await loadWorkspaces();
+      clearErrorMsg();
+      return true;
+    } catch {
+      errorMsg.value = "Cannot rename workspace";
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const deleteWorkspace = async (id: string): Promise<boolean> => {
+    isLoading.value = true;
+    try {
+      await appStateRepository.deleteWorkspace(id);
+      await loadWorkspaces();
+      clearErrorMsg();
+      return true;
+    } catch {
+      errorMsg.value = "Cannot delete workspace";
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   const selectWorkspace = async (id: string): Promise<boolean> => {
     try {
       await loadWorkspaces();
@@ -160,6 +190,8 @@ export const useSetupStore = defineStore("setup", () => {
     loadWorkspaces,
     createWorkspace,
     commitWorkspaceDraft,
+    renameWorkspace,
+    deleteWorkspace,
     selectRootPath,
     beginWorkspaceDraft,
     cancelWorkspaceDraft,

@@ -115,7 +115,8 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
 
     for (const rawContainer of Object.values(flattenData)) {
       nodeMap.set(rawContainer.id, rawContainer);
-      for (const rawObject of Object.values(rawContainer.content)) {
+      const rawContent = rawContainer.content ?? {};
+      for (const rawObject of Object.values(rawContent)) {
         if (!nodeMap.has(rawObject.id)) {
           nodeMap.set(rawObject.id, rawObject);
         }
@@ -132,9 +133,10 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     const seenEdges = new Set<string>();
 
     for (const rawContainer of Object.values(flattenData)) {
+      const rawContent = rawContainer.content ?? {};
       const childIds = rawContainer.order?.length
         ? rawContainer.order
-        : Object.keys(rawContainer.content || {});
+        : Object.keys(rawContent);
 
       for (const childId of childIds) {
         const edgeKey = `${rawContainer.id}->${childId}`;
@@ -149,7 +151,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
           target: childId as EpObjectId,
         });
 
-        const child = rawContainer.content[childId];
+        const child = rawContent[childId];
         if (child && isRawMountedContainer(child)) {
           edges.push({
             source: rawContainer.id,

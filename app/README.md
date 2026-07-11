@@ -5,10 +5,12 @@ Electron + Vue client for the local-first Epos PKM workspace.
 
 - Authentication enables encrypted cross-device sync.
 - The renderer runs a background sync loop every 30 seconds.
-- Workspace JSON files and `.workspace` metadata are synchronized as encrypted, bounded file-op
-  batches.
+- Workspace JSON files are synchronized as encrypted, bounded file-op batches. Local `.workspace`
+  metadata stays on the device so workspace ids and titles do not leak into shared sync content.
 - Workspace discovery uses a separate encrypted catalog sync stream so devices can learn about
-  workspaces created on other machines without exposing titles to the server.
+  workspaces created on other machines without exposing titles to the server. The client now
+  pushes the full local workspace catalog snapshot when it changes, so the chooser can refresh
+  even if a device missed earlier incremental updates.
 - Workspaces are discovered relative to the selected workspace root directory; the renderer never needs absolute OS paths.
 - The sync request cursor is the last remote update id the client has already applied.
   `after_cursor` asks the server for only newer updates from that stream.

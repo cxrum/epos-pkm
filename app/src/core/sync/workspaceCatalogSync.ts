@@ -33,6 +33,22 @@ const catalogSyncState: CatalogSyncState = {
   workspaces: new Map(),
 };
 
+function isUnauthorizedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 401") || message.includes("status 403");
+}
+
+function serializeCatalogEntries(entries: CatalogEntry[]): string {
+  return JSON.stringify(
+    [...entries]
+      .map((entry) => ({
+        id: entry.id,
+        title: entry.title,
+      }))
+      .sort((left, right) => left.id.localeCompare(right.id)),
+  );
+}
+
 function getBase64Encoder() {
   return (value: string) => globalThis.btoa(value);
 }
@@ -250,27 +266,46 @@ function buildCatalogBatch(entries: CatalogEntry[]): CatalogBatchPayload {
 export async function syncWorkspaceCatalog(
   authState: AuthState,
   syncServerUrl: string,
-): Promise<void> {
+): Promise<boolean> {
   if (!authState.authenticated || !authState.user) {
-    return;
+    return false;
   }
 
-  const accessToken = await window.authApi.getAccessToken();
+  let accessToken = await window.authApi.getAccessToken();
   if (!accessToken) {
-    return;
+    return false;
   }
 
   const syncKey = await window.authApi.getSyncKey();
   if (!syncKey) {
-    return;
+    return false;
   }
 
-  const pullResponse = await fetchCatalogState(
-    syncServerUrl,
-    accessToken,
-    catalogSyncState.cursor,
-  );
+  let pullResponse: { updates: { cursor: string; payload: string }[] };
+  try {
+    pullResponse = await fetchCatalogState(
+      syncServerUrl,
+      accessToken,
+      catalogSyncState.cursor,
+    );
+  } catch (error) {
+    if (!isUnauthorizedError(error)) {
+      throw error;
+    }
 
+    accessToken = await window.authApi.getAccessToken();
+    if (!accessToken) {
+      return false;
+    }
+
+    pullResponse = await fetchCatalogState(
+      syncServerUrl,
+      accessToken,
+      catalogSyncState.cursor,
+    );
+  }
+
+  let catalogChanged = false;
   for (const update of pullResponse.updates) {
     let batch = tryParseCatalogBatch(update.payload);
 
@@ -294,6 +329,7 @@ export async function syncWorkspaceCatalog(
         id: entry.id,
         title: entry.title,
       });
+      catalogChanged = true;
     }
 
     catalogSyncState.cursor = update.cursor;
@@ -314,24 +350,59 @@ export async function syncWorkspaceCatalog(
     }),
   );
 
-  for (const entry of localEntries.filter((item): item is CatalogEntry => item !== null)) {
-    const remoteTitle = catalogSyncState.workspaces.get(entry.id);
-    if (remoteTitle === entry.title) {
-      continue;
-    }
+  const normalizedLocalEntries = localEntries.filter(
+    (item): item is CatalogEntry => item !== null,
+  );
+  const remoteSnapshot = serializeCatalogEntries(
+    Array.from(catalogSyncState.workspaces.entries()).map(([id, title]) => ({
+      id,
+      title,
+    })),
+  );
+  const localSnapshot = serializeCatalogEntries(normalizedLocalEntries);
 
+  if (normalizedLocalEntries.length > 0 && remoteSnapshot !== localSnapshot) {
     const encrypted = await encryptUpdate(
       syncKey,
-      new TextEncoder().encode(JSON.stringify(buildCatalogBatch([entry]))),
+      new TextEncoder().encode(
+        JSON.stringify(buildCatalogBatch(normalizedLocalEntries)),
+      ),
     );
-    const pushResponse = await pushCatalogUpdate(
-      syncServerUrl,
-      accessToken,
-      encrypted,
+    let pushResponse: { cursor: string };
+    try {
+      pushResponse = await pushCatalogUpdate(
+        syncServerUrl,
+        accessToken,
+        encrypted,
+      );
+    } catch (error) {
+      if (!isUnauthorizedError(error)) {
+        throw error;
+      }
+
+      accessToken = await window.authApi.getAccessToken();
+      if (!accessToken) {
+        return false;
+      }
+
+      pushResponse = await pushCatalogUpdate(
+        syncServerUrl,
+        accessToken,
+        encrypted,
+      );
+    }
+    catalogSyncState.workspaces = new Map(
+      normalizedLocalEntries.map((entry) => [entry.id, entry.title]),
     );
-    catalogSyncState.workspaces.set(entry.id, entry.title);
     catalogSyncState.cursor = pushResponse.cursor;
+    catalogChanged = true;
   }
+
+  if (catalogChanged) {
+    window.dispatchEvent(new Event("workspace-catalog-changed"));
+  }
+
+  return catalogChanged;
 }
 
 export function resetCatalogSyncState(): void {

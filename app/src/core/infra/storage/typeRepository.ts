@@ -154,6 +154,7 @@ export class TypingRepository implements TypingRepositoryContract {
       "children",
     );
 
+    this.descendants.clear();
     for (const [id, value] of Object.entries(rawDescendants)) {
       this.descendants.set(id, value);
     }

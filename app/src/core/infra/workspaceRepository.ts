@@ -46,7 +46,17 @@ export class WorkspaceStateRepository implements WorkspaceRepositoryContract {
     let root = await fileSystemApi.get(this.PATH);
 
     if (!root) {
-      throw Error("Workspace config not found");
+      const selectedWorkspace = await this.getSelectedWorkspace();
+      if (!selectedWorkspace) {
+        throw Error("Workspace config not found");
+      }
+
+      root = {
+        id: selectedWorkspace.id,
+        title: selectedWorkspace.title,
+        state: this.getDefaultWorkspaceState(),
+      };
+      await fileSystemApi.save(this.PATH, root);
     }
 
     root.state = {

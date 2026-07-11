@@ -1,26 +1,44 @@
 <script lang="ts" setup>
 import BaseButton from "@/shared/components/BaseButton.vue";
 import { useSetupStore } from "../store/setupStore";
+import { nextTick, onMounted, onUnmounted, ref } from "vue";
 import { useRouter } from "vue-router";
-import { onMounted } from "vue";
+import { useWorkspaceStore } from "@/core/store/workspaceStore";
 import FirstRunAuthCard from "../components/FirstRunAuthCard.vue";
 import WorkspaceDraftRow from "../components/WorkspaceDraftRow.vue";
+import WorkspaceRow from "../components/WorkspaceRow.vue";
 
 const router = useRouter();
 
 const stateStore = useSetupStore();
+const workspaceStore = useWorkspaceStore();
+const editingWorkspaceId = ref<string | null>(null);
+const editingWorkspaceTitle = ref<string>("Untitled");
 
 onMounted(async () => {
   await stateStore.loadWorkspaces();
+  window.addEventListener("workspace-catalog-changed", handleWorkspaceCatalogChanged);
+});
+
+onUnmounted(() => {
+  window.removeEventListener(
+    "workspace-catalog-changed",
+    handleWorkspaceCatalogChanged,
+  );
 });
 
 const handleSelectRoot = async () => {
   await stateStore.selectRootPath();
 };
 
+const handleWorkspaceCatalogChanged = () => {
+  void stateStore.loadWorkspaces();
+};
+
 const openWorkspace = async (id: string) => {
   const opened = await stateStore.selectWorkspace(id);
   if (opened) {
+    await workspaceStore.loadAppState();
     await router.push({ name: "workspace" });
   }
 };
@@ -35,6 +53,40 @@ const saveWorkspaceDraft = async (id: string) => {
 
 const cancelWorkspaceDraft = (id: string) => {
   stateStore.cancelWorkspaceDraft(id);
+};
+
+const beginWorkspaceRename = async (id: string, title: string) => {
+  editingWorkspaceId.value = id;
+  editingWorkspaceTitle.value = title;
+  await nextTick();
+};
+
+const saveWorkspaceRename = async (id: string) => {
+  const success = await stateStore.renameWorkspace(
+    id,
+    editingWorkspaceTitle.value,
+  );
+
+  if (success) {
+    editingWorkspaceId.value = null;
+  }
+};
+
+const cancelWorkspaceRename = () => {
+  editingWorkspaceId.value = null;
+  editingWorkspaceTitle.value = "Untitled";
+};
+
+const deleteWorkspace = async (id: string) => {
+  const confirmed = window.confirm("Delete this workspace?");
+  if (!confirmed) {
+    return;
+  }
+
+  const success = await stateStore.deleteWorkspace(id);
+  if (success && editingWorkspaceId.value === id) {
+    cancelWorkspaceRename();
+  }
 };
 </script>
 
@@ -93,19 +145,23 @@ const cancelWorkspaceDraft = (id: string) => {
           v-if="stateStore.workspaces.length > 0 || stateStore.draftWorkspaces.length > 0"
           class="flex flex-col flex-1 gap-2 min-w-0 overflow-y-auto scroll max-h-80"
         >
-          <span
-            v-for="value of stateStore.workspaces"
-            :key="value.id"
-            class="clickable rounded-md border border-(--border) p-2"
-            @click="void openWorkspace(value.id)"
-          >
-            <p>
-              {{ value.title }}
-            </p>
-            <label>
-              {{ value.relativePath }}
-            </label>
-          </span>
+          <template v-for="value of stateStore.workspaces" :key="value.id">
+            <WorkspaceDraftRow
+              v-if="editingWorkspaceId === value.id"
+              v-model="editingWorkspaceTitle"
+              @commit="saveWorkspaceRename(value.id)"
+              @cancel="cancelWorkspaceRename"
+            />
+            <WorkspaceRow
+              v-else
+              :id="value.id"
+              :title="value.title"
+              :relative-path="value.relativePath"
+              @open="openWorkspace"
+              @rename="beginWorkspaceRename(value.id, value.title)"
+              @delete="deleteWorkspace"
+            />
+          </template>
 
           <WorkspaceDraftRow
             v-for="value of stateStore.draftWorkspaces"

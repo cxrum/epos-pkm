@@ -16,6 +16,13 @@ interface LegacyWorkspaceEntry {
   absolutePath: string;
 }
 
+interface RawWorkspaceDiskConfig {
+  id: string;
+  title: string;
+  state?: unknown;
+  [key: string]: unknown;
+}
+
 interface WorkspaceRecord {
   id: string;
   absolutePath: string;
@@ -91,6 +98,123 @@ export class RawAppStateService implements AppStateApi {
     }
 
     return normalized.replace(/\\/g, "/");
+  }
+
+  private normalizeWorkspaceTitle(title: string): string {
+    const normalizedTitle = title.trim().length ? title.trim() : "Untitled";
+    const sanitized = normalizedTitle
+      .replace(/[<>:"|?*\\/]+/g, "-")
+      .replace(/\s+/g, " ")
+      .replace(/^\.+$/, "")
+      .trim();
+
+    return sanitized.length ? sanitized : "Untitled";
+  }
+
+  private getWorkspaceSuffix(id: string): string {
+    return id.replace(/-/g, "").slice(0, 8) || randomUUID().replace(/-/g, "").slice(0, 8);
+  }
+
+  private getWorkspaceFolderBase(title: string): string {
+    return this.normalizeWorkspaceTitle(title);
+  }
+
+  private getWorkspaceFolderName(title: string, id: string, unique: boolean): string {
+    const base = this.getWorkspaceFolderBase(title);
+    return unique ? `${base}_${this.getWorkspaceSuffix(id)}` : base;
+  }
+
+  private async buildWorkspacePath(
+    rootPath: string,
+    title: string,
+    id: string,
+    shouldUseSuffix: boolean,
+    fallbackPath?: string,
+  ): Promise<string> {
+    const baseName = this.getWorkspaceFolderBase(title);
+    const preferredName = shouldUseSuffix
+      ? this.getWorkspaceFolderName(title, id, true)
+      : baseName;
+    const preferredPath = path.join(rootPath, preferredName);
+
+    if (fallbackPath && path.resolve(fallbackPath) === path.resolve(preferredPath)) {
+      return preferredPath;
+    }
+
+    if (!(await this.pathExists(preferredPath))) {
+      return preferredPath;
+    }
+
+    if (!shouldUseSuffix) {
+      const suffixedPath = path.join(
+        rootPath,
+        this.getWorkspaceFolderName(title, id, true),
+      );
+      if (!(await this.pathExists(suffixedPath))) {
+        return suffixedPath;
+      }
+      return suffixedPath;
+    }
+
+    return preferredPath;
+  }
+
+  private async reconcileWorkspaceFolders(rootPath: string): Promise<WorkspaceRecord[]> {
+    const workspaces = await this.scanWorkspaces(rootPath);
+    const groups = new Map<string, WorkspaceRecord[]>();
+
+    for (const workspace of workspaces) {
+      const base = this.getWorkspaceFolderBase(workspace.title);
+      const group = groups.get(base) ?? [];
+      group.push(workspace);
+      groups.set(base, group);
+    }
+
+    const renames = workspaces
+      .map((workspace) => {
+        const base = this.getWorkspaceFolderBase(workspace.title);
+        const group = groups.get(base) ?? [];
+        const shouldUseSuffix = group.length > 1;
+        const desiredName = this.getWorkspaceFolderName(
+          workspace.title,
+          workspace.id,
+          shouldUseSuffix,
+        );
+        const desiredPath = path.join(rootPath, desiredName);
+
+        return {
+          workspace,
+          desiredPath,
+        };
+      })
+      .filter(({ workspace, desiredPath }) =>
+        path.resolve(workspace.absolutePath) !== path.resolve(desiredPath),
+      );
+
+    if (renames.length === 0) {
+      return workspaces;
+    }
+
+    const tempMoves = renames.map(({ workspace, desiredPath }) => ({
+      workspace,
+      desiredPath,
+      tempPath: path.join(
+        rootPath,
+        `.__tmp__${workspace.id.replace(/-/g, "")}_${randomUUID().replace(/-/g, "")}`,
+      ),
+    }));
+
+    for (const move of tempMoves) {
+      await fs.rename(move.workspace.absolutePath, move.tempPath);
+      move.workspace.absolutePath = move.tempPath;
+    }
+
+    for (const move of tempMoves) {
+      await fs.rename(move.tempPath, move.desiredPath);
+      move.workspace.absolutePath = move.desiredPath;
+    }
+
+    return await this.scanWorkspaces(rootPath);
   }
 
   private getLegacyWorkspaceRoot(
@@ -222,11 +346,21 @@ export class RawAppStateService implements AppStateApi {
 
   private async readLocalConfig(
     absolutePath: string,
-  ): Promise<WorkspaceConf | null> {
+  ): Promise<RawWorkspaceDiskConfig | null> {
     try {
       const workspaceConfigPath = path.join(absolutePath, ".workspace");
       const rawData = await fs.readFile(workspaceConfigPath, "utf-8");
-      return JSON.parse(rawData) as WorkspaceConf;
+      const parsed = JSON.parse(rawData) as RawWorkspaceDiskConfig;
+
+      if (
+        !parsed ||
+        typeof parsed.id !== "string" ||
+        typeof parsed.title !== "string"
+      ) {
+        return null;
+      }
+
+      return parsed;
     } catch (e) {
       return null;
     }
@@ -239,9 +373,17 @@ export class RawAppStateService implements AppStateApi {
     const workspaceConfigPath = path.join(absolutePath, ".workspace");
 
     try {
+      const current = await this.readLocalConfig(absolutePath);
+      const nextConfig: RawWorkspaceDiskConfig = {
+        ...(current ?? {}),
+        ...localConfig,
+        id: localConfig.id,
+        title: localConfig.title,
+      };
+
       await fs.writeFile(
         workspaceConfigPath,
-        JSON.stringify(localConfig, null, 2),
+        JSON.stringify(nextConfig, null, 2),
         "utf-8",
       );
       console.log(
@@ -355,6 +497,43 @@ export class RawAppStateService implements AppStateApi {
     return discovered;
   }
 
+  private async repairDuplicateWorkspaceIds(
+    workspaces: WorkspaceRecord[],
+  ): Promise<WorkspaceRecord[]> {
+    const seen = new Set<string>();
+    const repaired: WorkspaceRecord[] = [];
+    let changed = false;
+
+    for (const workspace of workspaces) {
+      const existing = seen.has(workspace.id);
+      if (!existing) {
+        seen.add(workspace.id);
+        repaired.push(workspace);
+        continue;
+      }
+
+      const nextId = randomUUID();
+      changed = true;
+      const updatedWorkspace: WorkspaceRecord = {
+        ...workspace,
+        id: nextId,
+      };
+      await this.saveWorkspaceConf(workspace.absolutePath, {
+        id: updatedWorkspace.id,
+        title: updatedWorkspace.title,
+      });
+      repaired.push(updatedWorkspace);
+    }
+
+    if (changed) {
+      console.warn(
+        "Detected duplicate workspace ids on disk and repaired the later copies.",
+      );
+    }
+
+    return repaired;
+  }
+
   private async syncWorkspaces(): Promise<WorkspaceRecord[]> {
     if (!this.config) {
       this.config = await this.loadConfig();
@@ -370,7 +549,9 @@ export class RawAppStateService implements AppStateApi {
       return [];
     }
 
-    const validWorkspaces = await this.scanWorkspaces(rootPath);
+    const validWorkspaces = await this.repairDuplicateWorkspaceIds(
+      await this.scanWorkspaces(rootPath),
+    );
     let configChanged = false;
 
     if (
@@ -583,38 +764,26 @@ export class RawAppStateService implements AppStateApi {
       throw new Error("Workspace root path is not set");
     }
 
-    const normalizedTitle = title.trim().length ? title.trim() : "Untitled";
-    const sanitizedTitle = normalizedTitle
-      .trim()
-      .replace(/[<>:"|?*\\/]+/g, "-")
-      .replace(/\s+/g, " ")
-      .replace(/^\.+$/, "")
-      .trim();
-    const workspaceFolderName = sanitizedTitle.length
-      ? sanitizedTitle
-      : "Untitled";
-
-    let workspaceAbsolutePath = path.join(
+    const normalizedTitle = this.normalizeWorkspaceTitle(title);
+    const id = randomUUID();
+    const existing = await this.syncWorkspaces();
+    const workspaceAbsolutePath = await this.buildWorkspacePath(
       normalizedRootPath,
-      workspaceFolderName,
+      normalizedTitle,
+      id,
+      existing.some(
+        (workspace) =>
+          this.getWorkspaceFolderBase(workspace.title) === normalizedTitle,
+      ),
     );
-    let suffix = 1;
-
-    while (await this.pathExists(workspaceAbsolutePath)) {
-      workspaceAbsolutePath = path.join(
-        normalizedRootPath,
-        `${workspaceFolderName}-${suffix}`,
-      );
-      suffix += 1;
-    }
 
     const newWorkspace: WorkspaceRecord = {
-      id: randomUUID(),
+      id,
       absolutePath: workspaceAbsolutePath,
       relativePath: this.toPosixRelativePath(
         path.relative(normalizedRootPath, workspaceAbsolutePath) || ".",
       ),
-      title,
+      title: normalizedTitle,
     };
 
     const localConfig: WorkspaceConf = {
@@ -627,7 +796,6 @@ export class RawAppStateService implements AppStateApi {
         newWorkspace.absolutePath,
         localConfig,
       );
-
       await this.saveConfig(this.config);
 
       return {
@@ -651,15 +819,33 @@ export class RawAppStateService implements AppStateApi {
       throw new Error("Workspace root path is not set");
     }
 
-    const normalizedTitle = workspace.title.trim().length
-      ? workspace.title.trim()
-      : "Untitled";
+    const normalizedTitle = this.normalizeWorkspaceTitle(workspace.title);
     const existing = await this.syncWorkspaces();
     const match = existing.find((entry) => entry.id === workspace.id);
 
     if (match) {
-      if (match.title !== normalizedTitle) {
-        await this.saveWorkspaceConf(match.absolutePath, {
+      const workspaceAbsolutePath = await this.buildWorkspacePath(
+        normalizedRootPath,
+        normalizedTitle,
+        workspace.id,
+        existing.some(
+          (entry) =>
+            entry.id !== workspace.id &&
+            this.getWorkspaceFolderBase(entry.title) === normalizedTitle,
+        ),
+        match.absolutePath,
+      );
+
+      if (path.resolve(match.absolutePath) !== path.resolve(workspaceAbsolutePath)) {
+        await fs.mkdir(path.dirname(workspaceAbsolutePath), { recursive: true });
+        await fs.rename(match.absolutePath, workspaceAbsolutePath);
+      }
+
+      if (
+        match.title !== normalizedTitle ||
+        path.resolve(match.absolutePath) !== path.resolve(workspaceAbsolutePath)
+      ) {
+        await this.saveWorkspaceConf(workspaceAbsolutePath, {
           id: match.id,
           title: normalizedTitle,
         });
@@ -671,29 +857,15 @@ export class RawAppStateService implements AppStateApi {
       };
     }
 
-    const sanitizedTitle = normalizedTitle
-      .trim()
-      .replace(/[<>:"|?*\\/]+/g, "-")
-      .replace(/\s+/g, " ")
-      .replace(/^\.+$/, "")
-      .trim();
-    const workspaceFolderName = sanitizedTitle.length
-      ? sanitizedTitle
-      : "Untitled";
-
-    let workspaceAbsolutePath = path.join(
+    const workspaceAbsolutePath = await this.buildWorkspacePath(
       normalizedRootPath,
-      workspaceFolderName,
+      normalizedTitle,
+      workspace.id,
+      existing.some(
+        (entry) =>
+          this.getWorkspaceFolderBase(entry.title) === normalizedTitle,
+      ),
     );
-    let suffix = 1;
-
-    while (await this.pathExists(workspaceAbsolutePath)) {
-      workspaceAbsolutePath = path.join(
-        normalizedRootPath,
-        `${workspaceFolderName}-${suffix}`,
-      );
-      suffix += 1;
-    }
 
     try {
       await this.ensureWorkspaceArtifacts(workspaceAbsolutePath, {
@@ -709,6 +881,42 @@ export class RawAppStateService implements AppStateApi {
     } catch (error) {
       console.error("Failed to upsert workspace", error);
       throw error;
+    }
+  }
+
+  public async renameWorkspace(
+    id: string,
+    title: string,
+  ): Promise<WorkspaceConf> {
+    const result = await this.upsertWorkspace({ id, title });
+    if (!result) {
+      throw new Error("Failed to rename workspace");
+    }
+
+    return result;
+  }
+
+  public async deleteWorkspace(id: string): Promise<void> {
+    if (!this.config) {
+      this.config = await this.loadConfig();
+    }
+
+    const normalizedRootPath = this.config.workspacesRootPath;
+    if (!normalizedRootPath) {
+      throw new Error("Workspace root path is not set");
+    }
+
+    const existing = await this.syncWorkspaces();
+    const target = existing.find((entry) => entry.id === id);
+    if (!target) {
+      throw new Error(`Workspace з id "${id}" не знайдено`);
+    }
+
+    await fs.rm(target.absolutePath, { recursive: true, force: true });
+
+    if (this.config.selectedWorkspace === id) {
+      this.config.selectedWorkspace = "";
+      await this.saveConfig(this.config);
     }
   }
 }

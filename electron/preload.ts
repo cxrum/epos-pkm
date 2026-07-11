@@ -49,6 +49,10 @@ const appStateApi: AppStateApi = {
   createWorkspace: (title) => ipcRenderer.invoke("app-state:createWorkspace", title),
   upsertWorkspace: (workspace) =>
     ipcRenderer.invoke("app-state:upsertWorkspace", workspace),
+  renameWorkspace: (id: string, title: string) =>
+    ipcRenderer.invoke("app-state:renameWorkspace", id, title),
+  deleteWorkspace: (id: string) =>
+    ipcRenderer.invoke("app-state:deleteWorkspace", id),
 };
 
 contextBridge.exposeInMainWorld("electronFs", fileSystemApi);

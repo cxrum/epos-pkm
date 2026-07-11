@@ -13,6 +13,7 @@ import {
   stableSerialize,
 } from "@/core/sync/workspaceSync";
 import { resetCatalogSyncState } from "@/core/sync/workspaceCatalogSync";
+import { SystemRoot } from "@/core/di/type";
 
 describe("workspace sync helpers", () => {
   const localWorkspaces = [
@@ -136,8 +137,7 @@ describe("workspace sync helpers", () => {
     const snapshot = {
       state: { title: "Workspace", selectedWorkspace: "abc" },
       files: {
-        "workspace/root.json": { id: "-1", title: "root" },
-        ".workspace": { id: "abc", title: "Workspace" },
+        "root.json": { id: "-1", title: "root" },
       },
     };
 
@@ -149,14 +149,13 @@ describe("workspace sync helpers", () => {
     const baseSnapshot = {
       state: { title: "Workspace", selectedWorkspace: "abc" },
       files: {
-        "workspace/root.json": { id: "-1", title: "root" },
-        ".workspace": { id: "abc", title: "Workspace" },
+        "root.json": { id: "-1", title: "root" },
       },
     };
     const currentSnapshot = {
       state: { title: "Workspace 2", selectedWorkspace: "abc" },
       files: {
-        "workspace/root.json": { id: "-1", title: "root updated" },
+        "root.json": { id: "-1", title: "root updated" },
       },
     };
 
@@ -183,6 +182,96 @@ describe("workspace sync helpers", () => {
     const batches = buildWorkspaceBatches(ops);
     expect(batches.length).toBeGreaterThan(1);
     expect(batches.flatMap((batch) => batch.ops)).toHaveLength(20);
+  });
+
+  it("skips bootstrap root and system type snapshots on first sync", () => {
+    const baseSnapshot = {
+      state: {},
+      files: {},
+    };
+    const currentSnapshot = {
+      state: {},
+      files: {
+        "root.json": {
+          id: "-1",
+          typeId: "sys:workspace",
+          title: "root",
+          content: {},
+          order: [],
+          properties: {
+            isContainer: {
+              id: "isContainer",
+              title: "isContainer",
+              type: "boolean",
+              value: true,
+            },
+          },
+        },
+        "types/types.json": SystemRoot(),
+        "root/Untitled.json": {
+          id: "page-1",
+          typeId: "sys:container",
+          title: "Untitled",
+        },
+      },
+    };
+
+    const ops = buildWorkspaceOps(baseSnapshot, currentSnapshot);
+
+    expect(ops).toEqual([
+      {
+        op: "set",
+        path: "root/Untitled.json",
+        value: {
+          id: "page-1",
+          typeId: "sys:container",
+          title: "Untitled",
+        },
+      },
+    ]);
+  });
+
+  it("keeps workspace-specific types when they differ from the bootstrap system tree", () => {
+    const baseSnapshot = {
+      state: {},
+      files: {},
+    };
+    const customTypes = JSON.parse(JSON.stringify(SystemRoot())) as ReturnType<
+      typeof SystemRoot
+    >;
+    customTypes.children = [
+      ...(customTypes.children ?? []),
+      {
+        id: "custom-type",
+        type: {
+          id: "custom-type",
+          kind: "user",
+          title: "Custom",
+          propertiesScheme: {
+            order: [],
+            props: {},
+          },
+        },
+        children: [],
+      },
+    ];
+
+    const currentSnapshot = {
+      state: {},
+      files: {
+        "types/types.json": customTypes,
+      },
+    };
+
+    const ops = buildWorkspaceOps(baseSnapshot, currentSnapshot);
+
+    expect(ops).toEqual([
+      {
+        op: "set",
+        path: "types/types.json",
+        value: customTypes,
+      },
+    ]);
   });
 
   it("pulls catalog and content updates using encrypted payloads", async () => {

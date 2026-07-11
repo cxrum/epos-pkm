@@ -1,5 +1,7 @@
 import * as Y from "yjs";
 import { IpcFileSystem } from "@/core/infra/storage/storageRepository";
+import { refreshWorkspaceContent } from "@/core/di/global";
+import { SystemRoot } from "@/core/di/type";
 import type { WorkspaceEntry } from "../../../appState";
 import type { AuthState } from "../../../authApi";
 import { syncWorkspaceCatalog } from "./workspaceCatalogSync";
@@ -41,6 +43,11 @@ const POLL_INTERVAL_MS = 30_000;
 const MAX_BATCH_BYTES = 24_000;
 const syncStates = new Map<string, WorkspaceSyncState>();
 let syncStarted = false;
+
+function isUnauthorizedError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  return message.includes("status 401") || message.includes("status 403");
+}
 
 function getBase64Encoder() {
   return (value: string) => globalThis.btoa(value);
@@ -146,6 +153,24 @@ function createEmptySnapshot(): WorkspaceSnapshot {
   };
 }
 
+function createDefaultWorkspaceRoot(): Record<string, unknown> {
+  return {
+    id: "-1",
+    typeId: "sys:workspace",
+    title: "root",
+    content: {},
+    order: [],
+    properties: {
+      isContainer: {
+        id: "isContainer",
+        title: "isContainer",
+        type: "boolean",
+        value: true,
+      },
+    },
+  };
+}
+
 function snapshotToDoc(snapshot: WorkspaceSnapshot): Y.Doc {
   const doc = new Y.Doc();
   const stateMap = doc.getMap("state");
@@ -229,16 +254,7 @@ function applyWorkspaceOps(
 ): void {
   for (const op of ops) {
     if (op.op === "remove") {
-      if (op.path === ".workspace") {
-        snapshot.state = {};
-      } else {
-        delete snapshot.files[op.path];
-      }
-      continue;
-    }
-
-    if (op.path === ".workspace") {
-      snapshot.state = (op.value ?? {}) as Record<string, unknown>;
+      delete snapshot.files[op.path];
       continue;
     }
 
@@ -252,18 +268,6 @@ function buildWorkspaceOps(
 ): WorkspaceFileOp[] {
   const ops: WorkspaceFileOp[] = [];
 
-  if (stableSerialize(baseSnapshot.state) !== stableSerialize(currentSnapshot.state)) {
-    if (Object.keys(currentSnapshot.state).length === 0) {
-      ops.push({ op: "remove", path: ".workspace" });
-    } else {
-      ops.push({
-        op: "set",
-        path: ".workspace",
-        value: currentSnapshot.state,
-      });
-    }
-  }
-
   const allFileKeys = new Set([
     ...Object.keys(baseSnapshot.files),
     ...Object.keys(currentSnapshot.files),
@@ -272,6 +276,24 @@ function buildWorkspaceOps(
   for (const path of Array.from(allFileKeys).sort((left, right) =>
     left.localeCompare(right),
   )) {
+    if (
+      baseSnapshot.files[path] === undefined &&
+      path === "root.json" &&
+      stableSerialize(currentSnapshot.files[path]) ===
+        stableSerialize(createDefaultWorkspaceRoot())
+    ) {
+      continue;
+    }
+
+    if (
+      baseSnapshot.files[path] === undefined &&
+      path === "types/types.json" &&
+      stableSerialize(currentSnapshot.files[path]) ===
+        stableSerialize(SystemRoot())
+    ) {
+      continue;
+    }
+
     if (stableSerialize(baseSnapshot.files[path]) === stableSerialize(currentSnapshot.files[path])) {
       continue;
     }
@@ -408,10 +430,10 @@ async function readWorkspaceSnapshot(
     workspaceRelativePath,
   );
   const files = await fsApi.getAllFlat("");
-  const workspaceState = await fsApi.get(".workspace");
+  delete files[".workspace"];
 
   return {
-    state: (workspaceState ?? {}) as Record<string, unknown>,
+    state: {},
     files,
   };
 }
@@ -436,8 +458,6 @@ async function writeWorkspaceSnapshot(
   for (const [path, data] of Object.entries(snapshot.files)) {
     await fsApi.save(path, data as Record<string, unknown>);
   }
-
-  await fsApi.save(".workspace", snapshot.state as Record<string, unknown>);
 }
 
 async function fetchSyncState(
@@ -500,14 +520,14 @@ async function syncWorkspace(
   authState: AuthState,
   syncServerUrl: string,
   syncKey: string,
-): Promise<void> {
+): Promise<boolean> {
   if (!authState.authenticated || !authState.user) {
-    return;
+    return false;
   }
 
-  const accessToken = await window.authApi.getAccessToken();
+  let accessToken = await window.authApi.getAccessToken();
   if (!accessToken) {
-    return;
+    return false;
   }
 
   const state = syncStates.get(workspace.id) ?? {
@@ -518,12 +538,31 @@ async function syncWorkspace(
   const currentSnapshot = await readWorkspaceSnapshot(workspace.relativePath);
   const pulledSnapshot = cloneSnapshot(state.snapshot);
 
-  const pullResponse = await fetchSyncState(
-    syncServerUrl,
-    accessToken,
-    workspace.id,
-    state.cursor,
-  );
+  let pullResponse: { updates: { cursor: string; payload: string }[] };
+  try {
+    pullResponse = await fetchSyncState(
+      syncServerUrl,
+      accessToken,
+      workspace.id,
+      state.cursor,
+    );
+  } catch (error) {
+    if (!isUnauthorizedError(error)) {
+      throw error;
+    }
+
+    accessToken = await window.authApi.getAccessToken();
+    if (!accessToken) {
+      return false;
+    }
+
+    pullResponse = await fetchSyncState(
+      syncServerUrl,
+      accessToken,
+      workspace.id,
+      state.cursor,
+    );
+  }
 
   for (const update of pullResponse.updates) {
     const decrypted = await decryptUpdate(syncKey, update.payload);
@@ -552,12 +591,31 @@ async function syncWorkspace(
         syncKey,
         new TextEncoder().encode(JSON.stringify(batch)),
       );
-      const pushResponse = await pushSyncUpdate(
-        syncServerUrl,
-        accessToken,
-        workspace.id,
-        encrypted,
-      );
+      let pushResponse: { cursor: string };
+      try {
+        pushResponse = await pushSyncUpdate(
+          syncServerUrl,
+          accessToken,
+          workspace.id,
+          encrypted,
+        );
+      } catch (error) {
+        if (!isUnauthorizedError(error)) {
+          throw error;
+        }
+
+        accessToken = await window.authApi.getAccessToken();
+        if (!accessToken) {
+          return false;
+        }
+
+        pushResponse = await pushSyncUpdate(
+          syncServerUrl,
+          accessToken,
+          workspace.id,
+          encrypted,
+        );
+      }
       finalCursor = pushResponse.cursor;
     }
   }
@@ -565,13 +623,16 @@ async function syncWorkspace(
   const mergedSnapshot = cloneSnapshot(pulledSnapshot);
   applyWorkspaceOps(mergedSnapshot, localOps);
 
+  let didWrite = false;
   if (stableSerialize(mergedSnapshot) !== stableSerialize(currentSnapshot)) {
     await writeWorkspaceSnapshot(workspace.relativePath, mergedSnapshot);
+    didWrite = true;
   }
 
   state.snapshot = cloneSnapshot(mergedSnapshot);
   state.cursor = finalCursor;
   syncStates.set(workspace.id, state);
+  return didWrite;
 }
 
 export async function runWorkspaceSyncTick(): Promise<void> {
@@ -592,14 +653,25 @@ export async function runWorkspaceSyncTick(): Promise<void> {
     return;
   }
 
+  let selectedWorkspaceChanged = false;
+
   try {
-    await syncWorkspaceCatalog(authState, syncServerUrl);
+    const catalogChanged = await syncWorkspaceCatalog(authState, syncServerUrl);
+    if (catalogChanged) {
+      selectedWorkspaceChanged = true;
+    }
   } catch (error) {
     console.error("Catalog sync failed:", error);
   }
 
   const workspaces = await window.appState.getWorkspaces();
   const selected = await window.appState.getSelectedWorkspace();
+  const activeWorkspaceIds = new Set(workspaces.map((workspace) => workspace.id));
+  for (const workspaceId of Array.from(syncStates.keys())) {
+    if (!activeWorkspaceIds.has(workspaceId)) {
+      syncStates.delete(workspaceId);
+    }
+  }
   const orderedWorkspaces = [
     ...workspaces.filter((workspace) => workspace.id === selected?.id),
     ...workspaces.filter((workspace) => workspace.id !== selected?.id),
@@ -607,10 +679,22 @@ export async function runWorkspaceSyncTick(): Promise<void> {
 
   for (const workspace of orderedWorkspaces) {
     try {
-      await syncWorkspace(workspace, authState, syncServerUrl, syncKey);
+      const didWrite = await syncWorkspace(
+        workspace,
+        authState,
+        syncServerUrl,
+        syncKey,
+      );
+      if (didWrite && workspace.id === selected?.id) {
+        selectedWorkspaceChanged = true;
+      }
     } catch (error) {
       console.error(`Sync failed for workspace ${workspace.id}:`, error);
     }
+  }
+
+  if (selected && selectedWorkspaceChanged) {
+    await refreshWorkspaceContent();
   }
 }
 

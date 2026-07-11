@@ -32,6 +32,11 @@ export async function bootstrapWorkspaceServices() {
   await objectRepository.init();
 }
 
+export async function refreshWorkspaceContent() {
+  await typingRepository.init();
+  await objectRepository.init();
+}
+
 export const globalTypingService = new TypingService(typingRepository);
 export const globalObjectsService = new ObjectsService(
   typingRepository,

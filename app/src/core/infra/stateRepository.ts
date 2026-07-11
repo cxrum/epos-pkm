@@ -34,6 +34,12 @@ export class AppStateRepository implements AppStateApi {
   upsertWorkspace(workspace: WorkspaceConf): Promise<WorkspaceConf | undefined> {
     return window.appState.upsertWorkspace(workspace);
   }
+  renameWorkspace(id: string, title: string): Promise<WorkspaceConf | undefined> {
+    return window.appState.renameWorkspace(id, title);
+  }
+  deleteWorkspace(id: string): Promise<void> {
+    return window.appState.deleteWorkspace(id);
+  }
   public async getWorkspaces(): Promise<WorkspaceEntry[]> {
     return window.appState.getWorkspaces();
   }
