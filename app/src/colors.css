@@ -8,6 +8,7 @@
   --text-on-accent-color: var(--white);
   --text-error-color: rgba(199, 82, 82, 1);
   --text-header-color: var(--white);
+  --text-highlight-color: var(--accent);
 
   --icon-color: var(--gray);
 

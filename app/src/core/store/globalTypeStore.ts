@@ -16,6 +16,22 @@ export const useGlobalTypeStore = defineStore("global-type", () => {
   const treeStructure = ref<TreeNode>({ id: "-1", title: "-1", children: [] });
   const isTreeStructureLoading = ref(false);
 
+  const cachedTypeIcons = ref<Map<EpTypeId, Icon>>(new Map());
+
+  const syncTypeIconsCache = async (): Promise<void> => {
+    const newMap = new Map<EpTypeId, Icon>();
+    const types = await globalTypingService.getAllTypes();
+    const defaultTypeIcon: Icon = {
+      type: "default",
+      name: "object",
+    };
+
+    types.forEach((it) => {
+      newMap.set(it.id, it.icon ?? defaultTypeIcon);
+    });
+    cachedTypeIcons.value = newMap;
+  };
+
   const rename = async (objId: EpTypeId, newTitle: string) => {
     const result = await globalTypingService.get(objId);
     if (result) {
@@ -34,6 +50,9 @@ export const useGlobalTypeStore = defineStore("global-type", () => {
   return {
     treeStructure,
     isTreeStructureLoading,
+    cachedTypeIcons,
+
+    syncTypeIconsCache,
     refreshTreeStructure,
     rename,
   };

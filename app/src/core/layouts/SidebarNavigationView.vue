@@ -40,6 +40,8 @@ const stubMenuGroup: MenuGroup[] = [
 ];
 
 const globalTypeStore = useGlobalTypeStore();
+globalTypeStore.syncTypeIconsCache();
+
 const globalPageStore = useGlobalObjectStore();
 
 const objectTreeController = useTreeController(globalPageStore.treeStructure);

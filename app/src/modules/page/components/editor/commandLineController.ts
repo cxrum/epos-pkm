@@ -5,7 +5,7 @@ import type {
   FilteredCommandType,
 } from "./extension/commandLine/commandLineControllerContract";
 import type { UserTypeEntity } from "@/core/domain/type";
-import type { EpTypeId } from "@/core/types";
+import type { EpTypeId, Icon } from "@/core/types";
 import { SYSTEM_BLOCK_CONFIG } from "./helpers";
 
 export function useBaseCommandLineController(): CommandControllerContract {
@@ -82,10 +82,9 @@ export function useBaseCommandLineController(): CommandControllerContract {
   const getMatchIndices = (text: string, query: string): [number, number][] => {
     const escapedQuery = query.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
     const regex = new RegExp(escapedQuery, "gi");
-    return [...text.matchAll(regex)].map((m) => [
-      m.index!,
-      m.index! + m[0].length,
-    ]);
+    const matches = [...text.matchAll(regex)];
+
+    return matches.map((m) => [m.index!, m.index! + m[0].length]);
   };
 
   const fetchFiltered = async (

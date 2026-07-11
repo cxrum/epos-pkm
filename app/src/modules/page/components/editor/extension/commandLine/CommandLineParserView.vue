@@ -11,6 +11,9 @@
       @mouseenter="onHover(index)"
       @click="onClick(index)"
     >
+      <BaseIcon size="24px">
+        <DynamicIcon :icon="globalTypeStore.cachedTypeIcons.get(item.typeId)" />
+      </BaseIcon>
       <span
         v-for="(chunk, i) in formatTitle(item.title, item.matchIndices.title)"
         :key="i"
@@ -27,6 +30,9 @@ import type {
   CommandType,
   FilteredCommandType,
 } from "./commandLineControllerContract";
+import { useGlobalTypeStore } from "@/core/store/globalTypeStore";
+import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
+import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 
 const props = defineProps<{
   items: FilteredCommandType[];
@@ -34,6 +40,8 @@ const props = defineProps<{
   selectedIndex: number;
   onUpdateIndex: (index: number) => void;
 }>();
+
+const globalTypeStore = useGlobalTypeStore();
 
 const listRef = ref<HTMLElement | null>(null);
 
@@ -99,7 +107,6 @@ const formatTitle = (text: string, indices: [number, number][]) => {
 
 <style scoped>
 .highlight {
-  font-weight: 600;
-  color: #3b82f6;
+  color: var(--text-highlight-color);
 }
 </style>

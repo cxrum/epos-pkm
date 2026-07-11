@@ -1,5 +1,5 @@
 import type { EpObjectEntity } from "@/core/domain/type";
-import type { EpObjectId } from "@/core/types";
+import type { EpObjectId, Icon } from "@/core/types";
 import type { CommandType } from "./extension/commandLine/commandLineControllerContract";
 
 export const mapEpTypeToTiptapType = (typeId: string): string => {

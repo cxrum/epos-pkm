@@ -34,6 +34,7 @@ import { useObjectEditorStore } from "../store/objectEditorStore.ts";
 import { EditorControllerKey } from "../components/editor/contract.ts";
 import { useBaseCommandLineController } from "../components/editor/commandLineController.ts";
 import { CommandLineControllerKey } from "../components/editor/extension/commandLine/commandLineControllerContract.ts";
+import { useGlobalTypeStore } from "@/core/store/globalTypeStore.ts";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -42,10 +43,13 @@ const props = defineProps();
 const pageStore = usePageEditorStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
+const globalTypeStore = useGlobalTypeStore();
 const objectEditorStore = useObjectEditorStore();
 
 const editorController = useBaseEditorController(applicationBus);
-const commandLineController = useBaseCommandLineController();
+const commandLineController = useBaseCommandLineController(
+  globalTypeStore.cachedTypeIcons,
+);
 
 provide(EditorControllerKey, editorController);
 provide(CommandLineControllerKey, commandLineController);
