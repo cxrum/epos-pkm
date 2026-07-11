@@ -1,24 +1,13 @@
 import { Extension } from "@tiptap/core";
 import Suggestion from "@tiptap/suggestion";
 import { PluginKey } from "@tiptap/pm/state";
-import { VueRenderer } from "@tiptap/vue-3";
-import tippy from "tippy.js";
-import type { CommandControllerContract } from "./commandLineControllerContract.ts";
-import CommandLineParserView from "./commandLine.vue";
-
+import { renderItems } from "./suggestionRenderer";
+import type { CommandControllerContract } from "./commandLineControllerContract";
 export interface CommandParserOptions {
   controller: CommandControllerContract | null;
 }
 
 export const CommandParserPluginKey = new PluginKey("commandParser");
-
-declare module "@tiptap/core" {
-  interface Commands<ReturnType> {
-    commandParser: {
-      parseCommand: (command: string) => ReturnType;
-    };
-  }
-}
 
 export const CommandLineParser = Extension.create<CommandParserOptions>({
   name: "commandLineParser",
@@ -34,12 +23,15 @@ export const CommandLineParser = Extension.create<CommandParserOptions>({
       parseCommand:
         (command: string) =>
         ({ editor }) => {
-          if (!this.options.controller) {
+          if (!this.options.controller) return false;
+
+          const { from, to } = editor.state.selection;
+          const id = this.options.controller.parse(command);
+          if (!id) {
             return false;
           }
 
-          const { from, to } = editor.state.selection;
-          this.options.controller.execute(command, editor, {
+          this.options.controller.execute(id, editor, {
             from,
             to,
           });
@@ -49,9 +41,7 @@ export const CommandLineParser = Extension.create<CommandParserOptions>({
   },
 
   addProseMirrorPlugins() {
-    if (!this.options.controller) {
-      return [];
-    }
+    if (!this.options.controller) return [];
 
     const controller = this.options.controller;
 
@@ -65,62 +55,12 @@ export const CommandLineParser = Extension.create<CommandParserOptions>({
           return await controller.fetchFiltered(query);
         },
 
-        render: () => {
-          let component: VueRenderer;
-          let popup: any[];
-
-          return {
-            onStart: (props) => {
-              console.log(props);
-              component = new VueRenderer(CommandLineParserView, {
-                props: {
-                  items: props.items,
-                  command: props.command,
-                },
-                editor: props.editor,
-              });
-
-              if (!props.clientRect) {
-                return;
-              }
-
-              popup = tippy("body", {
-                getReferenceClientRect: props.clientRect,
-                appendTo: () => document.body,
-                content: component.element,
-                showOnCreate: true,
-                interactive: true,
-                trigger: "manual",
-                placement: "bottom-start",
-              });
-            },
-
-            onUpdate(props) {
-              component.updateProps(props);
-
-              if (!props.clientRect) {
-                return;
-              }
-
-              popup[0].setProps({
-                getReferenceClientRect: props.clientRect,
-              });
-            },
-
-            onKeyDown(props) {
-              if (props.event.key === "Escape") {
-                popup[0].hide();
-                return true;
-              }
-              return component.ref?.onKeyDown(props.event);
-            },
-
-            onExit() {
-              popup[0].destroy();
-              component.destroy();
-            },
-          };
+        command: ({ editor, range, props }) => {
+          console.log(props.id);
+          controller.execute(props.id, editor, {}, range);
         },
+
+        render: renderItems,
       }),
     ];
   },

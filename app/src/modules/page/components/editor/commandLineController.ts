@@ -11,6 +11,7 @@ export function useBaseCommandLineController(
 ): CommandControllerContract {
   const stubItems: CommandType[] = [
     {
+      id: "heading-1",
       title: "Heading 1",
       typeId: "def:heading",
       command: () => {
@@ -18,6 +19,7 @@ export function useBaseCommandLineController(
       },
     },
     {
+      id: "heading-2",
       title: "Heading 2",
       typeId: "def:heading",
       command: () => {
@@ -46,8 +48,16 @@ export function useBaseCommandLineController(
     }
   };
 
+  const parse = (commandLine: string): string | undefined => {
+    const item = stubItems.find(
+      (i) => i.title.toLowerCase() === commandLine.toLowerCase(),
+    )?.id;
+    return item;
+  };
+
   return {
     fetchFiltered,
     execute,
+    parse,
   };
 }

@@ -4,7 +4,8 @@
       v-for="(item, index) in items"
       :key="index"
       :class="{ 'is-selected': index === selectedIndex }"
-      @click="selectItem(index)"
+      @mouseenter="onHover(index)"
+      @click="onClick(index)"
     >
       {{ item.title }}
     </button>
@@ -12,53 +13,25 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
 import type { CommandType } from "./commandLineControllerContract";
 
 const props = defineProps<{
   items: CommandType[];
   command: (item: CommandType) => void;
+  selectedIndex: number;
+  onUpdateIndex: (index: number) => void;
 }>();
 
-const selectedIndex = ref(0);
-
-watch(
-  () => props.items,
-  () => {
-    selectedIndex.value = 0;
-  },
-);
-
-const onKeyDown = (event: KeyboardEvent) => {
-  if (event.key === "ArrowUp") {
-    selectedIndex.value =
-      (selectedIndex.value + props.items.length - 1) % props.items.length;
-    return true;
-  }
-
-  if (event.key === "ArrowDown") {
-    selectedIndex.value = (selectedIndex.value + 1) % props.items.length;
-    return true;
-  }
-
-  if (event.key === "Enter") {
-    selectItem(selectedIndex.value);
-    return true;
-  }
-
-  return false;
+const onHover = (index: number) => {
+  props.onUpdateIndex(index);
 };
 
-const selectItem = (index: number) => {
+const onClick = (index: number) => {
   const item = props.items[index];
   if (item) {
     props.command(item);
   }
 };
-
-defineExpose({
-  onKeyDown,
-});
 </script>
 
 <style scoped>
