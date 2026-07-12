@@ -1,11 +1,19 @@
 <template>
-  <BaseBlockLayout :is-selected="isSelected">
+  <BaseBlockLayout
+    :is-selected="isSelected"
+    :action-interceptor="handleBlockAction"
+    @click="handleNativeClick"
+    v-slot="{ wrapAction }"
+  >
     <component
       :is="resolvedComponent"
       :node="node"
+      :editor="editor"
+      :get-pos="getPos"
       :is-selected="isSelected"
       :node-attributes="node.attrs"
       :update-attributes="updateAttributes"
+      :wrap-action="wrapAction"
     >
       <NodeViewContent />
     </component>
@@ -23,10 +31,11 @@ import MountedPageBlock from "./blocks/MountedPageBlock.vue";
 import type { EpTypeId } from "@/core/types.ts";
 import LinkBlock from "./blocks/LinkBlock.vue";
 import ArrowedLinkBlock from "./blocks/ArrowedLinkBlock.vue";
+import { useObjectEditorStore } from "@/modules/page/store/objectEditorStore.ts";
 
 const props = defineProps(nodeViewProps);
-
 const controller = inject(EditorControllerKey);
+const editorStore = useObjectEditorStore();
 
 if (!controller) {
   throw new Error("EditorController doesnt exist in this context.");
@@ -38,12 +47,38 @@ const componentRegistry: Record<EpTypeId, any> = {
   "def:arrowed-link": ArrowedLinkBlock,
 };
 
+const id = computed(() => props.node.attrs.id);
+const typeId = computed(() => props.node.attrs.typeId);
+
 const resolvedComponent = computed(() => {
-  const typeId = props.node.attrs.typeId;
-  return componentRegistry[typeId] || UnknownBlock;
+  return componentRegistry[typeId.value] || UnknownBlock;
 });
 
 const isSelected = computed(() => {
-  return controller.focusedObjectId.value === props.node.attrs.id;
+  return controller.focusedObjectId.value === id.value;
 });
+
+const handleBlockAction = (targetAction: () => void) => {
+  if (editorStore.isObjectEidtorOpen) {
+    if (isSelected.value) {
+      targetAction();
+    } else {
+      selectNativeNode();
+    }
+  } else {
+    targetAction();
+  }
+};
+
+const handleNativeClick = () => {
+  if (editorStore.isObjectEidtorOpen && !isSelected.value) {
+    selectNativeNode();
+  }
+};
+
+const selectNativeNode = () => {
+  if (typeof props.getPos === "function") {
+    props.editor.commands.setNodeSelection(props.getPos());
+  }
+};
 </script>

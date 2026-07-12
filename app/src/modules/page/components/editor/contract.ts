@@ -9,6 +9,7 @@ export interface EditorControllerContract {
   focusedObjectId: Ref<EpObjectId | undefined>;
   initialData: Ref<EpContainerObjectEntity | undefined>;
   draftData: Ref<EpContainerObjectEntity | undefined>;
+  isOpened: Ref<boolean>;
 
   updateDraftObjectProperty(
     targetObjectId: EpObjectId,

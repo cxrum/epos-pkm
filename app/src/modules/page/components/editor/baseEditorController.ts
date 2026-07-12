@@ -16,6 +16,7 @@ export function useBaseEditorController(
   const focusedObjectId: Ref<EpObjectId | undefined> = ref();
   const initialData: Ref<EpContainerObjectEntity | undefined> = ref();
   const draftData: Ref<EpContainerObjectEntity | undefined> = ref();
+  const isOpened: Ref<boolean> = ref(false);
 
   const setObjectId = (id: EpObjectId): void => {
     focusedObjectId.value = id;
@@ -69,6 +70,7 @@ export function useBaseEditorController(
     focusedObjectId,
     initialData,
     draftData,
+    isOpened,
 
     updateDraftContent,
     updateDraftObjectProperty,

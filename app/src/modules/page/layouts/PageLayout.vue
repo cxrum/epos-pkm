@@ -34,7 +34,6 @@ import { useObjectEditorStore } from "../store/objectEditorStore.ts";
 import { EditorControllerKey } from "../components/editor/contract.ts";
 import { useBaseCommandLineController } from "../components/editor/commandLineController.ts";
 import { CommandLineControllerKey } from "../components/editor/extension/commandLine/commandLineControllerContract.ts";
-import { useGlobalTypeStore } from "@/core/store/globalTypeStore.ts";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -43,13 +42,10 @@ const props = defineProps();
 const pageStore = usePageEditorStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
-const globalTypeStore = useGlobalTypeStore();
 const objectEditorStore = useObjectEditorStore();
 
 const editorController = useBaseEditorController(applicationBus);
-const commandLineController = useBaseCommandLineController(
-  globalTypeStore.cachedTypeIcons,
-);
+const commandLineController = useBaseCommandLineController();
 
 provide(EditorControllerKey, editorController);
 provide(CommandLineControllerKey, commandLineController);
@@ -172,7 +168,7 @@ const pageMenuData: MenuGroup[] = [
   },
 ];
 
-const isTypeEditorOpen = computed(() => workSpaceStore.isTypeEditorOpen);
+const isTypeEditorOpen = computed(() => objectEditorStore.isObjectEidtorOpen);
 
 const computedPath = computed(() => {
   return pageStore.pagePath ?? [];
@@ -208,7 +204,7 @@ onUnmounted(() => {
           <BaseIcon
             size="28px"
             interactive
-            @click="workSpaceStore.toggleTypeEditor()"
+            @click="objectEditorStore.togleObjectEditorState()"
             class="shrink-0"
             :class="isTypeEditorOpen ? 'active' : ''"
           >

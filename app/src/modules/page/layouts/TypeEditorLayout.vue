@@ -72,11 +72,7 @@ const updateStringValue = (val: string, propId: EpPropertyId) => {
     return;
   }
 
-  props.controller.updateDraftObjectProperty(
-    focusedObject.id,
-    propId,
-    val,
-  );
+  props.controller.updateDraftObjectProperty(focusedObject.id, propId, val);
 };
 
 const updateNumberValue = async (
@@ -146,21 +142,19 @@ const createPropertyHandler = (
   }
 };
 
-const resolveInputFieldType  = (type: string)=>{
-  switch(type){
+const resolveInputFieldType = (type: string) => {
+  switch (type) {
     case "number":
-      return "number"
+      return "number";
     default:
-      return "text"
+      return "text";
   }
-}
+};
 
 watch(
   () => objectEditorStore.valuedProperties,
   (valuedProperties) => {
     if (!valuedProperties) return;
-
-    console.log(valuedProperties);
 
     const currentIds = new Set(valuedProperties.order);
     for (const key of handlers.keys()) {
@@ -181,8 +175,6 @@ watch(
         }
       }
     });
-
-    console.log(valuedProperties);
   },
   { immediate: true, deep: false },
 );

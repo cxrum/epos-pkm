@@ -8,6 +8,7 @@ import type { ValuedPropertiesScheme } from "@/core/application/type";
 export const useObjectEditorStore = defineStore("object-editor", () => {
   const focusedObjectId = ref<EpObjectId>();
   const focusedObject = ref<EpObjectEntity>();
+  const isObjectEidtorOpen = ref<boolean>(false);
 
   const valuedProperties = ref<ValuedPropertiesScheme>();
 
@@ -50,15 +51,26 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
     propertyFieldError.value.clear();
   };
 
+  const setObjectEditorState = (value: boolean) => {
+    isObjectEidtorOpen.value = value;
+  };
+
+  const togleObjectEditorState = () => {
+    isObjectEidtorOpen.value = !isObjectEidtorOpen.value;
+  };
+
   return {
     focusedObject,
     valuedProperties,
+    isObjectEidtorOpen,
 
     availableTypes,
     selectedType,
 
     propertyFieldError,
 
+    togleObjectEditorState,
+    setObjectEditorState,
     clearPropertyErrorMsg,
     setPropertyErrorMsg,
     clearErrorMsgs,

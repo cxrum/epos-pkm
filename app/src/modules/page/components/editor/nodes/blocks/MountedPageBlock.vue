@@ -1,12 +1,16 @@
 <template>
   <div class="page-link-block-wrapper">
-    <div class="mounted-page-card" contenteditable="false" @click="openPage">
-      <span v-if="isLoading" class="loading"> Loading...</span>
-      <span v-else class="title flex flex-row gap-2 items-center">
+    <div
+      class="mounted-page-card"
+      contenteditable="false"
+      @click="wrapAction(openPage)"
+    >
+      <span v-show="isLoading" class="loading"> Loading... </span>
+      <span v-show="!isLoading" class="title flex flex-row gap-2 items-center">
         <BaseIcon size="28">
           <DynamicIcon :icon="icon"></DynamicIcon>
         </BaseIcon>
-        {{ title }}
+        <span>{{ title }}</span>
       </span>
     </div>
 
@@ -15,7 +19,6 @@
     </div>
   </div>
 </template>
-
 <script setup lang="ts">
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore";
 import { useGlobalNavigation } from "@/core/store/navigationStore";
@@ -30,6 +33,7 @@ const globalNavigationStore = useGlobalNavigation();
 const props = defineProps<{
   nodeAttributes: Record<string, any>;
   updateAttributes: (attrs: Record<string, any>) => void;
+  wrapAction: (action: () => void) => void;
 }>();
 
 const targetPageId = computed(() => props.nodeAttributes.domainContent?.toId);

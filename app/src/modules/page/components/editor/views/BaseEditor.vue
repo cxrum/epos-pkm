@@ -115,12 +115,26 @@ const editor = useEditor({
     props.controller.updateDraftContent(parsed.content, parsed.order);
   },
   onSelectionUpdate({ editor }) {
-    const { $anchor } = editor.state.selection;
-    const currentNode = $anchor.parent;
+    const { selection } = editor.state;
+    let selectedId = null;
 
-    if (currentNode && currentNode.attrs.id) {
-      props.controller.setObjectId(currentNode.attrs.id);
+    if (selection instanceof NodeSelection) {
+      selectedId = selection.node.attrs.id;
     } else {
+      for (let depth = selection.$anchor.depth; depth >= 0; depth--) {
+        const node = selection.$anchor.node(depth);
+        if (node && node.attrs.id) {
+          selectedId = node.attrs.id;
+          break;
+        }
+      }
+    }
+
+    const currentFocusedId = props.controller.focusedObjectId.value;
+
+    if (selectedId && selectedId !== currentFocusedId) {
+      props.controller.setObjectId(selectedId);
+    } else if (!selectedId && currentFocusedId !== null) {
       props.controller.clearSelection();
     }
   },
@@ -237,38 +251,6 @@ onMounted(() => {
     editor.value.view.dom.setAttribute("dir", "rtl");
   }
 });
-
-const forceSelectTipTapNode = (
-  editor: Editor,
-  targetId: string | undefined,
-) => {
-  let targetPos: number | null = null;
-
-  editor.state.doc.descendants((node, pos) => {
-    if (node.attrs.id === targetId) {
-      targetPos = pos;
-      return false;
-    }
-  });
-
-  if (targetPos !== null) {
-    const tr = editor.state.tr;
-    const selection = NodeSelection.create(editor.state.doc, targetPos);
-
-    editor.view.dispatch(tr.setSelection(selection));
-
-    editor.view.dispatch(editor.state.tr.scrollIntoView());
-  }
-};
-
-watch(
-  () => props.controller.focusedObjectId,
-  (it) => {
-    if (editor.value) {
-      forceSelectTipTapNode(editor.value, it.value);
-    }
-  },
-);
 </script>
 
 <style lang="scss">
