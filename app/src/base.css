@@ -76,7 +76,7 @@
     justify-content: start;
     align-items: center;
     height: fit-content;
-    min-width: 4em;
+    min-width: 2em;
     min-height: 2em;
     padding: 0.2rem 0.5rem 0.2rem 0.5rem;
     gap: 8px;
