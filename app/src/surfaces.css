@@ -98,4 +98,53 @@
     max-height: 128px;
     box-sizing: border-box;
   }
+
+  .surface-latex-block {
+    margin: 8px 0;
+    text-align: center;
+    font-size: 1rem;
+    color: var(--text-latex-editor-color);
+  }
+
+  .surface-latex-block .preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: initial;
+  }
+
+  .surface-latex-block .preview :deep(.katex) {
+    font-family: KaTeX_Main, "Times New Roman", serif;
+  }
+
+  .surface-latex-block .preview :deep(.katex .mord) {
+    font-family: KaTeX_Main, "Times New Roman", serif !important;
+  }
+
+  .surface-latex-block .preview :deep(.katex .mathdefault) {
+    font-family: KaTeX_Math, "Times New Roman", serif;
+  }
+
+  .surface-latex-block .editor {
+    background-color: var(--bg-canvas);
+    --surface-layer: var(--bg-canvas);
+    --surface-contrast-layer: var(--bg-canvas-contrast);
+    padding: 8px;
+    border: 2px solid var(--border);
+    color: var(--text-latex-editor-color);
+    border-radius: 8px;
+    text-align: left;
+  }
+
+  .editor.is-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 }

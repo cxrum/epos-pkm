@@ -1,10 +1,15 @@
 import type { EpObjectEntity } from "@/core/domain/type";
 import type { EpObjectId, EpTypeId } from "@/core/types";
 
+export const TEXT_BLOCK_TYPES = ["def:latex"];
+
 export const mapEpTypeToTiptapType = (typeId: string): string => {
   if (typeId === "def:text") return "paragraph";
   if (typeId === "def:heading") return "heading";
   if (typeId === "def:code") return "codeBlock";
+
+  if (TEXT_BLOCK_TYPES.includes(typeId)) return "epTextBlock";
+
   return "epBlock";
 };
 
@@ -48,6 +53,12 @@ export const SYSTEM_BLOCK_CONFIG: BlockConfig[] = [
     baseId: "code",
     typeId: "def:code",
     titlePrefix: "Code Block",
+    variants: [{}],
+  },
+  {
+    baseId: "latex",
+    typeId: "def:latex",
+    titlePrefix: "LaTeX Block",
     variants: [{}],
   },
 ];

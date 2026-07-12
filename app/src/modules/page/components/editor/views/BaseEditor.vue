@@ -44,6 +44,7 @@ import type { EpObjectId } from "@/core/types";
 import { NodeSelection } from "@tiptap/pm/state";
 import { CommandLineParser } from "../extension/commandLine/CommandLineParserExtension";
 import { CommandLineControllerKey } from "../extension/commandLine/commandLineControllerContract";
+import { EpTextBlock } from "../nodes/EpTextBlockExtension";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },
@@ -92,6 +93,7 @@ const editor = useEditor({
     StarterKit,
     UniqueBlockIdExtension,
     EpObjectAttributesExtension,
+    EpTextBlock,
     EpCodeBlock,
     EpBaseBlock,
     Placeholder.configure({
