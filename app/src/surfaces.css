@@ -69,7 +69,7 @@
 
   .surface-content-code-block.code-block pre {
     padding: 8px;
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     border-radius: 8px;
     background-color: transparent;
   }
@@ -130,7 +130,7 @@
     --surface-layer: var(--bg-canvas);
     --surface-contrast-layer: var(--bg-canvas-contrast);
     padding: 8px;
-    border: 2px solid var(--border);
+    border: 1px solid var(--border);
     color: var(--text-latex-editor-color);
     border-radius: 8px;
     text-align: left;
