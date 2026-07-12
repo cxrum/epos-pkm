@@ -125,7 +125,8 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
     const isTextBlock =
       node.type === "paragraph" ||
       node.type === "heading" ||
-      node.type === "codeBlock";
+      node.type === "codeBlock" ||
+      node.type === "epTextBlock";
 
     if (isTextBlock) {
       if (node.type === "heading" && !resolvedTypeId) {

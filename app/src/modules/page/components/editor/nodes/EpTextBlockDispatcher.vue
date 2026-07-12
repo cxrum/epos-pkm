@@ -3,6 +3,8 @@
     <component
       :is="resolvedComponent"
       :node="node"
+      :editor="editor"
+      :get-pos="getPos"
       :is-selected="isSelected"
       :node-attributes="node.attrs"
       :update-attributes="updateAttributes"
@@ -15,26 +17,26 @@
 <script setup lang="ts">
 import { computed, inject } from "vue";
 import { nodeViewProps, NodeViewContent } from "@tiptap/vue-3";
-
-import PageLinkBlock from "./blocks/PageLinkBlock.vue";
+import { EditorControllerKey } from "../contract";
+import type { EpTypeId } from "@/core/types";
+import MathBlockView from "./blocks/MathBlockView.vue";
 import UnknownBlock from "./blocks/UnknownBlock.vue";
-import { EditorControllerKey } from "../contract.ts";
 import BaseBlockLayout from "./BaseBlockLayout.vue";
-import type { EpTypeId } from "@/core/types.ts";
 
 const props = defineProps(nodeViewProps);
 
 const controller = inject(EditorControllerKey);
-
 if (!controller) {
   throw new Error("EditorController doesnt exist in this context.");
 }
+
 const componentRegistry: Record<EpTypeId, any> = {
-  "sys:hard-page-link": PageLinkBlock,
+  "def:latex": MathBlockView,
 };
 
 const resolvedComponent = computed(() => {
   const typeId = props.node.attrs.typeId;
+  console.log("aboba");
   return componentRegistry[typeId] || UnknownBlock;
 });
 

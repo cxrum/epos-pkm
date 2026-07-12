@@ -335,7 +335,7 @@ export function isAnyText(
 }
 // TEXT INLINE OBJECT  -----------------------------------------------------
 
-// CODE INLINE OBJECT  -----------------------------------------------------
+// CODE OBJECT  -----------------------------------------------------
 export type CodeObjectPropertiesMap = WithContainerFlag<false> & {
   codeLanguage: TextValuedPropertyEntry<"codeLanguage", "system", true> & {
     value: "";
@@ -353,7 +353,23 @@ export function isCodeEntity(
 ): entity is CodeObjectEntity {
   return entity.typeId === "def:code";
 }
-// CODE INLINE OBJECT  -----------------------------------------------------
+// CODE OBJECT  -----------------------------------------------------
+
+// LaTeX OBJECT  -----------------------------------------------------
+export type LaTeXObjectPropertiesMap = WithContainerFlag<false>;
+
+export type LaTeXObjectEntity = BaseEpObjectEntity<
+  "def:latex",
+  Record<string, any>,
+  LaTeXObjectPropertiesMap
+>;
+
+export function isLaTeXEntity(
+  entity: EpObjectEntity,
+): entity is LaTeXObjectEntity {
+  return entity.typeId === "def:latex";
+}
+// LaTeX OBJECT  -----------------------------------------------------
 
 // USER INLINE OBJECT  -----------------------------------------------------
 export type CustomInlinePropertiesMap = WithContainerFlag<false>;

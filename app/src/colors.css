@@ -9,6 +9,7 @@
   --text-error-color: rgba(199, 82, 82, 1);
   --text-header-color: var(--white);
   --text-highlight-color: var(--accent);
+  --text-latex-editor-color: var(--white);
 
   --icon-color: var(--gray);
 
