@@ -32,6 +32,9 @@ import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.v
 import { applicationBus } from "@/bus/application.ts";
 import { useObjectEditorStore } from "../store/objectEditorStore.ts";
 import { EditorControllerKey } from "../components/editor/contract.ts";
+import { useBaseCommandLineController } from "../components/editor/commandLineController.ts";
+import { CommandLineControllerKey } from "../components/editor/extension/commandLine/commandLineControllerContract.ts";
+import { useGlobalTypeStore } from "@/core/store/globalTypeStore.ts";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -40,10 +43,16 @@ const props = defineProps();
 const pageStore = usePageEditorStore();
 const workSpaceStore = useWorkspaceStore();
 const globalNavigationStore = useGlobalNavigation();
+const globalTypeStore = useGlobalTypeStore();
 const objectEditorStore = useObjectEditorStore();
 
 const editorController = useBaseEditorController(applicationBus);
+const commandLineController = useBaseCommandLineController(
+  globalTypeStore.cachedTypeIcons,
+);
+
 provide(EditorControllerKey, editorController);
+provide(CommandLineControllerKey, commandLineController);
 
 const currentPageEntity = ref<EpContainerObjectEntity>();
 const title = ref<string>();
@@ -223,6 +232,7 @@ onUnmounted(() => {
 
       <div
         v-if="editorController.initialData.value"
+        id="page"
         class="flex flex-col gap-2 w-full h-full page scroll overflow-y-auto auto-hide-scroll"
       >
         <h1>{{ title }}</h1>

@@ -1,8 +1,9 @@
 import { ref, toRaw, type Ref } from "vue";
 import type { EditorControllerContract } from "./contract";
-import type { EpObjectId, EpPropertyId } from "@/core/types"; // Додано EpPropertyId
+import type { EpObjectId, EpPropertyId } from "@/core/types";
 import type {
   EpContainerObjectEntity,
+  EpInlineObjectEntity,
   EpObjectEntity,
 } from "@/core/domain/type";
 import { mapObjectEntitiesToContent } from "./helpers";

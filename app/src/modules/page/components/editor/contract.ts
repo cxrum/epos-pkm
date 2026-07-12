@@ -1,6 +1,5 @@
 import type {
   EpContainerObjectEntity,
-  EpInlineObjectEntity,
   EpObjectEntity,
 } from "@/core/domain/type";
 import type { EpObjectId, EpPropertyId } from "@/core/types";

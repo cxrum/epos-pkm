@@ -153,6 +153,6 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
 
   return {
     order: order,
-    content: entities,
+    content: entities as EpObjectEntity[],
   };
 };
