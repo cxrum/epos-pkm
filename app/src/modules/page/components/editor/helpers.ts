@@ -61,4 +61,16 @@ export const SYSTEM_BLOCK_CONFIG: BlockConfig[] = [
     titlePrefix: "LaTeX Block",
     variants: [{}],
   },
+  {
+    baseId: "back-link-object",
+    typeId: "def:back-link",
+    titlePrefix: "Back link object",
+    variants: [{}],
+  },
+  {
+    baseId: "arrowed-back-link-object",
+    typeId: "def:arrowed-link",
+    titlePrefix: "Arrowed link object",
+    variants: [{}],
+  },
 ];

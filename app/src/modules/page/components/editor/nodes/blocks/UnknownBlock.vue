@@ -1,5 +1,5 @@
 <template>
-  <div class="page-link-card">This type doesnt exist: {{ title }}</div>
+  <div class="mounted-page-card">This type doesnt exist: {{ title }}</div>
 </template>
 
 <script setup lang="ts">

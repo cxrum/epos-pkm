@@ -248,6 +248,50 @@ export function isMountedContainerEntity(
 }
 // MOUNTED CONTAINER LINK --------------------------------------------------
 
+// OBJECT LINK --------------------------------------------------
+export type ObjectLinkPropertiesMap = WithContainerFlag<false> & {
+  linkedObjectId: SelectValuedPropertyEntry<
+    "linkedObjectId",
+    "system",
+    true
+  > & {
+    value: string;
+  };
+};
+
+export type ObjectLinkEntity = BaseEpObjectEntity<
+  "def:back-link",
+  Record<string, any>,
+  ObjectLinkPropertiesMap
+>;
+
+export function isLinkOBjectEntity(
+  entity: EpObjectEntity,
+): entity is ObjectLinkEntity {
+  return entity.typeId === "def:back-link";
+}
+// OBJECT LINK --------------------------------------------------
+
+// ARROWED OBJECT LINK --------------------------------------------------
+export type ArrowedObjectLinkPropertiesMap = ObjectLinkPropertiesMap & {
+  question: TextValuedPropertyEntry<"question", "system", true> & {
+    value: string;
+  };
+};
+
+export type ArrowedObjectLinkEntity = BaseEpObjectEntity<
+  "def:arrowed-link",
+  Record<string, any>,
+  ArrowedObjectLinkPropertiesMap
+>;
+
+export function isArrowedLinkObjectEntity(
+  entity: EpObjectEntity,
+): entity is ArrowedObjectLinkEntity {
+  return entity.typeId === "def:arrowed-link";
+}
+// ARROWED OBJECT LINK --------------------------------------------------
+
 // SYSTEM CONTAINER --------------------------------------------------------
 export type SystemContainerEntity = BaseEpObjectEntity<
   "sys:container",
@@ -415,6 +459,8 @@ export type EpInlineObjectEntity =
   | CustomInlineEntity
   | HeadingObjectEntity
   | CodeObjectEntity
+  | ObjectLinkEntity
+  | ArrowedObjectLinkEntity
   | TextObjectEntity;
 
 export type EpObjectEntity = EpContainerObjectEntity | EpInlineObjectEntity;

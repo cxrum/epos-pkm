@@ -1,4 +1,4 @@
-.page-link-card,
+.mounted-page-card,
 .card {
   width: 100%;
   padding: 8px;
@@ -8,6 +8,6 @@
   color: var(--text-default-color);
 }
 
-.page-link-card:hover {
+.mounted-page-card:hover {
   background-color: var(--hover);
 }

@@ -1,6 +1,6 @@
 <template>
   <div class="page-link-block-wrapper">
-    <div class="page-link-card" contenteditable="false" @click="openPage">
+    <div class="mounted-page-card" contenteditable="false" @click="openPage">
       <span v-if="isLoading" class="loading"> Loading...</span>
       <span v-else class="title flex flex-row gap-2 items-center">
         <BaseIcon size="28">

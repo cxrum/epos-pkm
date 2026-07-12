@@ -10,6 +10,7 @@ export interface ObjectMetaInfo {
   icon?: Icon;
   title?: string;
   path?: string;
+  type: string;
 }
 
 export const useGlobalObjectStore = defineStore("objects", () => {
@@ -42,6 +43,7 @@ export const useGlobalObjectStore = defineStore("objects", () => {
       icon: typeRes?.icon,
       title: title,
       path: res?.objectPath.join("/"),
+      type: typeRes?.title ?? res!.typeId,
     };
   };
 
