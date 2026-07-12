@@ -99,6 +99,22 @@
     box-sizing: border-box;
   }
 
+  .surface-editor-card {
+    background-color: var(--bg-canvas);
+    --surface-layer: var(--bg-canvas);
+    --surface-contrast-layer: var(--bg-canvas-contrast);
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    color: var(--text-default-color);
+  }
+
+  .surface-editor-block:hover {
+    background: var(--hover);
+  }
+
   .surface-latex-block {
     margin: 8px 0;
     text-align: center;

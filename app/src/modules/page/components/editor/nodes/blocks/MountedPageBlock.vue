@@ -1,7 +1,7 @@
 <template>
   <div class="page-link-block-wrapper">
     <div
-      class="mounted-page-card"
+      class="surface-editor-card"
       contenteditable="false"
       @click="wrapAction(openPage)"
     >
