@@ -88,7 +88,7 @@ onClickOutside(omniSearchRef, (event: Event) => {
         <BaseIcon size="32px" v-show="isSidebarOpen" class="shrink-0">
           <User />
         </BaseIcon>
-        <span class="flex-1" v-show="isSidebarOpen"> UserName </span>
+        <p class="flex-1" v-show="isSidebarOpen">UserName</p>
 
         <router-link to="/workspace/settings" class="clickable rounded-md">
           <BaseIcon size="32px" class="shrink-0">
