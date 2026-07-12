@@ -1,6 +1,5 @@
 import type { EpObjectEntity } from "@/core/domain/type";
-import type { EpObjectId, Icon } from "@/core/types";
-import type { CommandType } from "./extension/commandLine/commandLineControllerContract";
+import type { EpObjectId, EpTypeId } from "@/core/types";
 
 export const mapEpTypeToTiptapType = (typeId: string): string => {
   if (typeId === "def:text") return "paragraph";
@@ -21,7 +20,7 @@ export const mapObjectEntitiesToContent = (
 
 export type BlockConfig = {
   baseId: string;
-  typeId: string;
+  typeId: EpTypeId;
   titlePrefix: string;
   variants: Record<string, any>[];
 };

@@ -1,5 +1,5 @@
 import type { UserTypeEntity } from "@/core/domain/type";
-import type { EpTypeId, Icon } from "@/core/types";
+import type { EpTypeId } from "@/core/types";
 import type { Editor } from "@tiptap/core";
 import type { InjectionKey } from "vue";
 

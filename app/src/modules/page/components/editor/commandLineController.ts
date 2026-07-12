@@ -1,11 +1,11 @@
-import type { Editor, Range } from "@tiptap/core";
+import type { Editor } from "@tiptap/core";
 import type {
   CommandControllerContract,
   CommandType,
   FilteredCommandType,
 } from "./extension/commandLine/commandLineControllerContract";
 import type { UserTypeEntity } from "@/core/domain/type";
-import type { EpTypeId, Icon } from "@/core/types";
+import type { EpTypeId } from "@/core/types";
 import { SYSTEM_BLOCK_CONFIG } from "./helpers";
 
 export function useBaseCommandLineController(): CommandControllerContract {
@@ -65,8 +65,8 @@ export function useBaseCommandLineController(): CommandControllerContract {
         id: slug(entry.title),
         title: entry.title,
         typeId: entry.id,
-        command: ({ editor, props, range }) => {
-          console.log(props, range);
+        command: (props) => {
+          replaceNodeWithObject(props.editor, entry.id, {});
         },
       };
       res.push(_res);

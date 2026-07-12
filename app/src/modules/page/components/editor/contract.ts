@@ -1,6 +1,5 @@
 import type {
   EpContainerObjectEntity,
-  EpInlineObjectEntity,
   EpObjectEntity,
 } from "@/core/domain/type";
 import type { EpObjectId, EpPropertyId } from "@/core/types";
@@ -16,7 +15,6 @@ export interface EditorControllerContract {
     propertyId: EpPropertyId,
     newValue: any,
   ): void;
-  createObject(object: EpInlineObjectEntity, postition?: number): void;
   updateDraftContent(content: EpObjectEntity[], order: EpObjectId[]): void;
   setInitialData(obj: EpContainerObjectEntity): void;
   setObjectId(id: EpObjectId): void;
