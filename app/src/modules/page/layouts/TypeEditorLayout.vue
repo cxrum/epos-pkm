@@ -72,11 +72,7 @@ const updateStringValue = (val: string, propId: EpPropertyId) => {
     return;
   }
 
-  props.controller.updateDraftObjectProperty(
-    focusedObject.id,
-    propId,
-    val,
-  );
+  props.controller.updateDraftObjectProperty(focusedObject.id, propId, val);
 };
 
 const updateNumberValue = async (
@@ -146,14 +142,14 @@ const createPropertyHandler = (
   }
 };
 
-const resolveInputFieldType  = (type: string)=>{
-  switch(type){
+const resolveInputFieldType = (type: string) => {
+  switch (type) {
     case "number":
-      return "number"
+      return "number";
     default:
-      return "text"
+      return "text";
   }
-}
+};
 
 watch(
   () => objectEditorStore.valuedProperties,
@@ -211,7 +207,7 @@ watch(
 
 <template>
   <div class="flex flex-col gap-2 h-full">
-    <span class="pb-4"> Editing object </span>
+    <h5 class="pb-4">Editing object</h5>
 
     <div
       class="flex flex-row w-full items-center justify-between pb-2 border-b border-(--border)"
