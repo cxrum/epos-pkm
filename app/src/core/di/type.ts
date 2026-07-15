@@ -91,13 +91,65 @@ export function bootstrapTypeRegistry(registry: TypeRegister): void {
       id: "def:back-link",
       title: "Back Link",
       kind: "default",
-      propertiesScheme: { order: [], props: {} },
+      propertiesScheme: {
+        order: ["linkedObjectId"],
+        props: {
+          linkedObjectId: {
+            id: "linkedObjectId",
+            title: "Linked object",
+            type: "autocomplete",
+            kind: "system",
+            isChangeable: true,
+            isMulti: false,
+            allowCustomOptions: false,
+            allowSystemOptionsMutation: false,
+            options: [],
+            filterConfig: {
+              allowedTypeIds: [],
+              includeParents: true,
+            },
+          },
+        },
+      },
     },
     {
       id: "def:arrowed-link",
       title: "Arrowed Link",
       kind: "default",
-      propertiesScheme: { order: [], props: {} },
+      propertiesScheme: {
+        order: ["linkedObjectId", "arrowedQuestion", "questionWord"],
+        props: {
+          linkedObjectId: {
+            id: "linkedObjectId",
+            title: "Linked object",
+            type: "autocomplete",
+            kind: "system",
+            isChangeable: true,
+            isMulti: false,
+            allowCustomOptions: false,
+            allowSystemOptionsMutation: false,
+            options: [],
+            filterConfig: {
+              allowedTypeIds: [],
+              includeParents: true,
+            },
+          },
+          arrowedQuestion: {
+            id: "arrowedQuestion",
+            title: "Arrowed quesion",
+            type: "text",
+            kind: "system",
+            isChangeable: true,
+          },
+          questionWord: {
+            id: "questionWord",
+            title: "Quesion word",
+            type: "text",
+            kind: "system",
+            isChangeable: true,
+          },
+        },
+      },
     },
   ];
 

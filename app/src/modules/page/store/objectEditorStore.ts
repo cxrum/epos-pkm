@@ -1,8 +1,24 @@
 import { defineStore } from "pinia";
 import { ref, type Ref } from "vue";
-import type { EpObjectId, EpPropertyId, ObjectPath, Path } from "@/core/types";
+import type {
+  EpObjectId,
+  EpPropertyId,
+  EpTypeId,
+  Icon,
+  ObjectPath,
+  Path,
+} from "@/core/types";
 import { globalObjectsService, globalTypingService } from "@/core/di/global";
-import { type EpObjectEntity, type EpTypeEntity } from "@/core/domain/type";
+import {
+  isAnyContainer,
+  isSelectPropertyItem,
+  isSelectPropertyValuedItem,
+  type EpObjectEntity,
+  type EpTypeEntity,
+  type SelectPropertySchemeEntry,
+  type SelectPropertyValueOptionEntry,
+  type SelectValuedPropertyEntry,
+} from "@/core/domain/type";
 import type { ValuedPropertiesScheme } from "@/core/application/type";
 
 export const useObjectEditorStore = defineStore("object-editor", () => {

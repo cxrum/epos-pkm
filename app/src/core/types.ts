@@ -30,7 +30,12 @@ export type CustomPropertyId = string & {};
 
 export type EpPropertyId = SystemPropertyId | CustomPropertyId;
 
-export type EpPropertyType = "text" | "boolean" | "select" | "number";
+export type EpPropertyType =
+  | "text"
+  | "boolean"
+  | "select"
+  | "number"
+  | "autocomplete";
 // | "object"
 
 export type SettingType = "text" | "boolean" | "select" | "number";

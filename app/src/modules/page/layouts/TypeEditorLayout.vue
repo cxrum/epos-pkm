@@ -9,12 +9,17 @@ import {
 } from "vue";
 import Accordion from "@/shared/components/Accordion.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
-import type { EpPropertyId, EpTypeId, Icon } from "@/core/types";
+import type { EpObjectId, EpPropertyId, EpTypeId, Icon } from "@/core/types";
 import type { ValuedPropertyEntry } from "@/core/application/type";
 import { useObjectEditorStore } from "../store/objectEditorStore";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 import type { EditorControllerContract } from "../components/editor/contract";
+import BaseSelect from "@/shared/components/BaseSelect.vue";
+import {
+  isSelectPropertyItem,
+  type BasePropertySchemeEntry,
+} from "@/core/domain/type";
 
 const objectEditorStore = useObjectEditorStore();
 
@@ -102,8 +107,13 @@ const updateNumberValue = async (
   );
   objectEditorStore.clearPropertyErrorMsg(propId);
 };
+
 const updateBooleanValue = (val: boolean, propId: EpPropertyId) => {
   console.log(`[Boolean] Оновлюємо ${propId}:`, val);
+};
+
+const updateSelectValue = (val: EpObjectId, propId: EpPropertyId) => {
+  console.log(`[Select] Оновлюємо ${propId}:`, val);
 };
 
 const createPropertyHandler = (
@@ -133,6 +143,30 @@ const createPropertyHandler = (
           objectEditorStore.valuedProperties?.props.get(propId)?.value?.value,
         set: (val: string) => {
           updateNumberValue(val, propId);
+        },
+      });
+
+    case "select":
+      return computed({
+        get: () => {
+          const value =
+            objectEditorStore.valuedProperties?.props.get(propId)?.value;
+          if (isSelectPropertyItem(value)) {
+            return value.options.map((it) => {
+              return {
+                label: it.title,
+              };
+            });
+          }
+          return [
+            {
+              label: "Empty",
+              id: "empty",
+            },
+          ];
+        },
+        set: (val: string) => {
+          updateSelectValue(val, propId);
         },
       });
 
