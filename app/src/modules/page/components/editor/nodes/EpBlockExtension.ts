@@ -16,7 +16,7 @@ export const EpBaseBlock = Node.create({
   addAttributes() {
     return {
       id: { default: null },
-      typeId: { default: "def:text" },
+      typeId: { default: "def:unknown" },
       physicalRelativePath: { default: "" },
       objectPath: { default: [] },
       props: { default: {} },

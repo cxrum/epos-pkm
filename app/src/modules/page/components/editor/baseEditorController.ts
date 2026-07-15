@@ -20,10 +20,13 @@ export function useBaseEditorController(
 
   const setObjectId = (id: EpObjectId): void => {
     focusedObjectId.value = id;
+    console.log(id);
   };
 
   const clearSelection = (): void => {
     focusedObjectId.value = undefined;
+
+    console.log("unfocused");
   };
 
   const setInitialData = (obj: EpContainerObjectEntity): void => {

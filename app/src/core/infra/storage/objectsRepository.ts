@@ -539,23 +539,15 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       }
 
       if (searchText) {
-        const title = rawObj.content?.title;
-        if (
-          typeof title === "string" &&
-          !title.toLowerCase().includes(searchText)
-        ) {
-          continue;
+        if (isRawContainer(rawObj)) {
+          const title = rawObj.title;
+          if (!title.toLowerCase().includes(searchText)) {
+            continue;
+          }
         }
       }
 
-      results.push({
-        id: rawObj.id,
-        typeId: rawObj.typeId,
-        props: rawObj.properties as AllPropertiesMap,
-        content: rawObj.content,
-        physicalRelativePath: this.objectPathCache.get(rawObj.id) || "",
-        objectPath: this.getAncestorPath(id),
-      } as EpObjectEntity);
+      results.push(this.inlineToDomain(rawObj));
     }
 
     return results;

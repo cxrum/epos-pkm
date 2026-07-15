@@ -5,7 +5,10 @@
       <BaseIcon size="28">
         <DynamicIcon :icon="icon"> </DynamicIcon>
       </BaseIcon>
-      {{ title }}
+      <span class="flex flex-col">
+        <label>{{ path }}</label>
+        <p>{{ title }}</p>
+      </span>
     </span>
   </div>
 </template>
@@ -24,9 +27,12 @@ const props = defineProps<{
   updateAttributes: (attrs: Record<string, any>) => void;
 }>();
 
-const targetPageId = computed(() => props.nodeAttributes.domainContent?.toId);
+const targetPageId = computed(
+  () => props.nodeAttributes.props?.linkedObjectId.value,
+);
 
 const title = ref("Unknown");
+const path = ref("Unknown");
 const icon: Ref<Icon> = ref({
   type: "default",
   name: "error",
@@ -47,6 +53,7 @@ watchEffect(async () => {
   try {
     const res = await store.getMetaInfo(id);
     title.value = res.title ?? "Unknown";
+    path.value = res.path ?? "Unknown";
     icon.value = res.icon ?? {
       type: "default",
       name: "error",

@@ -2,7 +2,11 @@ import { defineStore } from "pinia";
 import type { EpObjectId, Icon } from "../types";
 import { globalObjectsService, globalTypingService } from "../di/global";
 import { ref, type Ref } from "vue";
-import { isAnyContainer, isContainerEntity } from "../domain/type";
+import {
+  isAnyContainer,
+  isContainerEntity,
+  isMountedContainerEntity,
+} from "../domain/type";
 import type { TreeNode } from "@/shared/components/tree/contract";
 import { applicationBus } from "@/bus/application";
 
@@ -37,12 +41,24 @@ export const useGlobalObjectStore = defineStore("objects", () => {
 
     if (res && isAnyContainer(res)) {
       title = res.content.title;
+    } else if (res && isMountedContainerEntity(res)) {
+      const _id = res.content.toId;
+      const _res = await globalObjectsService.get(_id);
+      if (_res && isAnyContainer(_res)) {
+        title = _res.content.title;
+      }
     }
+
+    const path = res?.objectPath
+      .map((it) => {
+        it.title;
+      })
+      .join("/");
 
     return {
       icon: typeRes?.icon,
       title: title,
-      path: res?.objectPath.join("/"),
+      path: path,
       type: typeRes?.title ?? res!.typeId,
     };
   };

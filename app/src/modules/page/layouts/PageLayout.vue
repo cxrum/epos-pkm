@@ -27,13 +27,13 @@ import Breadcrumbs from "@/core/components/Breadcrumbs.vue";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import TypeIcon from "@/assets/icons/TypeIcon.vue";
 import DotsMenu from "@/assets/icons/DotsMenu.vue";
-import TypeEditorLayout from "./TypeEditorLayout.vue";
 import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
 import { applicationBus } from "@/bus/application.ts";
 import { useObjectEditorStore } from "../store/objectEditorStore.ts";
 import { EditorControllerKey } from "../components/editor/contract.ts";
 import { useBaseCommandLineController } from "../components/editor/commandLineController.ts";
 import { CommandLineControllerKey } from "../components/editor/extension/commandLine/commandLineControllerContract.ts";
+import ObjectEditorLayout from "./ObjectEditorLayout.vue";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -249,10 +249,10 @@ onUnmounted(() => {
     </div>
 
     <div
-      class="h-full w-64 p-2 border-l border-(--border) surface-sidebar overflow-y-auto auto-hide-scroll shrink-0"
+      class="h-full w-92 p-2 border-l border-(--border) surface-sidebar overflow-y-auto auto-hide-scroll shrink-0"
       v-if="isTypeEditorOpen"
     >
-      <TypeEditorLayout :controller="editorController" />
+      <ObjectEditorLayout :controller="editorController" />
     </div>
   </div>
 </template>

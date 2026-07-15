@@ -15,17 +15,16 @@ import { useObjectEditorStore } from "../store/objectEditorStore";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 import type { EditorControllerContract } from "../components/editor/contract";
-import BaseSelect from "@/shared/components/BaseSelect.vue";
-import {
-  isSelectPropertyItem,
-  type BasePropertySchemeEntry,
-} from "@/core/domain/type";
+import AutoCompleteInput from "@/shared/components/AutoCompleteInput.vue";
 
 const objectEditorStore = useObjectEditorStore();
 
 const props = defineProps<{
   controller: EditorControllerContract;
 }>();
+
+const searchQueries = ref<Record<string, string>>({});
+const autocompleteOptions = ref<Record<string, any[]>>({});
 
 const selectedType = ref<EpTypeId>();
 const typeOptions: Ref<{ label: string; value: EpTypeId }[]> = ref([]);
@@ -112,8 +111,19 @@ const updateBooleanValue = (val: boolean, propId: EpPropertyId) => {
   console.log(`[Boolean] Оновлюємо ${propId}:`, val);
 };
 
-const updateSelectValue = (val: EpObjectId, propId: EpPropertyId) => {
-  console.log(`[Select] Оновлюємо ${propId}:`, val);
+const updateAutocompleteValue = (val: EpObjectId, propId: EpPropertyId) => {
+  const focusedObject = objectEditorStore.focusedObject;
+  if (!focusedObject) return;
+  if (val === "" || val === null) {
+    return;
+  }
+
+  props.controller.updateDraftObjectProperty(focusedObject.id, propId, val);
+};
+
+const fetchAutocompleteOptions = async (scheme: any, query: string) => {
+  const result = await objectEditorStore.getFilteredObjects(scheme, query);
+  autocompleteOptions.value[scheme.id] = result;
 };
 
 const createPropertyHandler = (
@@ -146,27 +156,15 @@ const createPropertyHandler = (
         },
       });
 
-    case "select":
+    case "autocomplete":
       return computed({
         get: () => {
-          const value =
+          const scheme =
             objectEditorStore.valuedProperties?.props.get(propId)?.value;
-          if (isSelectPropertyItem(value)) {
-            return value.options.map((it) => {
-              return {
-                label: it.title,
-              };
-            });
-          }
-          return [
-            {
-              label: "Empty",
-              id: "empty",
-            },
-          ];
+          return scheme?.value;
         },
         set: (val: string) => {
-          updateSelectValue(val, propId);
+          updateAutocompleteValue(val, propId);
         },
       });
 
@@ -204,6 +202,8 @@ watch(
         if (!handlers.has(id)) {
           const handler = createPropertyHandler(id, prop.propertyScheme.type);
           if (handler) {
+            fetchAutocompleteOptions(prop.propertyScheme, "");
+
             handlers.set(id, handler);
           }
         }
@@ -280,6 +280,27 @@ watch(
           "
           :type="resolveInputFieldType(entry.propertyScheme.type)"
         ></BaseInput>
+
+        <AutoCompleteInput
+          v-else-if="
+            entry.propertyScheme.isChangeable &&
+            ['autocomplete'].includes(entry.propertyScheme.type)
+          "
+          v-model="handlers.get(entry.propertyScheme.id)!.value"
+          v-model:searchQuery="searchQueries[entry.propertyScheme.id]"
+          @update:searchQuery="
+            fetchAutocompleteOptions(
+              entry.propertyScheme,
+              searchQueries[entry.propertyScheme.id],
+            )
+          "
+          :items="autocompleteOptions[entry.propertyScheme.id] || []"
+          class="w-full"
+          :err-msg="
+            objectEditorStore.propertyFieldError.get(entry.propertyScheme.id)
+          "
+        >
+        </AutoCompleteInput>
 
         <p v-else class="flex">
           {{ entry.value?.value }}

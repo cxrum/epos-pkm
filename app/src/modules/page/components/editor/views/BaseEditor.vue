@@ -174,7 +174,7 @@ watch(rtl, (newValue) => {
 
 const updateTipTapNodeAttributes = (
   editor: Editor,
-  targetObjectId: EpObjectId,
+  targetObjectId: string,
   newAttributes: Record<string, any>,
 ) => {
   let targetNodePos: number | null = null;
@@ -215,13 +215,17 @@ const updateTipTapNodeAttributes = (
       updatedProps,
     );
 
-    editor.view.dispatch(
-      editor.state.tr.setNodeMarkup(targetNodePos, undefined, {
-        ...currentAttrs,
-        props: updatedProps,
-        ...tiptapProperties,
-      }),
-    );
+    const { tr, selection } = editor.state;
+
+    tr.setNodeMarkup(targetNodePos, undefined, {
+      ...currentAttrs,
+      props: updatedProps,
+      ...tiptapProperties,
+    });
+
+    tr.setSelection(selection.map(tr.doc, tr.mapping));
+
+    editor.view.dispatch(tr);
   } else {
     console.warn(
       `[TipTap] Вузол з ID ${targetObjectId} не знайдено в редакторі.`,

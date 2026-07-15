@@ -13,8 +13,10 @@ import {
   isAnyContainer,
   isSelectPropertyItem,
   isSelectPropertyValuedItem,
+  type AutocompleteValuedPropertyEntry,
   type EpObjectEntity,
   type EpTypeEntity,
+  type ObjectFilterOptions,
   type SelectPropertySchemeEntry,
   type SelectPropertyValueOptionEntry,
   type SelectValuedPropertyEntry,
@@ -75,6 +77,39 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
     isObjectEidtorOpen.value = !isObjectEidtorOpen.value;
   };
 
+  const getFilteredObjects = async (
+    propertyScheme: AutocompleteValuedPropertyEntry,
+    searchText: string = "",
+  ): Promise<{ id: string; label: string; description?: string }[]> => {
+    const filterOptions: ObjectFilterOptions = {
+      types: propertyScheme.filterConfig?.allowedTypeIds,
+      descendantTypes: propertyScheme.filterConfig?.includeParents,
+    };
+
+    if (searchText.length > 0) {
+      filterOptions.text = searchText;
+    } else {
+      filterOptions.text = undefined;
+    }
+
+    const objects = await globalObjectsService.getAll(filterOptions);
+
+    const objectOptions = objects.map((it) => {
+      let title = it.typeId;
+
+      if (isAnyContainer(it)) {
+        title = it.content.title;
+      }
+
+      return {
+        id: it.id,
+        label: title as string,
+        description: "log",
+      };
+    });
+    return [...objectOptions];
+  };
+
   return {
     focusedObject,
     valuedProperties,
@@ -85,6 +120,7 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
 
     propertyFieldError,
 
+    getFilteredObjects,
     togleObjectEditorState,
     setObjectEditorState,
     clearPropertyErrorMsg,
