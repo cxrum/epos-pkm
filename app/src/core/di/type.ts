@@ -50,7 +50,7 @@ export function bootstrapTypeRegistry(registry: TypeRegister): void {
         props: {
           codeLanguage: {
             id: "codeLanguage",
-            title: "codeLanguage",
+            title: "Language",
             type: "text",
             kind: "system",
             isChangeable: true,
