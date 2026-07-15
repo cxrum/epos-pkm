@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import type { EpObjectId, Icon } from "../types";
+import type { EpObjectId, EpTypeId, Icon } from "../types";
 import { globalObjectsService, globalTypingService } from "../di/global";
 import { ref, type Ref } from "vue";
 import {
@@ -14,6 +14,7 @@ export interface ObjectMetaInfo {
   icon?: Icon;
   title?: string;
   path?: string;
+  typeId?: EpTypeId;
   type: string;
 }
 
@@ -31,10 +32,16 @@ export const useGlobalObjectStore = defineStore("objects", () => {
     isTreeStructureLoading.value = false;
   };
 
-  const getMetaInfo = async (id: EpObjectId): Promise<ObjectMetaInfo> => {
+  const getMetaInfo = async (
+    id: EpObjectId,
+  ): Promise<ObjectMetaInfo | undefined> => {
     isObjectLoading.value.set(id, true);
     const res = await globalObjectsService.get(id);
-    const typeRes = await globalTypingService.get(id);
+    if (!res) {
+      return undefined;
+    }
+
+    const typeRes = await globalTypingService.get(res.typeId);
     isObjectLoading.value.set(id, false);
 
     let title = undefined;
@@ -49,17 +56,13 @@ export const useGlobalObjectStore = defineStore("objects", () => {
       }
     }
 
-    const path = res?.objectPath
-      .map((it) => {
-        it.title;
-      })
-      .join("/");
+    const path = res?.objectPath.map((it) => it.title).join(" > ");
 
     return {
-      icon: typeRes?.icon,
+      typeId: typeRes?.id,
       title: title,
       path: path,
-      type: typeRes?.title ?? res!.typeId,
+      type: typeRes?.title ?? res.typeId,
     };
   };
 

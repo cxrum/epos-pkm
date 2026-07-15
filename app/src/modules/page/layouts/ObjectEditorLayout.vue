@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import {
   computed,
+  h,
   reactive,
   ref,
   watch,
@@ -8,14 +9,13 @@ import {
   type WritableComputedRef,
 } from "vue";
 import Accordion from "@/shared/components/Accordion.vue";
-import BaseInput from "@/shared/components/BaseInput.vue";
 import type { EpObjectId, EpPropertyId, EpTypeId, Icon } from "@/core/types";
 import type { ValuedPropertyEntry } from "@/core/application/type";
 import { useObjectEditorStore } from "../store/objectEditorStore";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 import type { EditorControllerContract } from "../components/editor/contract";
-import AutoCompleteInput from "@/shared/components/AutoCompleteInput.vue";
+import DynamicProperyInput from "../components/DynamicProperyInput.vue";
 
 const objectEditorStore = useObjectEditorStore();
 
@@ -42,19 +42,19 @@ const groupedProperties = computed(
     filteredProps.forEach((prop) => {
       const groupId = prop.propertyScheme.parentType?.id || "current";
       const groupTitle = prop.propertyScheme.parentType?.title || "This";
+      if (prop.propertyScheme.parentType?.id !== "sys:root") {
+        if (!groups.has(groupId)) {
+          groups.set(groupId, {
+            id: groupId,
+            title: groupTitle,
+            items: [],
+            icon: prop.propertyScheme.parentType?.icon,
+          });
+        }
 
-      if (!groups.has(groupId)) {
-        groups.set(groupId, {
-          id: groupId,
-          title: groupTitle,
-          items: [],
-          icon: prop.propertyScheme.parentType?.icon,
-        });
+        groups.get(groupId).items.push(prop);
       }
-
-      groups.get(groupId).items.push(prop);
     });
-
     return Array.from(groups.values());
   },
 );
@@ -174,15 +174,6 @@ const createPropertyHandler = (
   }
 };
 
-const resolveInputFieldType = (type: string) => {
-  switch (type) {
-    case "number":
-      return "number";
-    default:
-      return "text";
-  }
-};
-
 watch(
   () => objectEditorStore.valuedProperties,
   (valuedProperties) => {
@@ -244,117 +235,85 @@ watch(
     ></div>
 
     <Accordion :label="'Properties'">
-      <span
-        v-for="entry of currentProperties?.items"
-        :key="entry.propertyScheme.id"
-        :id="entry.propertyScheme.id"
-        class="flex flex-row items-center"
-      >
-        <BaseIcon>
-          <DynamicIcon :icon="entry.propertyScheme.icon" />
-        </BaseIcon>
-
-        <BaseIcon
-          class="opacity-50"
-          v-if="
-            entry.propertyScheme.isSystem && !entry.propertyScheme.isChangeable
-          "
-          title="System property"
-        >
-          <DynamicIcon :icon="{ type: 'default', name: 'lock' }" />
-        </BaseIcon>
-
-        <p class="flex pe-4">
-          {{ entry.propertyScheme.title }}
-        </p>
-        <BaseInput
-          v-if="
-            entry.propertyScheme.isChangeable &&
-            handlers.has(entry.propertyScheme.id) &&
-            ['text', 'number'].includes(entry.propertyScheme.type)
-          "
-          v-model="handlers.get(entry.propertyScheme.id)!.value"
-          class="w-full"
-          :err-msg="
-            objectEditorStore.propertyFieldError.get(entry.propertyScheme.id)
-          "
-          :type="resolveInputFieldType(entry.propertyScheme.type)"
-        ></BaseInput>
-
-        <AutoCompleteInput
-          v-else-if="
-            entry.propertyScheme.isChangeable &&
-            ['autocomplete'].includes(entry.propertyScheme.type)
-          "
-          v-model="handlers.get(entry.propertyScheme.id)!.value"
-          v-model:searchQuery="searchQueries[entry.propertyScheme.id]"
-          @update:searchQuery="
-            fetchAutocompleteOptions(
-              entry.propertyScheme,
-              searchQueries[entry.propertyScheme.id],
-            )
-          "
-          :items="autocompleteOptions[entry.propertyScheme.id] || []"
-          class="w-full"
-          :err-msg="
-            objectEditorStore.propertyFieldError.get(entry.propertyScheme.id)
-          "
-        >
-        </AutoCompleteInput>
-
-        <p v-else class="flex">
-          {{ entry.value?.value }}
-        </p>
-
-        <div class="flex flex-1 m-0"></div>
-      </span>
-
-      <div class="hl pt-4"></div>
-      <label class="pt-4">Inherited:</label>
-      <div
-        v-for="group of inheritedProperties"
-        :key="group.id"
-        class="flex flex-col py-2"
-      >
-        <span class="flex flex-row">
-          <BaseIcon>
-            <DynamicIcon :icon="group.icon" />
-          </BaseIcon>
-          <p class="text-(--text-secondary-color)">{{ group.title }}:</p>
-        </span>
-
-        <span
-          v-for="entry in group.items"
-          :key="entry.propertyScheme.id"
-          :id="entry.propertyScheme.id"
-          class="flex flex-row items-center"
-        >
-          <BaseIcon>
-            <DynamicIcon :icon="entry.propertyScheme.icon" />
-          </BaseIcon>
-
-          <p class="flex pe-2">
-            {{ entry.propertyScheme.title }}
-          </p>
-
-          <BaseIcon
-            class="opacity-50"
-            v-if="
-              entry.propertyScheme.isSystem &&
-              !entry.propertyScheme.isChangeable
-            "
-            title="System property"
+      <template v-if="groupedProperties.length > 0">
+        <span class="flex flex-col gap-1">
+          <span
+            v-for="entry of currentProperties?.items"
+            :key="entry.propertyScheme.id"
+            :id="entry.propertyScheme.id"
           >
-            <DynamicIcon :icon="{ type: 'default', name: 'lock' }" />
-          </BaseIcon>
-
-          <p class="flex">
-            {{ entry.value?.value }}
-          </p>
-
-          <div class="flex flex-1 m-0"></div>
+            <DynamicProperyInput
+              v-if="handlers.has(entry.propertyScheme.id)"
+              v-model="handlers.get(entry.propertyScheme.id)!.value"
+              v-model:searchQuery="searchQueries[entry.propertyScheme.id]"
+              :property-scheme="entry.propertyScheme"
+              :autocomplete-items="autocompleteOptions[entry.propertyScheme.id]"
+              :err-msg="
+                objectEditorStore.propertyFieldError.get(
+                  entry.propertyScheme.id,
+                )
+              "
+              @update:searchQuery="
+                fetchAutocompleteOptions(entry.propertyScheme, $event)
+              "
+              class="ps-2"
+            />
+          </span>
         </span>
-      </div>
+
+        <template v-if="inheritedProperties.length > 0">
+          <h5 class="pt-4">Inherited</h5>
+
+          <div
+            v-for="group of inheritedProperties"
+            :key="group.id"
+            class="flex flex-col gap-2"
+          >
+            <span class="flex flex-row items-center py-2">
+              <BaseIcon>
+                <DynamicIcon :icon="group.icon" />
+              </BaseIcon>
+              <p>{{ group.title }}</p>
+            </span>
+
+            <span class="flex flex-col gap-1">
+              <span
+                v-for="entry in group.items"
+                :key="entry.propertyScheme.id"
+                :id="entry.propertyScheme.id"
+                class="flex flex-row items-center"
+              >
+                <DynamicProperyInput
+                  v-if="handlers.has(entry.propertyScheme.id)"
+                  v-model="handlers.get(entry.propertyScheme.id)!.value"
+                  v-model:searchQuery="searchQueries[entry.propertyScheme.id]"
+                  :property-scheme="entry.propertyScheme"
+                  :autocomplete-items="
+                    autocompleteOptions[entry.propertyScheme.id]
+                  "
+                  :err-msg="
+                    objectEditorStore.propertyFieldError.get(
+                      entry.propertyScheme.id,
+                    )
+                  "
+                  @update:searchQuery="
+                    fetchAutocompleteOptions(entry.propertyScheme, $event)
+                  "
+                  class="ps-2"
+                />
+              </span>
+            </span>
+            <div class="hl"></div>
+          </div>
+        </template>
+      </template>
+      <template v-else>
+        <p
+          class="flex flex-1 flex-wrap p-8 items-center justify-center text-(--text-secondary-color)"
+        >
+          Select object with properties in the editor
+        </p>
+      </template>
     </Accordion>
   </div>
 </template>

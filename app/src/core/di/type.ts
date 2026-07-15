@@ -26,7 +26,18 @@ export function bootstrapTypeRegistry(registry: TypeRegister): void {
       title: "Page",
       icon: { type: "default", name: "page" },
       kind: "system",
-      propertiesScheme: { order: [], props: {} },
+      propertiesScheme: {
+        order: ["isContainer"],
+        props: {
+          isContainer: {
+            id: "isContainer",
+            title: "isContainer",
+            type: "boolean",
+            kind: "system",
+            isChangeable: false,
+          },
+        },
+      },
     },
     {
       id: "def:text",
@@ -117,23 +128,8 @@ export function bootstrapTypeRegistry(registry: TypeRegister): void {
       title: "Arrowed Link",
       kind: "default",
       propertiesScheme: {
-        order: ["linkedObjectId", "arrowedQuestion", "questionWord"],
+        order: ["arrowedQuestion", "questionWord"],
         props: {
-          linkedObjectId: {
-            id: "linkedObjectId",
-            title: "Linked object",
-            type: "autocomplete",
-            kind: "system",
-            isChangeable: true,
-            isMulti: false,
-            allowCustomOptions: false,
-            allowSystemOptionsMutation: false,
-            options: [],
-            filterConfig: {
-              allowedTypeIds: [],
-              includeParents: true,
-            },
-          },
           arrowedQuestion: {
             id: "arrowedQuestion",
             title: "Arrowed quesion",

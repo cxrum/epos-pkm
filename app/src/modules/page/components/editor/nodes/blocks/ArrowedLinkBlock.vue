@@ -1,32 +1,31 @@
 <template>
   <div class="surface-editor-card" contenteditable="false" @click="openPage">
-    <span v-if="isLoading" class="loading"> Loading...</span>
+    <div v-if="isLoading" class="loading">Loading...</div>
     <span v-else class="title flex flex-row gap-2 items-center">
-      <BaseIcon size="28">
+      <BaseIcon size="28px">
         <DynamicIcon :icon="icon"> </DynamicIcon>
       </BaseIcon>
-      <span class="flex flex-1 flex-row justify-between">
-        <p>
-          {{ linkObjectTitle }}
-        </p>
-        <label>
-          {{ linkedObjectType }}
-        </label>
+      <span class="flex flex-1 flex-col">
+        <span class="flex flex-row w-full justify-between">
+          <label>{{ path }}</label>
+          <label>{{ type }}</label>
+        </span>
+        <p>{{ title }}</p>
       </span>
-      {{ arrowMessage }}
     </span>
   </div>
 </template>
 
 <script setup lang="ts">
-import type { ArrowedObjectLinkPropertiesMap } from "@/core/domain/type";
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore";
+import { useGlobalTypeStore } from "@/core/store/globalTypeStore";
 import type { Icon } from "@/core/types";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
 import { ref, computed, watchEffect, type Ref } from "vue";
 
-const store = useGlobalObjectStore();
+const objectStore = useGlobalObjectStore();
+const typeStore = useGlobalTypeStore();
 
 const props = defineProps<{
   nodeAttributes: Record<string, any>;
@@ -34,18 +33,12 @@ const props = defineProps<{
 }>();
 
 const targetPageId = computed(
-  () =>
-    (props.nodeAttributes.props as ArrowedObjectLinkPropertiesMap)
-      .linkedObjectId.value,
-);
-const arrowMessage = computed(
-  () =>
-    (props.nodeAttributes.props as ArrowedObjectLinkPropertiesMap).question
-      .value,
+  () => props.nodeAttributes.props?.linkedObjectId.value,
 );
 
-const linkObjectTitle = ref("Unknown");
-const linkedObjectType = ref("Unknown");
+const title = ref("");
+const path = ref("");
+const type = ref("");
 
 const icon: Ref<Icon> = ref({
   type: "default",
@@ -57,7 +50,7 @@ watchEffect(async () => {
   const id = targetPageId.value;
 
   if (!id) {
-    linkObjectTitle.value = "Link error";
+    title.value = "Link error";
     isLoading.value = false;
     return;
   }
@@ -65,16 +58,30 @@ watchEffect(async () => {
   isLoading.value = true;
 
   try {
-    const res = await store.getMetaInfo(id);
-    icon.value = res.icon ?? {
+    const res = await objectStore.getMetaInfo(id);
+    if (!res) {
+      title.value = "Not found";
+      return;
+    }
+    let _icon: Icon = {
       type: "default",
       name: "error",
     };
-    linkObjectTitle.value = res.title ?? "Unknown";
-    linkedObjectType.value = res.type;
+
+    if (res.typeId) {
+      const _res = await typeStore.cachedTypeIcons.get(res.typeId);
+      if (_res) {
+        _icon = _res;
+      }
+    }
+
+    title.value = res.title ?? "Unknown title";
+    path.value = res.path ?? "Unknown path";
+    type.value = res.type ?? "Unknown type";
+    icon.value = res.icon ?? _icon;
   } catch (error) {
-    console.error("Object is not exist:", error);
-    linkObjectTitle.value = "Not found";
+    console.error("Page is not exist:", error);
+    title.value = "Not found";
   } finally {
     isLoading.value = false;
   }

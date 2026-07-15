@@ -83,6 +83,7 @@ export const entitiesToTiptapDoc = (
           ...mappedAttrs,
         },
       };
+      console.log(node);
 
       if (isCustomBlock) {
         node.attrs!.domainContent = entity.content;
