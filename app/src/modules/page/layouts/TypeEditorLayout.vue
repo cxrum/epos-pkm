@@ -203,7 +203,7 @@ watch(
 
 <template>
   <div class="flex flex-col gap-2 h-full">
-    <span class="pb-4"> Editing object </span>
+    <h5 class="pb-4">Editing object</h5>
 
     <div
       class="flex flex-row w-full items-center justify-between pb-2 border-b border-(--border)"

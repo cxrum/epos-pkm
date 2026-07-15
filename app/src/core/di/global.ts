@@ -10,7 +10,8 @@ import type {
 import { AppStateRepository } from "../infra/stateRepository";
 import { WorkspaceStateRepository } from "../infra/workspaceRepository";
 import type { WorkspaceLocalConfigEntity } from "../domain/workspace";
-import { SystemRoot } from "./type";
+import { TypeRegister } from "../infra/typeRegister";
+import { bootstrapTypeRegistry } from "./type";
 
 const containerObjectStorageApi = new IpcFileSystem<RawContainerObject>(
   "/workspace",
@@ -25,7 +26,13 @@ export const workspaceStateRepository = new WorkspaceStateRepository(
   workspaceStateApi,
 );
 
-const typingRepository = new TypingRepository(typesStorageApi, SystemRoot());
+const typeRegister = new TypeRegister();
+bootstrapTypeRegistry(typeRegister);
+
+const typingRepository = new TypingRepository(
+  typesStorageApi,
+  typeRegister.systemRoot(),
+);
 const objectRepository = new ObjectStorageRepository(containerObjectStorageApi);
 
 export async function bootstrapWorkspaceServices() {
