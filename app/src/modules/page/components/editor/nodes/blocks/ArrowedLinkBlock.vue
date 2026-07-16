@@ -1,24 +1,47 @@
 <template>
-  <div class="surface-editor-card" contenteditable="false" @click="openPage">
-    <div v-if="isLoading" class="loading">Loading...</div>
-    <span v-else class="title flex flex-row gap-2 items-center">
-      <BaseIcon size="28px">
-        <DynamicIcon :icon="icon"> </DynamicIcon>
-      </BaseIcon>
-      <span class="flex flex-1 flex-col">
-        <span class="flex flex-row w-full justify-between">
-          <label>{{ path }}</label>
-          <label>{{ type }}</label>
-        </span>
-        <p>{{ title }}</p>
-      </span>
-    </span>
+  <div
+    class="surface-editor-card flex flex-col gap-3 p-4 cursor-pointer"
+    contenteditable="false"
+    @click="wrapAction(openPage)"
+  >
+    <div v-if="isLoading">Loading...</div>
+
+    <template v-else>
+      <div class="flex items-start gap-2">
+        <p
+          v-if="questionWord && questionWord !== 'None'"
+          class="px-2 py-0.5 bg-(--hover) rounded-md"
+        >
+          {{ questionWord }}
+        </p>
+        <p v-if="questionMsg && questionMsg !== 'None'" class="pt-0.5">
+          {{ questionMsg }}
+        </p>
+      </div>
+
+      <div class="flex items-center gap-3">
+        <BaseIcon size="24px" class="opacity-80">
+          <DynamicIcon :icon="icon" />
+        </BaseIcon>
+
+        <div class="flex flex-col flex-1 min-w-0">
+          <div class="flex justify-between items-center gap-2">
+            <p class="font-semibold">{{ title }}</p>
+            <label class="rounded whitespace-nowrap">
+              {{ type }}
+            </label>
+          </div>
+          <label class="truncate mt-0.5">{{ path }}</label>
+        </div>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore";
 import { useGlobalTypeStore } from "@/core/store/globalTypeStore";
+import { useGlobalNavigation } from "@/core/store/navigationStore";
 import type { Icon } from "@/core/types";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
@@ -26,19 +49,39 @@ import { ref, computed, watchEffect, type Ref } from "vue";
 
 const objectStore = useGlobalObjectStore();
 const typeStore = useGlobalTypeStore();
+const navigation = useGlobalNavigation();
 
 const props = defineProps<{
   nodeAttributes: Record<string, any>;
   updateAttributes: (attrs: Record<string, any>) => void;
+  wrapAction: (action: () => void) => void;
 }>();
-
-const targetPageId = computed(
-  () => props.nodeAttributes.props?.linkedObjectId.value,
-);
+const targetPageId = computed(() => {
+  const linkedObjectId = props.nodeAttributes?.props?.linkedObjectId;
+  if (linkedObjectId && linkedObjectId.value) {
+    return linkedObjectId.value;
+  }
+  return "-1";
+});
 
 const title = ref("");
 const path = ref("");
 const type = ref("");
+
+const questionWord = computed(() => {
+  const questionWord = props.nodeAttributes?.props?.questionWord;
+  if (questionWord && questionWord.value) {
+    return questionWord.value;
+  }
+  return "None";
+});
+const questionMsg = computed(() => {
+  const questionMsg = props.nodeAttributes?.props?.arrowedQuestion;
+  if (questionMsg && questionMsg.value) {
+    return questionMsg.value;
+  }
+  return "None";
+});
 
 const icon: Ref<Icon> = ref({
   type: "default",
@@ -49,7 +92,7 @@ const isLoading = ref(true);
 watchEffect(async () => {
   const id = targetPageId.value;
 
-  if (!id) {
+  if (!id || id === "-1") {
     title.value = "Link error";
     isLoading.value = false;
     return;
@@ -90,6 +133,7 @@ watchEffect(async () => {
 const openPage = () => {
   const targetId = targetPageId.value;
   if (targetId) {
+    navigation.openPage(targetId);
   }
 };
 </script>

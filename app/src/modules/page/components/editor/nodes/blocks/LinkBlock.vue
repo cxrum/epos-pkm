@@ -1,5 +1,9 @@
 <template>
-  <div class="surface-editor-card" contenteditable="false" @click="openPage">
+  <div
+    class="surface-editor-card"
+    contenteditable="false"
+    @click="wrapAction(openPage)"
+  >
     <div v-if="isLoading" class="loading">Loading...</div>
     <span v-else class="title flex flex-row gap-2 items-center">
       <BaseIcon size="28px">
@@ -30,11 +34,15 @@ const typeStore = useGlobalTypeStore();
 const props = defineProps<{
   nodeAttributes: Record<string, any>;
   updateAttributes: (attrs: Record<string, any>) => void;
+  wrapAction: (action: () => void) => void;
 }>();
-
-const targetPageId = computed(
-  () => props.nodeAttributes.props?.linkedObjectId.value,
-);
+const targetPageId = computed(() => {
+  const linkedObjectId = props.nodeAttributes?.props?.linkedObjectId;
+  if (linkedObjectId && linkedObjectId.value) {
+    return linkedObjectId.value;
+  }
+  return "-1";
+});
 
 const title = ref("");
 const path = ref("");
@@ -49,7 +57,7 @@ const isLoading = ref(true);
 watchEffect(async () => {
   const id = targetPageId.value;
 
-  if (!id) {
+  if (!id || id === "-1") {
     title.value = "Link error";
     isLoading.value = false;
     return;

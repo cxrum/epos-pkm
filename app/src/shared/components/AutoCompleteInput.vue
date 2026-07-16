@@ -107,7 +107,6 @@ const handleBlur = () => {
   }, 150);
 };
 </script>
-
 <template>
   <div class="w-fit flex flex-col relative">
     <span v-if="label">
@@ -138,17 +137,19 @@ const handleBlur = () => {
       <button
         v-for="item in filteredItems"
         :key="item.id"
-        class="base-button h-fit"
+        class="base-button h-auto min-h-10 w-full max-w-full py-1.5 px-2"
         @click.prevent="handleSelect(item)"
       >
-        <span class="flex flex-col">
-          <span>{{ item.label ?? item.text }}</span>
-          <span
+        <span class="flex flex-col w-full min-w-0 text-left justify-center">
+          <p class="w-full truncate block leading-tight">
+            {{ item.label ?? item.text }}
+          </p>
+          <label
             v-if="item.description"
-            class="text-xs opacity-60 ml-2 overflow-hide"
+            class="w-full truncate block opacity-70 text-xs mt-0.5 cursor-pointer"
           >
             {{ item.description }}
-          </span>
+          </label>
         </span>
       </button>
     </div>

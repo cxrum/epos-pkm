@@ -76,7 +76,6 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
   const togleObjectEditorState = () => {
     isObjectEidtorOpen.value = !isObjectEidtorOpen.value;
   };
-
   const getFilteredObjects = async (
     propertyScheme: AutocompleteValuedPropertyEntry,
     searchText: string = "",
@@ -95,18 +94,19 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
     const objects = await globalObjectsService.getAll(filterOptions);
 
     const objectOptions = objects.map((it) => {
-      let title = it.typeId;
+      let title = it.id;
 
       if (isAnyContainer(it)) {
-        title = it.content.title;
+        title = it.content.title || it.id;
       }
 
       return {
         id: it.id,
         label: title as string,
-        description: "log",
+        description: it.objectPath.map((it) => it.title).join(" > "),
       };
     });
+
     return [...objectOptions];
   };
 
