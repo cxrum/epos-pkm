@@ -1,5 +1,9 @@
 <template>
-  <BaseBlockLayout :is-selected="isSelected">
+  <BaseBlockLayout
+    :is-selected="isSelected"
+    :content-editable="true"
+    :custom-drag-handle="false"
+  >
     <component
       :is="resolvedComponent"
       :node="node"

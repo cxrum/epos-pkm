@@ -4,13 +4,11 @@
       class="ep-block-wrapper"
       :class="['my-custom-block', { 'is-focused': isSelected }]"
     >
-      <div
-        class="custom-drag-handle"
-        contenteditable="false"
-        data-drag-handle
-      ></div>
+      <template v-if="props.customDragHandle">
+        <div class="custom-drag-handle" data-drag-handle></div>
+      </template>
 
-      <div class="block-content">
+      <div class="block-content" :contenteditable="props.contentEditable">
         <slot :wrap-action="wrapAction" />
       </div>
     </div>
@@ -23,10 +21,13 @@ import { NodeViewWrapper } from "@tiptap/vue-3";
 const props = withDefaults(
   defineProps<{
     isSelected: boolean;
+    customDragHandle: boolean;
+    contentEditable: boolean;
     actionInterceptor?: (action: () => void) => void;
   }>(),
   {
     actionInterceptor: (action: () => void) => action(),
+    customDragHandle: false,
   },
 );
 
@@ -50,9 +51,10 @@ const wrapAction = (targetAction: () => void) => {
   pointer-events: none;
   transition: opacity;
 }
-
 .is-focused {
-  background: var(--hover);
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .ep-block-wrapper:hover .custom-drag-handle {

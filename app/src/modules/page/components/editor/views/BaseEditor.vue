@@ -262,6 +262,17 @@ onMounted(() => {
 
 <style lang="scss">
 .ProseMirror {
+  outline: none;
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: rgba(33, 150, 243, 0.3);
+  }
+
   .ProseMirror-widget * {
     margin-top: auto;
   }
@@ -275,19 +286,9 @@ onMounted(() => {
 .ProseMirror-selectednode,
 .ProseMirror-selectednoderange {
   position: relative;
-
-  &::before {
-    position: absolute;
-    pointer-events: none;
-    z-index: -1;
-    content: "";
-    top: -0.25rem;
-    left: -0.25rem;
-    right: -0.25rem;
-    bottom: -0.25rem;
-    background-color: var(--hover);
-    border-radius: 0.5rem;
-  }
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .custom-drag-handle {

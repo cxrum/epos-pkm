@@ -505,7 +505,6 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
 
     return parentId;
   }
-
   async getAll(
     filterOptions: RawObjectFilterOptions,
   ): Promise<EpObjectEntity[]> {
@@ -518,6 +517,7 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
       : null;
 
     const searchText = filterOptions?.text?.toLowerCase();
+    const limit = filterOptions?.limit;
 
     for (const [id, rawObj] of this.fileTreeCache.entries()) {
       if (allowedTypes && allowedTypes.length > 0) {
@@ -549,10 +549,15 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
           continue;
         }
       }
+
       if (isRawContainer(rawObj)) {
         results.push(this.containerToDomain(rawObj));
       } else {
         results.push(this.inlineToDomain(rawObj));
+      }
+
+      if (limit !== undefined && results.length >= limit) {
+        break;
       }
     }
 

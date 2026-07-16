@@ -36,25 +36,37 @@ export function useBaseCommandLineController(): CommandControllerContract {
     editor: Editor,
     objectTypeId: EpTypeId,
     props: Record<string, any>,
+    range?: { from: number; to: number },
   ) => {
     const newId = crypto.randomUUID();
 
-    editor
-      .chain()
-      .command(({ tr, state }) => {
-        const { $from } = state.selection;
-
-        tr.delete($from.before(), $from.after());
-
-        return true;
-      })
-      .insertInlineObject({
-        id: newId,
-        typeId: objectTypeId,
-        props: props,
-      })
-      .focus()
-      .run();
+    if (range) {
+      editor
+        .chain()
+        .deleteRange(range)
+        .insertInlineObject({
+          id: newId,
+          typeId: objectTypeId,
+          props: props,
+        })
+        .focus()
+        .run();
+    } else {
+      editor
+        .chain()
+        .command(({ tr, state }) => {
+          const { $from } = state.selection;
+          tr.delete($from.start(), $from.end());
+          return true;
+        })
+        .insertInlineObject({
+          id: newId,
+          typeId: objectTypeId,
+          props: props,
+        })
+        .focus()
+        .run();
+    }
   };
 
   const extendList = (list: UserTypeEntity[]): void => {

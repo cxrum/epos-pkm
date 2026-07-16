@@ -554,4 +554,5 @@ export type ObjectFilterOptions = {
   types?: EpTypeId[] | EpTypeId;
   descendantTypes?: boolean;
   text?: string;
+  limit?: number;
 };

@@ -42,13 +42,14 @@ export const EpObjectAttributesExtension = Extension.create({
     return {
       insertInlineObject:
         (options) =>
-        ({ commands }) => {
-          const { id, typeId, props = {} } = options;
+        ({ commands, state }) => {
+          const { id, typeId, props = {}, pos } = options;
           const resType = mapEpTypeToTiptapType(typeId);
-          console.log(resType);
           const tipTapProperty = domainPropertyToTiptap(resType, props);
 
-          return commands.insertContent({
+          const targetPos = pos ?? state.selection.head;
+
+          return commands.insertContentAt(targetPos, {
             type: resType,
             attrs: {
               id: id,

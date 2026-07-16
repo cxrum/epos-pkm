@@ -7,7 +7,7 @@
     >
       <span v-show="isLoading" class="loading"> Loading... </span>
       <span v-show="!isLoading" class="title flex flex-row gap-2 items-center">
-        <BaseIcon size="28">
+        <BaseIcon size="28px">
           <DynamicIcon :icon="icon"></DynamicIcon>
         </BaseIcon>
         <span>{{ title }}</span>

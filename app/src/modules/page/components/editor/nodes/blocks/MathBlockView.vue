@@ -24,7 +24,7 @@ const renderedMath = computed(() => {
   const text = props.node.textContent || "";
 
   if (!text) {
-    return katex.renderToString("E = mc^2", {
+    return katex.renderToString("\\text{Empty LaTeX block}", {
       displayMode: true,
       throwOnError: false,
     });

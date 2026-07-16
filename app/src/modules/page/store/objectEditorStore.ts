@@ -83,6 +83,7 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
     const filterOptions: ObjectFilterOptions = {
       types: propertyScheme.filterConfig?.allowedTypeIds,
       descendantTypes: propertyScheme.filterConfig?.includeParents,
+      limit: 10,
     };
 
     if (searchText.length > 0) {

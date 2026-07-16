@@ -4,19 +4,27 @@
     contenteditable="false"
     @click="wrapAction(openPage)"
   >
-    <div v-if="isLoading" class="loading">Loading...</div>
-    <span v-else class="title flex flex-row gap-2 items-center">
-      <BaseIcon size="28px">
-        <DynamicIcon :icon="icon"> </DynamicIcon>
-      </BaseIcon>
-      <span class="flex flex-1 flex-col">
-        <span class="flex flex-row w-full justify-between">
-          <label>{{ path }}</label>
-          <label>{{ type }}</label>
+    <template v-if="isLoading">
+      <div class="loading">Loading...</div>
+    </template>
+
+    <template v-else-if="targetPageId === '-1'">
+      <div class="flex justify-center items-center">Select related object!</div>
+    </template>
+    <template v-else>
+      <span class="title flex flex-row gap-2 items-center">
+        <BaseIcon size="28px">
+          <DynamicIcon :icon="icon"> </DynamicIcon>
+        </BaseIcon>
+        <span class="flex flex-1 flex-col">
+          <span class="flex flex-row w-full justify-between">
+            <label>{{ path }}</label>
+            <label>{{ type }}</label>
+          </span>
+          <p>{{ title }}</p>
         </span>
-        <p>{{ title }}</p>
       </span>
-    </span>
+    </template>
   </div>
 </template>
 
@@ -60,7 +68,7 @@ watchEffect(async () => {
   const id = targetPageId.value;
 
   if (!id || id === "-1") {
-    title.value = "Link error";
+    title.value = "Select realted object";
     isLoading.value = false;
     return;
   }
@@ -99,7 +107,7 @@ watchEffect(async () => {
 
 const openPage = () => {
   const targetId = targetPageId.value;
-  if (targetId) {
+  if (targetId && targetId !== "-1") {
     navigation.openPage(targetId);
   }
 };

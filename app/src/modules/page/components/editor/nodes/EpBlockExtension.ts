@@ -11,6 +11,7 @@ export const EpBaseBlock = Node.create({
 
   group: "block",
   content: "block*",
+  atom: true,
   draggable: true,
 
   addAttributes() {

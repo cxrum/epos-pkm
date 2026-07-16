@@ -24,4 +24,5 @@ export interface ObjetServiceContract {
   existTitle(parentId: EpObjectId, title: string): Promise<boolean>;
   getObjectAncestors(id: EpObjectId): Promise<ObjectPath>;
   getPaths(): Promise<Record<EpObjectId, ObjectPath>>;
+  getParentContainer(objectId: EpObjectId): Promise<EpObjectEntity | undefined>;
 }

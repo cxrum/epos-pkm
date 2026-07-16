@@ -54,6 +54,30 @@ export class ObjectsService implements ObjetServiceContract {
     return links;
   }
 
+  async getParentContainer(
+    objectId: EpObjectId,
+  ): Promise<EpObjectEntity | undefined> {
+    const parentId = await this.objectsStorageRepository.getParent(objectId);
+
+    if (!parentId) {
+      return undefined;
+    }
+
+    const parent = await this.objectsStorageRepository.get(parentId);
+
+    if (!parent) {
+      return undefined;
+    }
+
+    console.log(parent);
+
+    if (isAnyContainer(parent)) {
+      return parent;
+    }
+
+    return this.getParentContainer(parentId);
+  }
+
   async move(
     movedPageId: EpObjectId,
     newParentId?: EpObjectId,
@@ -163,6 +187,7 @@ export class ObjectsService implements ObjetServiceContract {
     const res = await this.objectsStorageRepository.getAll({
       text: filterOptions.text,
       types: expandedTypes,
+      limit: filterOptions.limit,
     });
 
     if (!res) {

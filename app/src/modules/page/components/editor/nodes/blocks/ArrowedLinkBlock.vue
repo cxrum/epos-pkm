@@ -4,7 +4,13 @@
     contenteditable="false"
     @click="wrapAction(openPage)"
   >
-    <div v-if="isLoading">Loading...</div>
+    <template v-if="isLoading">
+      <div>Loading...</div>
+    </template>
+
+    <template v-else-if="targetPageId === '-1'">
+      <div class="flex justify-center items-center">Select related object!</div>
+    </template>
 
     <template v-else>
       <div class="flex items-start gap-2">
@@ -93,7 +99,7 @@ watchEffect(async () => {
   const id = targetPageId.value;
 
   if (!id || id === "-1") {
-    title.value = "Link error";
+    title.value = "Select realted object";
     isLoading.value = false;
     return;
   }
@@ -132,7 +138,7 @@ watchEffect(async () => {
 
 const openPage = () => {
   const targetId = targetPageId.value;
-  if (targetId) {
+  if (targetId && targetId !== "-1") {
     navigation.openPage(targetId);
   }
 };

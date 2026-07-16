@@ -4,6 +4,8 @@
     :action-interceptor="handleBlockAction"
     @click="handleNativeClick"
     v-slot="{ wrapAction }"
+    :custom-drag-handle="true"
+    :content-editable="false"
   >
     <component
       :is="resolvedComponent"
@@ -60,11 +62,7 @@ const isSelected = computed(() => {
 
 const handleBlockAction = (targetAction: () => void) => {
   if (editorStore.isObjectEidtorOpen) {
-    if (isSelected.value) {
-      targetAction();
-    } else {
-      selectNativeNode();
-    }
+    selectNativeNode();
   } else {
     targetAction();
   }

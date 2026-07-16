@@ -116,8 +116,8 @@ export function bootstrapTypeRegistry(registry: TypeRegister): void {
             allowSystemOptionsMutation: false,
             options: [],
             filterConfig: {
-              allowedTypeIds: [],
-              includeParents: true,
+              allowedTypeIds: ["sys:container"],
+              includeParents: false,
             },
           },
         },

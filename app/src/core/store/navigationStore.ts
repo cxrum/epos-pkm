@@ -14,7 +14,7 @@ import {
   type SystemPageId,
 } from "../types";
 import { globalObjectsService, globalTypingService } from "../di/global";
-import { resolveTitle } from "../domain/type";
+import { isAnyContainer, resolveTitle } from "../domain/type";
 import type { SavedTab } from "../domain/workspace";
 
 export const useGlobalNavigation = defineStore("navigation", () => {
@@ -34,27 +34,41 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     currentPath.value = [];
   };
 
-  const pageToMeta = async (
+  const getObjectMeta = async (
     objId: EpObjectId,
   ): Promise<ObjectMeta | undefined> => {
-    const result = await globalObjectsService.get(objId);
+    const initialObject = await globalObjectsService.get(objId);
 
-    if (!result) {
+    if (!initialObject) {
       return undefined;
     }
 
-    const type = await globalTypingService.get(result.typeId);
+    let targetEntity = initialObject;
+
+    if (!isAnyContainer(initialObject)) {
+      const parentContainer = await globalObjectsService.getParentContainer(
+        initialObject.id,
+      );
+
+      if (!parentContainer) {
+        return undefined;
+      }
+
+      targetEntity = parentContainer;
+    }
+
+    const type = await globalTypingService.get(targetEntity.typeId);
 
     let icon: Icon = { type: "emoji", emoji: "U" };
-    let title: string = resolveTitle(result);
+    const title: string = resolveTitle(targetEntity);
 
     if (type) {
       icon = type.icon ?? { type: "default", name: "object" };
     }
 
     return {
-      id: objId,
-      typeId: result.typeId,
+      id: targetEntity.id,
+      typeId: targetEntity.typeId,
       title: title,
       icon: icon,
       kind: "page",
@@ -102,14 +116,15 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     }
   };
 
-  const preloadPageMeta = async (
+  const preloadObjectMeta = async (
     objId: EpObjectId,
   ): Promise<ObjectMeta | undefined> => {
     if (cachedPageMeta.value.has(objId)) {
       return cachedPageMeta.value.get(objId);
     }
 
-    const meta = await pageToMeta(objId);
+    const meta = await getObjectMeta(objId);
+
     if (meta) {
       cachedPageMeta.value.set(objId, meta);
     }
@@ -117,8 +132,8 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     return meta;
   };
 
-  const openPage = async (pageId: EpObjectId) => {
-    const meta = await preloadPageMeta(pageId);
+  const openObject = async (pageId: EpObjectId) => {
+    const meta = await preloadObjectMeta(pageId);
     if (meta) {
       active.value = meta;
     }
@@ -127,11 +142,11 @@ export const useGlobalNavigation = defineStore("navigation", () => {
   const preloadMeta = async (tab: SavedTab): Promise<PageMeta | undefined> => {
     switch (tab.kind) {
       case "system":
-        return preloadSystemPageMeta(tab.id);
+        return preloadSystemPageMeta(tab.id as SystemPageId);
       case "type":
         return await preloadTypePageMeta(tab.id);
       case "page":
-        return await preloadPageMeta(tab.id);
+        return await preloadObjectMeta(tab.id);
     }
   };
 
@@ -139,7 +154,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     if (isSystemPageMeta(meta)) {
       openSystemPage(meta.id);
     } else if (isObjectPageMeta(meta)) {
-      await openPage(meta.id);
+      await openObject(meta.id);
     } else if (isTypePageMeta(meta)) {
       await openType(meta.id);
     }
@@ -152,7 +167,7 @@ export const useGlobalNavigation = defineStore("navigation", () => {
   const updateMeta = async (
     pageId: EpObjectId,
   ): Promise<ObjectMeta | undefined> => {
-    const meta = await pageToMeta(pageId);
+    const meta = await getObjectMeta(pageId);
     if (meta) {
       cachedPageMeta.value.set(pageId, meta);
     }
@@ -188,8 +203,8 @@ export const useGlobalNavigation = defineStore("navigation", () => {
     preloadTypePageMeta,
     openType,
 
-    preloadPageMeta,
-    openPage,
+    preloadPageMeta: preloadObjectMeta,
+    openPage: openObject,
 
     closePage,
   };

@@ -128,8 +128,12 @@ onClickOutside(omniSearchRef, (event: Event) => {
               v-else
               class="flex flex-col flex-1 items-center place-content-center w-full h-full"
             >
-              <p>Create a new note (shortcut placeholder)</p>
-              <p>Select page from tree or browser tab</p>
+              <p class="text-(--text-secondary-color)">
+                Create a new note (shortcut placeholder)
+              </p>
+              <p class="text-(--text-secondary-color)">
+                Select page from tree or browser tab
+              </p>
             </div>
           </div>
 

@@ -240,54 +240,6 @@ onUnmounted(() => {
     </BaseButton>
 
     <div v-show="isSidebarOpen">
-      <Accordion label="Fast Actions" :menu-data="stubMenuGroup">
-        <BaseButton
-          class="w-full"
-          :is-content-visible="isSidebarOpen"
-          :icon="AddDocument"
-        >
-          Example action 1
-        </BaseButton>
-        <BaseButton
-          class="w-full"
-          :is-content-visible="isSidebarOpen"
-          :icon="AddDocument"
-        >
-          Example action 2
-        </BaseButton>
-        <BaseButton
-          class="w-full"
-          :is-content-visible="isSidebarOpen"
-          :icon="AddDocument"
-        >
-          Example action 3
-        </BaseButton>
-      </Accordion>
-
-      <Accordion label="Pinned" :menu-data="stubMenuGroup">
-        <BaseButton
-          class="w-full"
-          :is-content-visible="isSidebarOpen"
-          :icon="AddDocument"
-        >
-          Example document 1
-        </BaseButton>
-        <BaseButton
-          class="w-full"
-          :is-content-visible="isSidebarOpen"
-          :icon="AddDocument"
-        >
-          Example document 2
-        </BaseButton>
-        <BaseButton
-          class="w-full"
-          :is-content-visible="isSidebarOpen"
-          :icon="AddDocument"
-        >
-          Example document 3
-        </BaseButton>
-      </Accordion>
-
       <Accordion label="Types" :menu-data="treeHierarchyMenu">
         <Tree
           v-if="!globalTypeStore.isTreeStructureLoading"

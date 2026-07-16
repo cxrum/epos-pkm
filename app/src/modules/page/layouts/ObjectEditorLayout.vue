@@ -236,22 +236,20 @@ watch(
   },
 );
 </script>
-
 <template>
-  <div class="flex flex-col gap-2 h-full">
-    <h5 class="pb-4">Editing object</h5>
+  <div class="flex flex-col h-full w-full">
+    <h5 class="mb-4">Editing object</h5>
 
-    <div
-      class="flex flex-row w-full items-center justify-between pb-2 border-b border-(--border)"
-    ></div>
+    <div class="w-full border-b border-(--border) mb-4"></div>
 
     <Accordion :label="'Properties'">
       <template v-if="groupedProperties.length > 0">
-        <span class="flex flex-col gap-1">
-          <span
+        <div class="flex flex-col gap-2">
+          <div
             v-for="entry of currentProperties?.items"
             :key="entry.propertyScheme.id"
             :id="entry.propertyScheme.id"
+            class="w-full"
           >
             <DynamicProperyInput
               v-if="handlers.has(entry.propertyScheme.id)"
@@ -270,59 +268,66 @@ watch(
               @focus-change="togleFieldFocus"
               class="ps-2"
             />
-          </span>
-        </span>
+          </div>
+        </div>
 
         <template v-if="inheritedProperties.length > 0">
-          <h5 class="pt-4">Inherited</h5>
+          <div class="w-full border-b border-(--border) my-4"></div>
+
+          <h5 class="mb-4">Inherited</h5>
 
           <div
             v-for="group of inheritedProperties"
             :key="group.id"
-            class="flex flex-col gap-2"
+            class="flex flex-col gap-4 mb-4"
           >
-            <span class="flex flex-row items-center py-2">
-              <BaseIcon>
-                <DynamicIcon :icon="group.icon" />
-              </BaseIcon>
-              <p>{{ group.title }}</p>
-            </span>
-
-            <span class="flex flex-col gap-1">
-              <span
-                v-for="entry in group.items"
-                :key="entry.propertyScheme.id"
-                :id="entry.propertyScheme.id"
-                class="flex flex-row items-center"
+            <div class="flex flex-col gap-2">
+              <div
+                class="flex flex-row items-center gap-2 text-(--text-secondary-color)"
               >
-                <DynamicProperyInput
-                  v-if="handlers.has(entry.propertyScheme.id)"
-                  v-model="handlers.get(entry.propertyScheme.id)!.value"
-                  v-model:searchQuery="searchQueries[entry.propertyScheme.id]"
-                  :property-scheme="entry.propertyScheme"
-                  :autocomplete-items="
-                    autocompleteOptions[entry.propertyScheme.id]
-                  "
-                  :err-msg="
-                    objectEditorStore.propertyFieldError.get(
-                      entry.propertyScheme.id,
-                    )
-                  "
-                  @update:searchQuery="
-                    fetchAutocompleteOptions(entry.propertyScheme, $event)
-                  "
-                  @focus-change="togleFieldFocus"
-                  class="ps-2"
-                />
-              </span>
-            </span>
-            <div class="hl"></div>
+                <BaseIcon>
+                  <DynamicIcon :icon="group.icon" />
+                </BaseIcon>
+                <span class="font-medium">{{ group.title }}</span>
+              </div>
+
+              <div class="flex flex-col gap-2">
+                <div
+                  v-for="entry in group.items"
+                  :key="entry.propertyScheme.id"
+                  :id="entry.propertyScheme.id"
+                  class="w-full"
+                >
+                  <DynamicProperyInput
+                    v-if="handlers.has(entry.propertyScheme.id)"
+                    v-model="handlers.get(entry.propertyScheme.id)!.value"
+                    v-model:searchQuery="searchQueries[entry.propertyScheme.id]"
+                    :property-scheme="entry.propertyScheme"
+                    :autocomplete-items="
+                      autocompleteOptions[entry.propertyScheme.id]
+                    "
+                    :err-msg="
+                      objectEditorStore.propertyFieldError.get(
+                        entry.propertyScheme.id,
+                      )
+                    "
+                    @update:searchQuery="
+                      fetchAutocompleteOptions(entry.propertyScheme, $event)
+                    "
+                    @focus-change="togleFieldFocus"
+                    class="ps-2"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div class="w-full border-b border-(--border)"></div>
           </div>
         </template>
       </template>
       <template v-else>
         <p
-          class="flex flex-1 flex-wrap p-8 items-center justify-center text-(--text-secondary-color)"
+          class="flex w-full p-8 items-center justify-center text-center text-(--text-secondary-color)"
         >
           Select object with properties in the editor
         </p>
