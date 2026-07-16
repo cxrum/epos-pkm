@@ -11,7 +11,7 @@
       ></div>
 
       <div class="block-content">
-        <slot />
+        <slot :wrap-action="wrapAction" />
       </div>
     </div>
   </NodeViewWrapper>
@@ -20,9 +20,19 @@
 <script setup lang="ts">
 import { NodeViewWrapper } from "@tiptap/vue-3";
 
-defineProps<{
-  isSelected: boolean;
-}>();
+const props = withDefaults(
+  defineProps<{
+    isSelected: boolean;
+    actionInterceptor?: (action: () => void) => void;
+  }>(),
+  {
+    actionInterceptor: (action: () => void) => action(),
+  },
+);
+
+const wrapAction = (targetAction: () => void) => {
+  props.actionInterceptor(targetAction);
+};
 </script>
 
 <style scoped lang="scss">
@@ -36,10 +46,13 @@ defineProps<{
   transform: translateX(-100%);
   cursor: grab;
   user-select: none;
-
   opacity: 0;
   pointer-events: none;
   transition: opacity;
+}
+
+.is-focused {
+  background: var(--hover);
 }
 
 .ep-block-wrapper:hover .custom-drag-handle {

@@ -520,42 +520,40 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     const searchText = filterOptions?.text?.toLowerCase();
 
     for (const [id, rawObj] of this.fileTreeCache.entries()) {
-      if (allowedTypes) {
-        let isFit = false;
-        if (!allowedTypes.includes(rawObj.id)) {
-          for (const typeId of allowedTypes) {
-            if (rawObj.typeId === typeId) {
-              isFit = true;
-              break;
-            }
-          }
-        } else {
-          isFit = true;
-        }
-
-        if (!isFit) {
-          continue;
-        }
-      }
-
-      if (searchText) {
-        const title = rawObj.content?.title;
+      if (allowedTypes && allowedTypes.length > 0) {
         if (
-          typeof title === "string" &&
-          !title.toLowerCase().includes(searchText)
+          !allowedTypes.includes(rawObj.typeId) &&
+          !allowedTypes.includes(rawObj.id)
         ) {
           continue;
         }
       }
 
-      results.push({
-        id: rawObj.id,
-        typeId: rawObj.typeId,
-        props: rawObj.properties as AllPropertiesMap,
-        content: rawObj.content,
-        physicalRelativePath: this.objectPathCache.get(rawObj.id) || "",
-        objectPath: this.getAncestorPath(id),
-      } as EpObjectEntity);
+      if (searchText) {
+        let isMatch = false;
+
+        if (isRawContainer(rawObj)) {
+          if (rawObj.title && rawObj.title.toLowerCase().includes(searchText)) {
+            isMatch = true;
+          }
+        } else {
+          if (
+            rawObj.id.toLowerCase().includes(searchText) ||
+            rawObj.typeId.toLowerCase().includes(searchText)
+          ) {
+            isMatch = true;
+          }
+        }
+
+        if (!isMatch) {
+          continue;
+        }
+      }
+      if (isRawContainer(rawObj)) {
+        results.push(this.containerToDomain(rawObj));
+      } else {
+        results.push(this.inlineToDomain(rawObj));
+      }
     }
 
     return results;

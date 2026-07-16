@@ -40,7 +40,6 @@ import type { EditorControllerContract } from "../contract";
 import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
 import type { ApplicationEvents } from "@/bus/application";
 import type { Emitter } from "mitt";
-import type { EpObjectId } from "@/core/types";
 import { NodeSelection } from "@tiptap/pm/state";
 import { CommandLineParser } from "../extension/commandLine/CommandLineParserExtension";
 import { CommandLineControllerKey } from "../extension/commandLine/commandLineControllerContract";
@@ -115,13 +114,31 @@ const editor = useEditor({
     props.controller.updateDraftContent(parsed.content, parsed.order);
   },
   onSelectionUpdate({ editor }) {
-    const { $anchor } = editor.state.selection;
-    const currentNode = $anchor.parent;
+    if (props.controller.isFocusLocked.value) {
+      return;
+    }
 
-    if (currentNode && currentNode.attrs.id) {
-      props.controller.setObjectId(currentNode.attrs.id);
+    const { selection } = editor.state;
+    let selectedId = null;
+
+    if (selection instanceof NodeSelection) {
+      selectedId = selection.node.attrs.id;
     } else {
-      props.controller.clearSelection();
+      for (let depth = selection.$anchor.depth; depth >= 0; depth--) {
+        const node = selection.$anchor.node(depth);
+        if (node && node.attrs.id) {
+          selectedId = node.attrs.id;
+          break;
+        }
+      }
+    }
+
+    const currentFocusedId = props.controller.focusedObjectId.value;
+
+    if (selectedId && selectedId !== currentFocusedId) {
+      props.controller.focusObject(selectedId);
+    } else if (!selectedId && currentFocusedId !== null) {
+      props.controller.unfocus();
     }
   },
 });
@@ -160,7 +177,7 @@ watch(rtl, (newValue) => {
 
 const updateTipTapNodeAttributes = (
   editor: Editor,
-  targetObjectId: EpObjectId,
+  targetObjectId: string,
   newAttributes: Record<string, any>,
 ) => {
   let targetNodePos: number | null = null;
@@ -201,13 +218,17 @@ const updateTipTapNodeAttributes = (
       updatedProps,
     );
 
-    editor.view.dispatch(
-      editor.state.tr.setNodeMarkup(targetNodePos, undefined, {
-        ...currentAttrs,
-        props: updatedProps,
-        ...tiptapProperties,
-      }),
-    );
+    const { tr, selection } = editor.state;
+
+    tr.setNodeMarkup(targetNodePos, undefined, {
+      ...currentAttrs,
+      props: updatedProps,
+      ...tiptapProperties,
+    });
+
+    tr.setSelection(selection.map(tr.doc, tr.mapping));
+
+    editor.view.dispatch(tr);
   } else {
     console.warn(
       `[TipTap] Вузол з ID ${targetObjectId} не знайдено в редакторі.`,
@@ -237,38 +258,6 @@ onMounted(() => {
     editor.value.view.dom.setAttribute("dir", "rtl");
   }
 });
-
-const forceSelectTipTapNode = (
-  editor: Editor,
-  targetId: string | undefined,
-) => {
-  let targetPos: number | null = null;
-
-  editor.state.doc.descendants((node, pos) => {
-    if (node.attrs.id === targetId) {
-      targetPos = pos;
-      return false;
-    }
-  });
-
-  if (targetPos !== null) {
-    const tr = editor.state.tr;
-    const selection = NodeSelection.create(editor.state.doc, targetPos);
-
-    editor.view.dispatch(tr.setSelection(selection));
-
-    editor.view.dispatch(editor.state.tr.scrollIntoView());
-  }
-};
-
-watch(
-  () => props.controller.focusedObjectId,
-  (it) => {
-    if (editor.value) {
-      forceSelectTipTapNode(editor.value, it.value);
-    }
-  },
-);
 </script>
 
 <style lang="scss">

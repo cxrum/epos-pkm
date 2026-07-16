@@ -36,7 +36,6 @@ const componentRegistry: Record<EpTypeId, any> = {
 
 const resolvedComponent = computed(() => {
   const typeId = props.node.attrs.typeId;
-  console.log("aboba");
   return componentRegistry[typeId] || UnknownBlock;
 });
 
