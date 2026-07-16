@@ -104,7 +104,7 @@ const handleOnChainClick = (value: Path) => {
 </script>
 
 <template>
-  <nav class="flex w-full flex-col shrink-0 bg-(--bg-canvas) p-1">
+  <nav class="flex w-full flex-col shrink-0 surface-canvas p-1">
     <div class="flex w-full shrink-0 items-center">
       <Breadcrumbs :path="computedPath" @chain-click="handleOnChainClick" />
 
@@ -157,7 +157,7 @@ const handleOnChainClick = (value: Path) => {
               class="flex flex-row items-center"
             >
               <BaseIcon size="24px">
-                <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
+                <DynamicIcon :icon="entry.icon" />
               </BaseIcon>
               <p class="flex flex-1">
                 {{ entry.title }}
@@ -177,7 +177,7 @@ const handleOnChainClick = (value: Path) => {
           >
             <span class="flex flex-row">
               <BaseIcon size="24px">
-                <DynamicIcon :icon="group.icon" class="text-(--icon-color)" />
+                <DynamicIcon :icon="group.icon" />
               </BaseIcon>
               <p class="text-(--text-secondary-color)">{{ group.title }}:</p>
             </span>
@@ -189,7 +189,7 @@ const handleOnChainClick = (value: Path) => {
               class="flex flex-row items-center gap-2"
             >
               <BaseIcon size="24px">
-                <DynamicIcon :icon="entry.icon" class="text-(--icon-color)" />
+                <DynamicIcon :icon="entry.icon" />
               </BaseIcon>
 
               <p class="">

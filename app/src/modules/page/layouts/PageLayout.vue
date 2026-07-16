@@ -27,11 +27,13 @@ import Breadcrumbs from "@/core/components/Breadcrumbs.vue";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import TypeIcon from "@/assets/icons/TypeIcon.vue";
 import DotsMenu from "@/assets/icons/DotsMenu.vue";
-import TypeEditorLayout from "./TypeEditorLayout.vue";
 import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
 import { applicationBus } from "@/bus/application.ts";
 import { useObjectEditorStore } from "../store/objectEditorStore.ts";
 import { EditorControllerKey } from "../components/editor/contract.ts";
+import { useBaseCommandLineController } from "../components/editor/commandLineController.ts";
+import { CommandLineControllerKey } from "../components/editor/extension/commandLine/commandLineControllerContract.ts";
+import ObjectEditorLayout from "./ObjectEditorLayout.vue";
 
 const route = useRoute();
 const pageId = ref<EpObjectId>();
@@ -43,7 +45,10 @@ const globalNavigationStore = useGlobalNavigation();
 const objectEditorStore = useObjectEditorStore();
 
 const editorController = useBaseEditorController(applicationBus);
+const commandLineController = useBaseCommandLineController();
+
 provide(EditorControllerKey, editorController);
+provide(CommandLineControllerKey, commandLineController);
 
 const currentPageEntity = ref<EpContainerObjectEntity>();
 const title = ref<string>();
@@ -79,7 +84,6 @@ watch(
         title.value = newData.content.title;
 
         editorController.setInitialData(currentPageEntity.value);
-        console.log(_newData);
         isFirst = false;
       }
     } else {
@@ -164,7 +168,7 @@ const pageMenuData: MenuGroup[] = [
   },
 ];
 
-const isTypeEditorOpen = computed(() => workSpaceStore.isTypeEditorOpen);
+const isTypeEditorOpen = computed(() => objectEditorStore.isObjectEidtorOpen);
 
 const computedPath = computed(() => {
   return pageStore.pagePath ?? [];
@@ -193,16 +197,16 @@ onUnmounted(() => {
 <template>
   <div class="flex w-full h-full flex-row">
     <div class="flex flex-1 flex-col min-w-0">
-      <nav class="flex w-full flex-col shrink-0 bg-(--bg-canvas) p-1">
+      <nav class="flex w-full flex-col shrink-0 surface-canvas p-1">
         <div class="flex w-full shrink-0 items-center">
           <Breadcrumbs :path="computedPath" @chain-click="handleOnChainClick" />
 
           <BaseIcon
             size="28px"
             interactive
-            @click="workSpaceStore.toggleTypeEditor()"
-            class="text-(--icon-color) shrink-0"
-            :class="isTypeEditorOpen ? 'bg-(--hover)' : ''"
+            @click="objectEditorStore.togleObjectEditorState()"
+            class="shrink-0"
+            :class="isTypeEditorOpen ? 'active' : ''"
           >
             <TypeIcon />
           </BaseIcon>
@@ -213,7 +217,6 @@ onUnmounted(() => {
                 :ref="referenceRef"
                 size="28px"
                 interactive
-                class="text-(--icon-color)"
                 @click="toggleMenu"
               >
                 <DotsMenu />
@@ -225,7 +228,8 @@ onUnmounted(() => {
 
       <div
         v-if="editorController.initialData.value"
-        class="flex flex-col gap-2 w-full h-full page overflow-y-auto auto-hide-scroll"
+        id="page"
+        class="flex flex-col gap-2 w-full h-full page scroll overflow-y-auto auto-hide-scroll"
       >
         <h1>{{ title }}</h1>
         <BaseEditor
@@ -245,10 +249,10 @@ onUnmounted(() => {
     </div>
 
     <div
-      class="h-full w-64 p-2 border-l border-(--border) bg-(--bg-sidebar) overflow-y-auto auto-hide-scroll shrink-0"
+      class="h-full w-92 p-2 border-l border-(--border) surface-sidebar overflow-y-auto auto-hide-scroll shrink-0"
       v-if="isTypeEditorOpen"
     >
-      <TypeEditorLayout :controller="editorController" />
+      <ObjectEditorLayout :controller="editorController" />
     </div>
   </div>
 </template>

@@ -136,44 +136,52 @@ const cancelEditTitle = () => {
 
   <li v-else>
     <span
-      class="tree-row"
+      class="tree-row flex flex-row items-center w-full"
       :class="{ 'is-selected': controller.isSelected(node.id) }"
       v-context-menu="{
         menu: controller.menuItemsGroup.value ?? [],
         context: { id: props.node.id, title: props.node.title },
       }"
     >
-      <BaseIcon
-        :class="controller.isExpanded(node.id) ? 'rotate-90' : ''"
-        interactive
-        @click="controller.toggleExpand(node.id)"
-        v-if="node.children?.length"
-      >
-        <ChevronRight />
-      </BaseIcon>
-      <div
-        v-if="!editingId"
-        :draggable="controller.isDraggable.value"
-        @dragstart="onDragStart($event, node.id.toString())"
-        @dragover="onDragOver($event)"
-        @dragleave="onDragLeave"
-        @drop="onDrop($event, node.id.toString())"
-        @click="controller.selectNode(node.id)"
-        @dblclick="editTitle(node.id)"
-        :class="[`drop-${dropState} w-full`]"
-      >
-        <DynamicIcon :icon="node.icon" class="base-icon" />
-        {{ node.title }}
-      </div>
-      <BaseInput
-        v-else
-        ref="inputRef"
-        v-model="localTitle"
-        :placeholder="node.title"
-        @keydown.enter="saveEditedTitle(node.id)"
-        @blur="cancelEditTitle()"
-        type="text"
-      />
+      <template v-if="!editingId">
+        <BaseIcon
+          :class="controller.isExpanded(node.id) ? 'rotate-90' : ''"
+          interactive
+          @click="controller.toggleExpand(node.id)"
+          v-if="node.children?.length"
+          class="shrink-0"
+        >
+          <ChevronRight />
+        </BaseIcon>
+        <div
+          :draggable="controller.isDraggable.value"
+          @dragstart="onDragStart($event, node.id.toString())"
+          @dragover="onDragOver($event)"
+          @dragleave="onDragLeave"
+          @drop="onDrop($event, node.id.toString())"
+          @click="controller.selectNode(node.id)"
+          @dblclick="editTitle(node.id)"
+          :class="[
+            `drop-${dropState} flex-1 flex flex-row items-center gap-1 min-w-0`,
+          ]"
+        >
+          <DynamicIcon :icon="node.icon" class="base-icon shrink-0" />
+          <p class="truncate flex-1 min-w-0">
+            {{ node.title }}
+          </p>
+        </div>
+      </template>
+      <template v-else>
+        <BaseInput
+          ref="inputRef"
+          v-model="localTitle"
+          :placeholder="node.title"
+          @keydown.enter="saveEditedTitle(node.id)"
+          @blur="cancelEditTitle()"
+          type="text"
+          class="flex-1 w-full"
+        />
+      </template>
     </span>
 
     <ul class="childs" v-if="controller.isExpanded(node.id) && node.children">

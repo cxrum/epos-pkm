@@ -1,10 +1,10 @@
-import type { RawEptTypeHierarchyNode } from "../infra/storage/type";
+import type { EpTypeEntity } from "../domain/type";
+import { TypeRegister } from "../infra/typeRegister";
 import type { EpTypeId } from "../types";
 
-const NODES: RawEptTypeHierarchyNode[] = [
-  {
-    id: "sys:root",
-    type: {
+export function bootstrapTypeRegistry(registry: TypeRegister): void {
+  const nodesToRegister: EpTypeEntity[] = [
+    {
       id: "sys:root",
       title: "root",
       kind: "system",
@@ -21,46 +21,38 @@ const NODES: RawEptTypeHierarchyNode[] = [
         },
       },
     },
-    children: [],
-  },
-  {
-    id: "sys:container",
-    type: {
+    {
       id: "sys:container",
       title: "Page",
-      icon: {
-        type: "default",
-        name: "page",
-      },
+      icon: { type: "default", name: "page" },
       kind: "system",
-    },
-    children: [],
-  },
-  {
-    id: "def:text",
-    type: {
-      id: "def:text",
-      icon: {
-        type: "default",
-        name: "type",
+      propertiesScheme: {
+        order: ["isContainer"],
+        props: {
+          isContainer: {
+            id: "isContainer",
+            title: "isContainer",
+            type: "boolean",
+            kind: "system",
+            isChangeable: false,
+          },
+        },
       },
+    },
+    {
+      id: "def:text",
+      icon: { type: "default", name: "type" },
       title: "Text",
       kind: "default",
+      propertiesScheme: { order: [], props: {} },
     },
-    children: [],
-  },
-  {
-    id: "def:latex",
-    type: {
+    {
       id: "def:latex",
       title: "LaTeX",
       kind: "default",
+      propertiesScheme: { order: [], props: {} },
     },
-    children: [],
-  },
-  {
-    id: "def:code",
-    type: {
+    {
       id: "def:code",
       title: "Code",
       kind: "default",
@@ -69,7 +61,7 @@ const NODES: RawEptTypeHierarchyNode[] = [
         props: {
           codeLanguage: {
             id: "codeLanguage",
-            title: "codeLanguage",
+            title: "Language",
             type: "text",
             kind: "system",
             isChangeable: true,
@@ -77,11 +69,7 @@ const NODES: RawEptTypeHierarchyNode[] = [
         },
       },
     },
-    children: [],
-  },
-  {
-    id: "def:heading",
-    type: {
+    {
       id: "def:heading",
       title: "Heading",
       kind: "default",
@@ -98,72 +86,89 @@ const NODES: RawEptTypeHierarchyNode[] = [
         },
       },
     },
-    children: [],
-  },
-  {
-    id: "sys:hard-page-link",
-    type: {
+    {
       id: "sys:hard-page-link",
       title: "Mounted Container",
       kind: "system",
+      propertiesScheme: { order: [], props: {} },
     },
-    children: [],
-  },
-  {
-    id: "sys:workspace",
-    type: {
+    {
       id: "sys:workspace",
       title: "Workspace",
       kind: "system",
+      propertiesScheme: { order: [], props: {} },
     },
-    children: [],
-  },
-  {
-    id: "def:back-link",
-    type: {
+    {
       id: "def:back-link",
       title: "Back Link",
       kind: "default",
+      propertiesScheme: {
+        order: ["linkedObjectId"],
+        props: {
+          linkedObjectId: {
+            id: "linkedObjectId",
+            title: "Linked object",
+            type: "autocomplete",
+            kind: "system",
+            isChangeable: true,
+            isMulti: false,
+            allowCustomOptions: false,
+            allowSystemOptionsMutation: false,
+            options: [],
+            filterConfig: {
+              allowedTypeIds: ["sys:container"],
+              includeParents: false,
+            },
+          },
+        },
+      },
     },
-    children: [],
-  },
-  {
-    id: "def:arrowed-link",
-    type: {
+    {
       id: "def:arrowed-link",
       title: "Arrowed Link",
       kind: "default",
+      propertiesScheme: {
+        order: ["arrowedQuestion", "questionWord"],
+        props: {
+          arrowedQuestion: {
+            id: "arrowedQuestion",
+            title: "Arrowed quesion",
+            type: "text",
+            kind: "system",
+            isChangeable: true,
+          },
+          questionWord: {
+            id: "questionWord",
+            title: "Quesion word",
+            type: "text",
+            kind: "system",
+            isChangeable: true,
+          },
+        },
+      },
     },
-    children: [],
-  },
-];
+  ];
 
-const EDGES: Record<EpTypeId, EpTypeId[]> = {
-  "sys:root": [
-    "sys:container",
-    "def:text",
-    "def:back-link",
-    "def:heading",
-    "sys:hard-page-link",
-    "sys:workspace",
-  ],
-  "def:back-link": ["def:arrowed-link"],
-  "def:text": ["def:latex", "def:code"],
-};
-
-export function SystemRoot(): RawEptTypeHierarchyNode {
-  const nodesMap = new Map<string, RawEptTypeHierarchyNode>(
-    NODES.map((node) => [node.id, { ...node, children: [] }]),
-  );
-
-  for (const [parentId, childrenIds] of Object.entries(EDGES)) {
-    const parent = nodesMap.get(parentId);
-    if (parent) {
-      parent.children = childrenIds
-        .map((id) => nodesMap.get(id))
-        .filter((node): node is RawEptTypeHierarchyNode => node !== undefined);
-    }
+  for (const node of nodesToRegister) {
+    registry.register(node);
   }
 
-  return nodesMap.get("sys:root") as RawEptTypeHierarchyNode;
+  const edgesToRegister: Record<string, string[]> = {
+    "sys:root": [
+      "sys:container",
+      "def:text",
+      "def:back-link",
+      "def:heading",
+      "sys:hard-page-link",
+      "sys:workspace",
+    ],
+    "def:back-link": ["def:arrowed-link"],
+    "def:text": ["def:latex", "def:code"],
+  };
+
+  for (const [parentId, childrenIds] of Object.entries(edgesToRegister)) {
+    for (const childId of childrenIds) {
+      registry.registerEdge(parentId as EpTypeId, childId as EpTypeId);
+    }
+  }
 }

@@ -27,8 +27,7 @@ const props = withDefaults(
   },
 );
 
-const baseClasses =
-  "base-button inline-flex items-center h-fit w-fit min-h-[2em] px-[0.5rem] py-[0.2rem] gap-[0.5rem] rounded-md transition-colors disabled:cursor-not-allowed disabled:opacity-50";
+const baseClasses = "base-button";
 
 const variantClasses: Record<ButtonVariant, string> = {
   default: "button-variant-default",

@@ -28,21 +28,21 @@ const props = withDefaults(
 );
 
 const isOpen = ref(false);
-const referenceRef = ref<HTMLElement | null>(null);
+const referenceRef = ref<Element | null>(null);
 const floatingRef = ref<HTMLElement | null>(null);
 
 const resolveElement = (
   value: Element | ComponentPublicInstance | null,
-): HTMLElement | null => {
+): Element | null => {
   if (!value) {
     return null;
   }
 
-  if (value instanceof HTMLElement) {
+  if (value instanceof Element) {
     return value;
   }
 
-  if ("$el" in value && value.$el instanceof HTMLElement) {
+  if ("$el" in value && value.$el instanceof Element) {
     return value.$el;
   }
 
@@ -81,6 +81,7 @@ const toggleMenu = () => {
 
 onClickOutside(floatingRef, closeMenu, {
   ignore: [referenceRef],
+  event: "click",
 });
 
 defineExpose({

@@ -1,8 +1,12 @@
 import { defineStore } from "pinia";
-import type { EpObjectId, Icon } from "../types";
+import type { EpObjectId, EpTypeId, Icon } from "../types";
 import { globalObjectsService, globalTypingService } from "../di/global";
 import { ref, type Ref } from "vue";
-import { isAnyContainer, isContainerEntity } from "../domain/type";
+import {
+  isAnyContainer,
+  isContainerEntity,
+  isMountedContainerEntity,
+} from "../domain/type";
 import type { TreeNode } from "@/shared/components/tree/contract";
 import { applicationBus } from "@/bus/application";
 
@@ -10,6 +14,8 @@ export interface ObjectMetaInfo {
   icon?: Icon;
   title?: string;
   path?: string;
+  typeId?: EpTypeId;
+  type: string;
 }
 
 export const useGlobalObjectStore = defineStore("objects", () => {
@@ -26,22 +32,37 @@ export const useGlobalObjectStore = defineStore("objects", () => {
     isTreeStructureLoading.value = false;
   };
 
-  const getMetaInfo = async (id: EpObjectId): Promise<ObjectMetaInfo> => {
+  const getMetaInfo = async (
+    id: EpObjectId,
+  ): Promise<ObjectMetaInfo | undefined> => {
     isObjectLoading.value.set(id, true);
     const res = await globalObjectsService.get(id);
-    const typeRes = await globalTypingService.get(id);
+    if (!res) {
+      return undefined;
+    }
+
+    const typeRes = await globalTypingService.get(res.typeId);
     isObjectLoading.value.set(id, false);
 
     let title = undefined;
 
     if (res && isAnyContainer(res)) {
       title = res.content.title;
+    } else if (res && isMountedContainerEntity(res)) {
+      const _id = res.content.toId;
+      const _res = await globalObjectsService.get(_id);
+      if (_res && isAnyContainer(_res)) {
+        title = _res.content.title;
+      }
     }
 
+    const path = res?.objectPath.map((it) => it.title).join(" > ");
+
     return {
-      icon: typeRes?.icon,
+      typeId: typeRes?.id,
       title: title,
-      path: res?.objectPath.join("/"),
+      path: path,
+      type: typeRes?.title ?? res.typeId,
     };
   };
 

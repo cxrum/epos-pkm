@@ -82,9 +82,7 @@ const sorterOptionsData: MenuGroup[] = [
 </script>
 
 <template>
-  <div
-    class="flex flex-col w-1/2 h-1/4 ьшт bg-(--bg-omnisearh) rounded-md border border-(--border) items-center shadow-md"
-  >
+  <div class="flex flex-col w-1/2 h-1/4 surface-dialog items-center shadow-md">
     <div
       class="flex justify-start items-center w-full p-2 gap-2 border-b border-(--border)"
     >
@@ -150,7 +148,7 @@ const sorterOptionsData: MenuGroup[] = [
       </BaseIcon>
 
       <input
-        class="flex-1 px-2 bg-transparent outline-none text-(--text-default-color) transition-colors"
+        class="flex-1 px-2 outline-none"
         placeholder="Search everything..."
       />
 
@@ -160,22 +158,9 @@ const sorterOptionsData: MenuGroup[] = [
         </BaseIcon>
       </BaseCheckbox>
     </div>
-    <div class="flex flex-1 w-full flex-col p-2 overflow-auto auto-hide-scroll">
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-      <p>Sample snippet</p>
-    </div>
+    <div
+      class="flex flex-1 w-full flex-col p-2 overflow-y-auto overflow-x-hide scroll auto-hide-scroll"
+    ></div>
   </div>
 </template>
 
