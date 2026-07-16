@@ -40,7 +40,6 @@ import type { EditorControllerContract } from "../contract";
 import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
 import type { ApplicationEvents } from "@/bus/application";
 import type { Emitter } from "mitt";
-import type { EpObjectId } from "@/core/types";
 import { NodeSelection } from "@tiptap/pm/state";
 import { CommandLineParser } from "../extension/commandLine/CommandLineParserExtension";
 import { CommandLineControllerKey } from "../extension/commandLine/commandLineControllerContract";
@@ -115,6 +114,10 @@ const editor = useEditor({
     props.controller.updateDraftContent(parsed.content, parsed.order);
   },
   onSelectionUpdate({ editor }) {
+    if (props.controller.isFocusLocked.value) {
+      return;
+    }
+
     const { selection } = editor.state;
     let selectedId = null;
 
@@ -133,9 +136,9 @@ const editor = useEditor({
     const currentFocusedId = props.controller.focusedObjectId.value;
 
     if (selectedId && selectedId !== currentFocusedId) {
-      props.controller.setObjectId(selectedId);
+      props.controller.focusObject(selectedId);
     } else if (!selectedId && currentFocusedId !== null) {
-      props.controller.clearSelection();
+      props.controller.unfocus();
     }
   },
 });

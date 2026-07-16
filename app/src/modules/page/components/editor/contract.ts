@@ -10,7 +10,9 @@ export interface EditorControllerContract {
   initialData: Ref<EpContainerObjectEntity | undefined>;
   draftData: Ref<EpContainerObjectEntity | undefined>;
   isOpened: Ref<boolean>;
+  isFocusLocked: Ref<boolean>;
 
+  setFocusLock(state: boolean): void;
   updateDraftObjectProperty(
     targetObjectId: EpObjectId,
     propertyId: EpPropertyId,
@@ -18,8 +20,8 @@ export interface EditorControllerContract {
   ): void;
   updateDraftContent(content: EpObjectEntity[], order: EpObjectId[]): void;
   setInitialData(obj: EpContainerObjectEntity): void;
-  setObjectId(id: EpObjectId): void;
-  clearSelection(): void;
+  focusObject(id: EpObjectId): void;
+  unfocus(): void;
 }
 
 export const EditorControllerKey: InjectionKey<EditorControllerContract> =

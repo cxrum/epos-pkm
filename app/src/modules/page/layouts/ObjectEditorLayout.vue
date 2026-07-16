@@ -2,6 +2,7 @@
 import {
   computed,
   h,
+  inject,
   reactive,
   ref,
   watch,
@@ -14,10 +15,14 @@ import type { ValuedPropertyEntry } from "@/core/application/type";
 import { useObjectEditorStore } from "../store/objectEditorStore";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
-import type { EditorControllerContract } from "../components/editor/contract";
+import {
+  EditorControllerKey,
+  type EditorControllerContract,
+} from "../components/editor/contract";
 import DynamicProperyInput from "../components/DynamicProperyInput.vue";
 
 const objectEditorStore = useObjectEditorStore();
+const controller = inject(EditorControllerKey);
 
 const props = defineProps<{
   controller: EditorControllerContract;
@@ -174,6 +179,12 @@ const createPropertyHandler = (
   }
 };
 
+const togleFieldFocus = (state: boolean) => {
+  if (controller) {
+    controller.setFocusLock(state);
+  }
+};
+
 watch(
   () => objectEditorStore.valuedProperties,
   (valuedProperties) => {
@@ -256,6 +267,7 @@ watch(
               @update:searchQuery="
                 fetchAutocompleteOptions(entry.propertyScheme, $event)
               "
+              @focus-change="togleFieldFocus"
               class="ps-2"
             />
           </span>
@@ -299,6 +311,7 @@ watch(
                   @update:searchQuery="
                     fetchAutocompleteOptions(entry.propertyScheme, $event)
                   "
+                  @focus-change="togleFieldFocus"
                   class="ps-2"
                 />
               </span>

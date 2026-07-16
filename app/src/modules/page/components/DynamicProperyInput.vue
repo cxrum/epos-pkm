@@ -22,6 +22,10 @@ const props = defineProps<{
   autocompleteItems?: any[];
 }>();
 
+const emit = defineEmits<{
+  (e: "focusChange", isFocused: boolean): void;
+}>();
+
 const resolveInputFieldType = (type: string) => {
   return type === "number" ? "number" : "text";
 };
@@ -43,6 +47,8 @@ const resolveInputFieldType = (type: string) => {
       class="w-full"
       :err-msg="errMsg"
       :type="resolveInputFieldType(propertyScheme.type)"
+      @focus="emit('focusChange', true)"
+      @blur="emit('focusChange', false)"
     />
 
     <AutoCompleteInput
@@ -52,6 +58,8 @@ const resolveInputFieldType = (type: string) => {
       :items="autocompleteItems || []"
       class="w-full"
       :err-msg="errMsg"
+      @focus="emit('focusChange', true)"
+      @blur="emit('focusChange', false)"
     />
 
     <BaseCheckbox
@@ -59,6 +67,8 @@ const resolveInputFieldType = (type: string) => {
       v-model="model"
       :items="autocompleteItems || []"
       :err-msg="errMsg"
+      @focus="emit('focusChange', true)"
+      @blur="emit('focusChange', false)"
     />
 
     <template v-if="propertyScheme.isSystem && !propertyScheme.isChangeable">

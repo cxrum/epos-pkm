@@ -3,7 +3,6 @@ import type { EditorControllerContract } from "./contract";
 import type { EpObjectId, EpPropertyId } from "@/core/types";
 import type {
   EpContainerObjectEntity,
-  EpInlineObjectEntity,
   EpObjectEntity,
 } from "@/core/domain/type";
 import { mapObjectEntitiesToContent } from "./helpers";
@@ -17,10 +16,15 @@ export function useBaseEditorController(
   const initialData: Ref<EpContainerObjectEntity | undefined> = ref();
   const draftData: Ref<EpContainerObjectEntity | undefined> = ref();
   const isOpened: Ref<boolean> = ref(false);
+  const isFocusLocked: Ref<boolean> = ref(false);
 
-  const setObjectId = (id: EpObjectId): void => {
+  const setFocusLock = (state: boolean) => {
+    isFocusLocked.value = state;
+  };
+
+  const focusObject = (id: EpObjectId) => {
+    if (isFocusLocked.value) return;
     focusedObjectId.value = id;
-    console.log(id);
   };
 
   const clearSelection = (): void => {
@@ -74,11 +78,13 @@ export function useBaseEditorController(
     initialData,
     draftData,
     isOpened,
+    isFocusLocked,
 
+    setFocusLock,
     updateDraftContent,
     updateDraftObjectProperty,
     setInitialData,
-    setObjectId,
-    clearSelection,
+    focusObject,
+    unfocus: clearSelection,
   };
 }
