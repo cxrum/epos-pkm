@@ -55,6 +55,7 @@ export interface RawEptTypeHierarchyNode {
 export type RawObjectFilterOptions = {
   types?: EpTypeId[] | EpTypeId;
   text?: string;
+  limit?: number;
 };
 
 export type AllRawEpObject =

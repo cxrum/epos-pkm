@@ -520,34 +520,40 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
     const searchText = filterOptions?.text?.toLowerCase();
 
     for (const [id, rawObj] of this.fileTreeCache.entries()) {
-      if (allowedTypes) {
-        let isFit = false;
-        if (!allowedTypes.includes(rawObj.id)) {
-          for (const typeId of allowedTypes) {
-            if (rawObj.typeId === typeId) {
-              isFit = true;
-              break;
-            }
-          }
-        } else {
-          isFit = true;
-        }
-
-        if (!isFit) {
+      if (allowedTypes && allowedTypes.length > 0) {
+        if (
+          !allowedTypes.includes(rawObj.typeId) &&
+          !allowedTypes.includes(rawObj.id)
+        ) {
           continue;
         }
       }
 
       if (searchText) {
+        let isMatch = false;
+
         if (isRawContainer(rawObj)) {
-          const title = rawObj.title;
-          if (!title.toLowerCase().includes(searchText)) {
-            continue;
+          if (rawObj.title && rawObj.title.toLowerCase().includes(searchText)) {
+            isMatch = true;
+          }
+        } else {
+          if (
+            rawObj.id.toLowerCase().includes(searchText) ||
+            rawObj.typeId.toLowerCase().includes(searchText)
+          ) {
+            isMatch = true;
           }
         }
-      }
 
-      results.push(this.inlineToDomain(rawObj));
+        if (!isMatch) {
+          continue;
+        }
+      }
+      if (isRawContainer(rawObj)) {
+        results.push(this.containerToDomain(rawObj));
+      } else {
+        results.push(this.inlineToDomain(rawObj));
+      }
     }
 
     return results;

@@ -97,7 +97,8 @@ export const useObjectEditorStore = defineStore("object-editor", () => {
       let title = it.id;
 
       if (isAnyContainer(it)) {
-        title = it.content.title || it.id;
+        console.log(it);
+        title = it.content.title;
       }
 
       return {

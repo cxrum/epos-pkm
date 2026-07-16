@@ -23,6 +23,7 @@
 <script setup lang="ts">
 import { useGlobalObjectStore } from "@/core/store/globalObjectStore";
 import { useGlobalTypeStore } from "@/core/store/globalTypeStore";
+import { useGlobalNavigation } from "@/core/store/navigationStore";
 import type { Icon } from "@/core/types";
 import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 import DynamicIcon from "@/shared/components/icon/DynamicIcon.vue";
@@ -30,6 +31,7 @@ import { ref, computed, watchEffect, type Ref } from "vue";
 
 const objectStore = useGlobalObjectStore();
 const typeStore = useGlobalTypeStore();
+const navigation = useGlobalNavigation();
 
 const props = defineProps<{
   nodeAttributes: Record<string, any>;
@@ -98,6 +100,7 @@ watchEffect(async () => {
 const openPage = () => {
   const targetId = targetPageId.value;
   if (targetId) {
+    navigation.openPage(targetId);
   }
 };
 </script>
