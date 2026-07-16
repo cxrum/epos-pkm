@@ -59,6 +59,8 @@ export interface SettingEntry {
   description?: string;
   type: SettingType;
   value: any;
+  placeholder?: string;
+  inputType?: string;
   options?: SettingOption[];
 }
 

@@ -3,7 +3,7 @@ import { MockFileSystem } from "./mockFileSystem";
 import type { RawContainerObject } from "@/core/infra/storage/type";
 import { ObjectStorageRepository } from "@/core/infra/storage/objectsRepository";
 
-describe("ObjectsStorgaeRepository", () => {
+describe("ObjectStorageRepository", () => {
   let mockFs: MockFileSystem<RawContainerObject>;
   let repository: ObjectStorageRepository;
 
@@ -176,5 +176,13 @@ describe("ObjectsStorgaeRepository", () => {
       });
       expect(repository.index).toHaveBeenCalledTimes(1);
     });
+  });
+
+  it("should initialize the workspace root container", async () => {
+    const root = await mockFs.get("./root.json");
+
+    expect(root).toBeDefined();
+    expect(root?.id).toBe("-1");
+    expect(root?.typeId).toBe("sys:workspace");
   });
 });

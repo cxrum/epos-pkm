@@ -5,7 +5,7 @@ import {
   ipcMain,
   screen,
 } from "electron";
-import { APP_NAME, isDev } from "./config";
+import { APP_NAME, DEFAULT_SYNC_SERVER_URL, isDev } from "./config";
 import { appConfig } from "./electronStore/configuration";
 import AppUpdater from "./autoUpdate";
 import { setupWorkSpaceStorage } from "./handlers/workspaceStorageHandlers";
@@ -14,6 +14,9 @@ import path from "path";
 import * as fs from "fs/promises";
 import { RawAppStateService } from "./AppStateService";
 import { setupAppState } from "./handlers/configHanlders";
+import { AuthService } from "./AuthService";
+import { setupAuthHandlers } from "./handlers/authHandlers";
+import { migrateLegacyAuthFields } from "./electronStore/authentication";
 
 function resolveWindowIcon() {
   if (app.isPackaged) {
@@ -105,10 +108,13 @@ app.whenReady().then(async () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
   });
 
-  const appStateService = new RawAppStateService();
+  const appStateService = new RawAppStateService(DEFAULT_SYNC_SERVER_URL);
+  migrateLegacyAuthFields();
+  const authService = new AuthService(() => appStateService.getSyncServerUrl());
 
   setupAppState(appStateService);
   setupWorkSpaceStorage(appStateService);
+  setupAuthHandlers(authService);
 });
 
 app.on("window-all-closed", () => {

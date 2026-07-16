@@ -9,6 +9,12 @@ export class AppStateRepository implements AppStateApi {
   getLocalWorkspace(id: string): Promise<WorkspaceConf | undefined> {
     return window.appState.getLocalWorkspace(id);
   }
+  getSyncServerUrl(): Promise<string> {
+    return window.appState.getSyncServerUrl();
+  }
+  setSyncServerUrl(url: string | null): Promise<string> {
+    return window.appState.setSyncServerUrl(url);
+  }
   hotReload(): Promise<AppConfig> {
     return window.appState.hotReload();
   }

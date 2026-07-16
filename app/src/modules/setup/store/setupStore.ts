@@ -1,6 +1,5 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-import type { WorkspaceEntry } from "../../../../appState";
 import { appStateRepository } from "@/core/di/global";
 
 interface Workspace {

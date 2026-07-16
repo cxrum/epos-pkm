@@ -1,4 +1,5 @@
 import { useWorkspaceStore } from "@/core/store/workspaceStore";
+import { useAuthStore } from "@/core/store/authStore";
 import { createRouter, createWebHistory } from "vue-router";
 
 const routes = [
@@ -52,9 +53,14 @@ const router = createRouter({
 });
 router.beforeEach(async (to, from, next) => {
   const workspaceStore = useWorkspaceStore();
+  const authStore = useAuthStore();
 
   if (!workspaceStore.selectedWorkspace) {
     await workspaceStore.loadAppState();
+  }
+
+  if (!authStore.authState) {
+    await authStore.loadAuthState();
   }
 
   const hasWorkspace = workspaceStore.selectedWorkspace ? true : false;

@@ -15,6 +15,7 @@ const props = withDefaults(
     iconPosition?: "left" | "right";
     isContentVisible?: boolean;
     align?: ButtonAlign;
+    type?: "button" | "submit" | "reset";
   }>(),
   {
     variant: "default",
@@ -22,6 +23,7 @@ const props = withDefaults(
     iconPosition: "left",
     isContentVisible: true,
     align: "start",
+    type: "button",
   },
 );
 
@@ -52,7 +54,7 @@ const computedClasses = computed(() => {
     :class="computedClasses"
     v-bind="$attrs"
     class="prevent-select"
-    type="button"
+    :type="type"
   >
     <component
       :is="icon"

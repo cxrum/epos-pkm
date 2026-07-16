@@ -10,10 +10,13 @@ export interface WorkspaceEntry {
 
 export interface AppConfig {
   selectedWorkspace: string;
+  customSyncServerUrl: string | null;
 }
 
 export interface AppStateApi {
   getWorkspaces(): Promise<WorkspaceEntry[]>;
+  getSyncServerUrl(): Promise<string>;
+  setSyncServerUrl(url: string | null): Promise<string>;
   hotReload(): Promise<AppConfig>;
   selectWorkspace(id: string): Promise<WorkspaceConf>;
   getSelectedWorkspace(): Promise<WorkspaceConf | undefined>;

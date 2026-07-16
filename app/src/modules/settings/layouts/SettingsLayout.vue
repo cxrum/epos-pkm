@@ -1,202 +1,322 @@
 <script setup lang="ts">
-import { useRouter } from 'vue-router'
-import BaseIcon from '@/shared/components/icon/BaseIcon.vue';
-import Cross from '@/assets/icons/Cross.vue';
-import SidebarState from '@/assets/icons/SidebarState.vue';
-import { computed, onMounted, onUnmounted, ref } from 'vue';
-import ArrowLeft from '@/assets/icons/ArrowLeft.vue';
-import { useGlobalSettingsStore } from '@/core/store/globalSettingsStore';
-import BaseCheckbox from '@/shared/components/BaseCheckbox.vue';
-import BaseInput from '@/shared/components/BaseInput.vue';
-import BaseSelect from '@/shared/components/BaseSelect.vue';
+import { computed, onMounted, onUnmounted, ref } from "vue";
+import { useRouter } from "vue-router";
+import ArrowLeft from "@/assets/icons/ArrowLeft.vue";
+import Cross from "@/assets/icons/Cross.vue";
+import User from "@/assets/icons/User.vue";
+import SidebarState from "@/assets/icons/SidebarState.vue";
+import BaseButton from "@/shared/components/BaseButton.vue";
+import BaseCheckbox from "@/shared/components/BaseCheckbox.vue";
+import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
+import BaseInput from "@/shared/components/BaseInput.vue";
+import BaseSelect from "@/shared/components/BaseSelect.vue";
+import { useAuthStore } from "@/core/store/authStore";
+import { useGlobalSettingsStore } from "@/core/store/globalSettingsStore";
+import { SYNC_SERVER_URL_SETTING_ID } from "@/core/store/globalSettingsStore";
+import type { SettingEntry } from "@/core/types";
+import SettingsAuthDialog from "../components/SettingsAuthDialog.vue";
 
 const globalSettingsStore = useGlobalSettingsStore();
+const authStore = useAuthStore();
 const router = useRouter();
+const authDialogOpen = ref(false);
+const GENERAL_SETTINGS_CATEGORY_ID = "core.category.general";
 
-const categories = computed(() => globalSettingsStore.categories)
-const selectedCategory = ref<string>("")
+const categories = computed(() => globalSettingsStore.categories);
+const selectedCategory = ref<string>(categories.value[0]?.id ?? "");
 
 const settings = computed(() => {
-    if(selectedCategory.value == undefined || !selectedCategory){
-        return []
-    }
+  if (!selectedCategory.value) {
+    return [];
+  }
 
-    return globalSettingsStore.settingsByCategory(selectedCategory.value)
-})
+  return globalSettingsStore.settingsByCategory(selectedCategory.value);
+});
 
 const componentMap: Record<string, any> = {
-  'boolean': BaseCheckbox,
-  'text': BaseInput,
-  'number': BaseInput,
-  'select': BaseSelect
-}
+  boolean: BaseCheckbox,
+  text: BaseInput,
+  number: BaseInput,
+  select: BaseSelect,
+};
 
 const closeModal = () => {
-  router.push('/workspace')
-}
+  router.push("/workspace");
+};
 
-const isCategoriesOpen = ref(false)
+const isCategoriesOpen = ref(false);
 
 const openCategories = () => {
-    isCategoriesOpen.value = true
-}
+  isCategoriesOpen.value = true;
+};
 
 const closeCategories = () => {
-    isCategoriesOpen.value = false
-}
+  isCategoriesOpen.value = false;
+};
 
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape') {
-    closeModal()
+const handleKeydown = (event: KeyboardEvent) => {
+  if (event.key === "Escape") {
+    closeModal();
   }
-}
+};
 
-onMounted(() => {
-  document.addEventListener('keydown', handleKeydown)
-})
+const settingBindings = (setting: SettingEntry) => {
+  if (setting.type === "select") {
+    return {
+      options: setting.options ?? [],
+    };
+  }
+
+  if (setting.type === "text" || setting.type === "number") {
+    return {
+      placeholder: setting.placeholder,
+      type: setting.inputType ?? "text",
+    };
+  }
+
+  return {};
+};
+
+const handleSettingUpdate = async (
+  setting: SettingEntry,
+  value: unknown,
+) => {
+  await globalSettingsStore.updateSetting(
+    selectedCategory.value,
+    setting.id,
+    value,
+  );
+
+  if (setting.id === SYNC_SERVER_URL_SETTING_ID) {
+    await authStore.loadAuthState();
+  }
+};
+
+const isAuthenticated = computed(
+  () => authStore.authState?.authenticated ?? false,
+);
+
+const shouldShowAccountPanel = computed(
+  () => selectedCategory.value === GENERAL_SETTINGS_CATEGORY_ID,
+);
+
+const accountEmail = computed(() => authStore.authState?.user?.email ?? "Guest");
+
+const accountDescription = computed(() => {
+  if (authStore.isLoading && !authStore.authState) {
+    return "Checking account status...";
+  }
+
+  if (isAuthenticated.value) {
+    return `Connected as ${accountEmail.value}.`;
+  }
+
+  return "Sign in to enable sync across devices.";
+});
+
+const accountActionLabel = computed(() =>
+  isAuthenticated.value ? "Logout" : "Login",
+);
+
+const accountActionVariant = computed<"secondary" | "accent">(() =>
+  isAuthenticated.value ? "secondary" : "accent",
+);
+
+const handleAccountAction = async () => {
+  if (isAuthenticated.value) {
+    await authStore.logout();
+    return;
+  }
+
+  authDialogOpen.value = true;
+};
+
+const closeAuthDialog = () => {
+  authDialogOpen.value = false;
+};
+
+onMounted(async () => {
+  document.addEventListener("keydown", handleKeydown);
+  await globalSettingsStore.loadSettings();
+
+  if (!selectedCategory.value && categories.value[0]) {
+    selectedCategory.value = categories.value[0].id;
+  }
+});
 
 onUnmounted(() => {
-  document.removeEventListener('keydown', handleKeydown)
-})
-
+  document.removeEventListener("keydown", handleKeydown);
+});
 </script>
+
 <template>
-<Teleport to="body">
-<div 
-    class="fixed flex z-100 p-0 md:py-16 md:px-24 items-center justify-center inset-0 bg-black/30"
-    @click.self="closeModal"
+  <Teleport to="body">
+    <div
+      class="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-0 md:px-24 md:py-16"
+      @click.self="closeModal"
     >
-    <div class="flex flex-col w-full h-full max-w-6xl bg-(--bg-settings) md:border border-(--border) rounded-none md:rounded-2xl shadow-xl relative overflow-hidden">
-        
-        <div class="flex flex-row w-full h-full relative">
-            
-            <div 
-                :class="isCategoriesOpen ? 'flex' : 'hidden md:flex'"
-                class="absolute md:relative pt-6 px-8 md:min-w-64 md:w-64 md:inset-auto inset-0 flex-col border-r border-(--border) bg-(--bg-settings)"
-            >
-                <div class="flex flex-row items-center gap-2">
-                    <BaseIcon 
-                        size="32px"
-                        interactive @click="closeCategories"
-                        class="text-(--icon-color) md:hidden"
-                        >
-                        <ArrowLeft></ArrowLeft>
-                    </BaseIcon>
-                    
-                    <h1 class="text-(--text-secondary-color)">
-                        Categories
-                    </h1>
-                </div>
-                
-                <nav class="flex flex-col flex-1 overflow-auto auto-hide-scroll">
-                    <div class="h-8 shrink-0"></div>
-                    <label 
-                        v-for="value in categories" 
-                        :key="value.id"
-                        class="flex items-center py-2 px-3 rounded-md cursor-pointer clickable transition-colors"
-                        :class="selectedCategory === value.id ? 'bg-(--tab-active-bg)' : ''"
-                        >
-                        <div class="flex items-center">
-                            <input 
-                            type="radio" 
-                            v-model="selectedCategory" 
-                            :value="value.id"
-                            class="w-4 h-4"
-                            />
-                            <span class="text-(-text-secondary-color)">{{ value.label }}</span>
-                        </div>
-                    </label>
-                    
-                    
-                </nav>  
+      <div
+        class="relative flex h-full w-full max-w-6xl flex-col overflow-hidden rounded-none border border-(--border) bg-(--bg-settings) shadow-xl md:rounded-2xl"
+      >
+        <div class="relative flex h-full w-full flex-row">
+          <div
+            :class="isCategoriesOpen ? 'flex' : 'hidden md:flex'"
+            class="absolute inset-0 md:relative md:min-w-64 md:w-64 flex-col border-r border-(--border) bg-(--bg-settings) px-8 pt-6 md:inset-auto"
+          >
+            <div class="flex flex-row items-center gap-2">
+              <BaseIcon
+                interactive
+                size="32px"
+                class="text-(--icon-color) md:hidden"
+                @click="closeCategories"
+              >
+                <ArrowLeft />
+              </BaseIcon>
+
+              <h1 class="text-(--text-secondary-color)">Categories</h1>
             </div>
 
-            <div class="flex flex-col flex-1 pt-6 ps-8">
-                <div class="flex flex-row items-center gap-2">
-                    <BaseIcon 
-                        size="32px" 
-                        class="text-(--icon-color) md:hidden"
-                        interactive @click="openCategories" 
-                        >
-                        <SidebarState :status="isCategoriesOpen ? 'closed':'opened' "/>
-                    </BaseIcon>
-                
-                    <h1 class="flex-1 text-(--text-secondary-color)">
-                        General
-                    </h1>
+            <nav class="auto-hide-scroll flex flex-1 flex-col overflow-auto">
+              <div class="h-8 shrink-0"></div>
+              <label
+                v-for="value in categories"
+                :key="value.id"
+                class="clickable flex cursor-pointer items-center rounded-md px-3 py-2 transition-colors"
+                :class="
+                  selectedCategory === value.id ? 'bg-(--tab-active-bg)' : ''
+                "
+              >
+                <div class="flex items-center gap-2">
+                  <input
+                    v-model="selectedCategory"
+                    :value="value.id"
+                    class="h-4 w-4"
+                    type="radio"
+                  />
+                  <span class="text-(--text-secondary-color)">
+                    {{ value.label }}
+                  </span>
                 </div>
+              </label>
+            </nav>
+          </div>
 
-                <div class="flex flex-col flex-1 px-4 overflow-y-auto auto-hide-scroll">
-                    <div class="h-6 shrink-0"></div>
+          <div class="flex flex-1 flex-col pt-6 ps-8">
+            <div class="flex flex-row items-center gap-2">
+              <BaseIcon
+                interactive
+                size="32px"
+                class="text-(--icon-color) md:hidden"
+                @click="openCategories"
+              >
+                <SidebarState :status="isCategoriesOpen ? 'closed' : 'opened'" />
+              </BaseIcon>
 
-                    <div v-for="setting in settings">
-                        <div class="flex flex-col gap-2">
-                            <h3>{{ setting.label }}</h3>
-                            <span v-if="setting.description">
-                                {{ setting.description }}
-                            </span>
-                            
-                            <component 
-                                :is="componentMap[setting.type]"
-                                :modelValue="setting.value"
-                                :options="setting.options"
-                                @update:modelValue="(val) => store.updateSetting(setting.id, val)"
-                            />
-                        </div>
+              <h1 class="flex-1 text-(--text-secondary-color)">General</h1>
+            </div>
+
+            <div class="auto-hide-scroll flex flex-1 flex-col overflow-y-auto px-4">
+              <div class="h-6 shrink-0"></div>
+
+              <div
+                v-if="shouldShowAccountPanel"
+                class="mb-4 rounded-2xl border border-(--border) bg-black/10 p-4"
+              >
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center">
+                  <div class="flex items-center gap-3">
+                    <BaseIcon size="32px" class="text-(--icon-color)">
+                      <User />
+                    </BaseIcon>
+                    <div class="flex flex-col gap-1">
+                      <h3>Account</h3>
+                      <span class="text-(--text-secondary-color)">
+                        {{ accountDescription }}
+                      </span>
                     </div>
-                    
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
-                    <h1>ANNNTOOON</h1>
+                  </div>
+
+                  <div class="sm:ml-auto">
+                    <BaseButton
+                      :variant="accountActionVariant"
+                      :disabled="authStore.isLoading"
+                      @click="handleAccountAction"
+                    >
+                      {{ accountActionLabel }}
+                    </BaseButton>
+                  </div>
                 </div>
+
+                <p
+                  v-if="authStore.errorMsg"
+                  class="mt-3 text-sm text-(--text-error-color)"
+                >
+                  {{ authStore.errorMsg }}
+                </p>
+                <p
+                  v-else-if="authStore.noticeMsg"
+                  class="mt-3 text-sm text-(--text-secondary-color)"
+                >
+                  {{ authStore.noticeMsg }}
+                </p>
+              </div>
+
+              <div
+                v-if="globalSettingsStore.isLoading"
+                class="rounded-2xl border border-(--border) bg-black/10 p-4 text-(--text-secondary-color)"
+              >
+                Loading settings...
+              </div>
+
+              <div v-else class="flex flex-col gap-4">
+                <div v-for="setting in settings" :key="setting.id">
+                  <div class="flex flex-col gap-2">
+                    <h3>{{ setting.label }}</h3>
+                    <span v-if="setting.description">
+                      {{ setting.description }}
+                    </span>
+
+                    <component
+                      :is="componentMap[setting.type]"
+                      v-bind="settingBindings(setting)"
+                      v-model="setting.value"
+                      class="w-full max-w-xl"
+                      :disabled="globalSettingsStore.isLoading"
+                      @update:modelValue="(val) => handleSettingUpdate(setting, val)"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
+          </div>
         </div>
-        <BaseIcon 
-            size="32px"
-            interactive @click="closeModal"
-            class="absolute top-4 right-4"
-            >
-            <Cross></Cross>
+
+        <BaseIcon
+          interactive
+          size="32px"
+          class="absolute top-4 right-4"
+          @click="closeModal"
+        >
+          <Cross />
         </BaseIcon>
+      </div>
     </div>
-</div>
-</Teleport>  
+  </Teleport>
+
+  <SettingsAuthDialog
+    :open="authDialogOpen"
+    @close="closeAuthDialog"
+    @authenticated="closeAuthDialog"
+  />
 </template>
 
-<style lang="css" scoped>
-input[type="radio"]{
+<style scoped>
+input[type="radio"] {
   visibility: hidden;
   height: 0;
   width: 0;
 }
-label:hover{
-    background-color: var(--hover);
+
+label:hover {
+  background-color: var(--hover);
 }
 </style>

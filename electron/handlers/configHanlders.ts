@@ -3,6 +3,12 @@ import { RawAppStateService } from "../AppStateService";
 
 export function setupAppState(stateService: RawAppStateService) {
   ipcMain.handle("app-state:getWorkspaces", () => stateService.getWorkspaces());
+  ipcMain.handle("app-state:getSyncServerUrl", () =>
+    stateService.getSyncServerUrl(),
+  );
+  ipcMain.handle("app-state:setSyncServerUrl", (_, url: string | null) =>
+    stateService.setSyncServerUrl(url),
+  );
 
   ipcMain.handle("app-state:selectWorkspace", (_, id: string) => {
     return stateService.selectWorkspace(id);
