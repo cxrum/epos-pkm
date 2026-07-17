@@ -18,11 +18,12 @@ Electron + Vue client for the local-first Epos PKM workspace.
 
 ## Configuration
 
-- Set the sync server URL in app settings.
-- Leave the field empty to use the default server from `EPOS_API_URL`.
+- Set the sync server URL in app settings or during onboarding when you want to enable sync.
+- Leave the sync server URL empty to keep the app in local-only mode.
 
 ## Authentication
 
+- The app stays usable without an account, but authorization and cross-device sync stay disabled until a sync server URL is set.
 - Login and registration can keep a session in memory even when secure OS storage is unavailable.
 - The `Remember for 30 days` checkbox only persists refresh tokens when secure storage is available.
 - If secure storage is unavailable, the app falls back to a session-only login and shows a warning with steps to enable a keyring or secret-service provider on Linux.

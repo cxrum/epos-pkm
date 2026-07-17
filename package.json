@@ -10,7 +10,7 @@
     "electron:setup": "yarn",
     "setup": "yarn front:setup && yarn electron:setup",
     "serve:front": "cd app && yarn dev",
-    "serve:electron": "set APP_IS_NIGHTLY=yes && set APP_IS_DEV=yes && yarn build && wait-on tcp:3000 && electron .",
+    "serve:electron": "node scripts/serve-electron-dev.js",
     "build:front": "cd app && yarn build",
     "electron:build": "yarn build",
     "electron:builder": "electron-builder",

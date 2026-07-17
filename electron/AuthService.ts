@@ -1,7 +1,6 @@
 import { safeStorage } from "electron";
 import { createHash, pbkdf2Sync } from "crypto";
 import { authConfig } from "./electronStore/authentication";
-import { DEFAULT_SYNC_SERVER_URL } from "./config";
 import type {
   AuthCredentials,
   AuthState,
@@ -29,8 +28,7 @@ export class AuthService {
   private currentTokenType: string | null = null;
   private currentSyncKey: string | null = null;
 
-  constructor(resolveApiBaseUrl: () => Promise<string> | string = () =>
-    DEFAULT_SYNC_SERVER_URL) {
+  constructor(resolveApiBaseUrl: () => Promise<string> | string = () => "") {
     this.resolveApiBaseUrl = resolveApiBaseUrl;
   }
 
@@ -129,7 +127,12 @@ export class AuthService {
     path: string,
     init: RequestInit,
   ): Promise<T> {
-    const apiBaseUrl = (await this.resolveApiBaseUrl()).replace(/\/+$/, "");
+    const apiBaseUrl = (await this.resolveApiBaseUrl())
+      .trim()
+      .replace(/\/+$/, "");
+    if (!apiBaseUrl) {
+      throw new Error("Set the sync server URL before authorizing.");
+    }
     const response = await fetch(`${apiBaseUrl}${path}`, init);
 
     if (!response.ok) {

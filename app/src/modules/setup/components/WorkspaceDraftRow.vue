@@ -1,5 +1,10 @@
 <script setup lang="ts">
+import BaseInput from "@/shared/components/BaseInput.vue";
 import { nextTick, onMounted, ref } from "vue";
+import {
+  focusAndSelectInput,
+  resolveWorkspaceDraftRowAction,
+} from "./workspaceDraftRowBehavior";
 
 const props = defineProps<{
   modelValue: string;
@@ -11,17 +16,11 @@ const emit = defineEmits<{
   (event: "cancel"): void;
 }>();
 
-const inputRef = ref<HTMLInputElement | null>(null);
+const inputRef = ref<InstanceType<typeof BaseInput> | null>(null);
 
 const focusAndSelect = async () => {
   await nextTick();
-  const input = inputRef.value;
-  if (!input) {
-    return;
-  }
-
-  input.focus();
-  input.select();
+  focusAndSelectInput(inputRef.value);
 };
 
 onMounted(() => {
@@ -29,27 +28,32 @@ onMounted(() => {
 });
 
 const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === "Enter") {
-    event.preventDefault();
-    emit("commit");
+  const action = resolveWorkspaceDraftRowAction(event.key);
+
+  if (!action) {
+    return;
   }
 
-  if (event.key === "Escape") {
-    event.preventDefault();
+  event.preventDefault();
+
+  if (action === "commit") {
+    emit("commit");
+  } else {
     emit("cancel");
   }
 };
 </script>
 
 <template>
-  <div class="flex items-center gap-2 rounded-md border border-(--border) p-2">
-    <input
+  <div
+    class="surface-mid-layer flex items-center gap-2 rounded-xl border border-(--border) p-2"
+  >
+    <BaseInput
       ref="inputRef"
-      class="flex-1 min-w-0 bg-transparent px-1 py-1 outline-none text-(--text-secondary-color)"
-      :value="modelValue"
-      @input="
-        emit('update:modelValue', ($event.target as HTMLInputElement).value)
-      "
+      :model-value="modelValue"
+      class="flex-1"
+      placeholder="Workspace name"
+      @update:modelValue="emit('update:modelValue', String($event))"
       @keydown="handleKeydown"
     />
   </div>

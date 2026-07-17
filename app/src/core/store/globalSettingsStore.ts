@@ -32,7 +32,7 @@ function createSettingsSchema(): SettingsCategory[] {
           pluginId: "core",
           label: "Sync Server URL",
           description:
-            "Leave empty to use the standard sync server configured by the app.",
+            "Leave empty to keep the app in local-only mode.",
           type: "text",
           inputType: "url",
           placeholder: "http://localhost:8000",

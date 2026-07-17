@@ -1,9 +1,12 @@
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { computed, onMounted, ref, watch } from "vue";
 import BaseButton from "@/shared/components/BaseButton.vue";
 import BaseCheckbox from "@/shared/components/BaseCheckbox.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
 import { useAuthStore } from "@/core/store/authStore";
+import {
+  useAuthSyncServerUrl,
+} from "./useAuthSyncServerUrl";
 
 type AuthMode = "login" | "register";
 
@@ -28,6 +31,14 @@ const email = ref("");
 const password = ref("");
 const rememberFor30Days = ref(true);
 const localError = ref<string | undefined>(undefined);
+const {
+  syncServerUrl,
+  isLoading: isSyncServerLoading,
+  errorMsg: syncServerUrlError,
+  authAvailable,
+  load: loadSyncServerState,
+  updateSyncServerUrl,
+} = useAuthSyncServerUrl();
 
 const title = computed(() =>
   mode.value === "login" ? "Welcome back" : "Create account",
@@ -45,6 +56,19 @@ const switchActionLabel = computed(() =>
   mode.value === "login" ? "Register" : "Log in",
 );
 
+const isSubmitDisabled = computed(
+  () =>
+    authStore.isLoading || isSyncServerLoading.value || !authAvailable.value,
+);
+
+const statusMessage = computed(() => {
+  if (!authAvailable.value) {
+    return "Local-only mode is active until you set a sync server URL. Authorization and sync stay unavailable while this field is empty.";
+  }
+
+  return `${formLabel.value} to keep your account and sync state in the cloud.`;
+});
+
 const resetErrors = () => {
   localError.value = undefined;
   authStore.clearErrorMsg();
@@ -55,8 +79,25 @@ watch(mode, () => {
   resetErrors();
 });
 
+watch(syncServerUrl, () => {
+  resetErrors();
+});
+
+onMounted(() => {
+  void loadSyncServerState();
+});
+
+const handleSyncServerUrlChange = async (nextUrl: string | number) => {
+  await updateSyncServerUrl(String(nextUrl));
+};
+
 const submit = async () => {
   resetErrors();
+
+  if (!authAvailable.value) {
+    localError.value = "Set the sync server URL before signing in.";
+    return;
+  }
 
   if (!email.value.trim() || !password.value.trim()) {
     localError.value = "Email and password are required.";
@@ -81,7 +122,7 @@ const submit = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-5">
     <div v-if="eyebrow || subtitle" class="flex flex-col gap-2">
       <span
         v-if="eyebrow"
@@ -93,29 +134,50 @@ const submit = async () => {
       <label v-if="subtitle">{{ subtitle }}</label>
     </div>
 
-    <div
-      class="grid gap-2 rounded-xl border border-(--border) bg-black/10 p-1 sm:grid-cols-2"
-    >
-      <BaseButton
-        :variant="mode === 'login' ? 'accent' : 'default'"
+    <div class="surface-bottom-layer flex flex-col gap-4 rounded-2xl border border-(--border) p-4">
+      <div class="flex flex-col gap-1">
+        <p>Sync server</p>
+        <label>
+          Leave this empty to stay in local-only mode. Set a server URL to
+          enable authorization and sync.
+        </label>
+      </div>
+
+      <BaseInput
+        :model-value="syncServerUrl"
+        autocomplete="url"
         class="w-full"
-        @click="mode = 'login'"
-      >
-        Login
-      </BaseButton>
-      <BaseButton
-        :variant="mode === 'register' ? 'accent' : 'default'"
-        class="w-full"
-        @click="mode = 'register'"
-      >
-        Register
-      </BaseButton>
+        label="Server URL"
+        placeholder="http://localhost:8000"
+        type="url"
+        @update:modelValue="handleSyncServerUrlChange"
+      />
     </div>
 
     <form class="flex flex-col gap-4" @submit.prevent="submit">
+      <div
+        class="surface-bottom-layer grid gap-2 rounded-2xl border border-(--border) p-1 sm:grid-cols-2"
+      >
+        <BaseButton
+          :variant="mode === 'login' ? 'accent' : 'default'"
+          class="w-full"
+          @click="mode = 'login'"
+        >
+          Login
+        </BaseButton>
+        <BaseButton
+          :variant="mode === 'register' ? 'accent' : 'default'"
+          class="w-full"
+          @click="mode = 'register'"
+        >
+          Register
+        </BaseButton>
+      </div>
+
       <BaseInput
         v-model="email"
         autocomplete="email"
+        class="w-full"
         label="Email"
         placeholder="name@example.com"
         type="email"
@@ -124,6 +186,7 @@ const submit = async () => {
       <BaseInput
         v-model="password"
         autocomplete="current-password"
+        class="w-full"
         label="Password"
         placeholder="••••••••"
         type="password"
@@ -142,6 +205,9 @@ const submit = async () => {
         <p v-if="localError" class="text-(--text-error-color)">
           {{ localError }}
         </p>
+        <p v-else-if="syncServerUrlError" class="text-(--text-error-color)">
+          {{ syncServerUrlError }}
+        </p>
         <p v-else-if="authStore.errorMsg" class="text-(--text-error-color)">
           {{ authStore.errorMsg }}
         </p>
@@ -152,7 +218,7 @@ const submit = async () => {
           {{ authStore.noticeMsg }}
         </p>
         <p v-else class="text-(--text-secondary-color)">
-          {{ formLabel }} to keep your account and sync state in the cloud.
+          {{ statusMessage }}
         </p>
       </div>
 
@@ -160,7 +226,7 @@ const submit = async () => {
         <BaseButton
           :variant="'accent'"
           class="w-full sm:w-auto"
-          :disabled="authStore.isLoading"
+          :disabled="isSubmitDisabled"
           type="submit"
         >
           <span class="w-20 text-center">{{ formLabel }}</span>

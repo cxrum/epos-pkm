@@ -65,7 +65,7 @@ describe("useGlobalSettingsStore", () => {
       .find((setting) => setting.id === "core.syncServerUrl");
     expect(syncSetting?.value).toBe("https://sync.example.com");
 
-    appStateRepositoryMock.setSyncServerUrl.mockResolvedValue("http://default");
+    appStateRepositoryMock.setSyncServerUrl.mockResolvedValue("");
 
     await store.updateSetting("core.category.sync", "core.syncServerUrl", "");
 

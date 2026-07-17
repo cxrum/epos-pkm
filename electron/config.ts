@@ -1,8 +1,3 @@
-import { config as loadEnv } from "dotenv";
-import path from "path";
-
-loadEnv({ path: path.resolve(process.cwd(), ".env") });
-
 function parseBoolean(value: string | undefined) {
     if (!value) return false;
 
@@ -11,5 +6,3 @@ function parseBoolean(value: string | undefined) {
 
 export const isDev = parseBoolean(process.env.APP_IS_DEV);
 export const APP_NAME = process.env.APP_NAME || "Undefined";
-export const DEFAULT_SYNC_SERVER_URL =
-  process.env.EPOS_API_URL || "http://localhost:8000";

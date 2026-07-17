@@ -43,11 +43,9 @@ interface LegacyRawAppConfig extends Partial<RawAppConfig> {
 export class RawAppStateService implements AppStateApi {
   private configPath: string;
   private config: RawAppConfig | null = null;
-  private readonly defaultSyncServerUrl: string;
 
-  constructor(defaultSyncServerUrl: string) {
+  constructor() {
     this.configPath = path.join(app.getPath("userData"), "config.json");
-    this.defaultSyncServerUrl = defaultSyncServerUrl.replace(/\/+$/, "");
   }
 
   private getDefaultWorkspacesRootPath(): string {
@@ -330,7 +328,7 @@ export class RawAppStateService implements AppStateApi {
       this.config = await this.loadConfig();
     }
 
-    return this.config.customSyncServerUrl ?? this.defaultSyncServerUrl;
+    return this.config.customSyncServerUrl ?? "";
   }
 
   async setSyncServerUrl(url: string | null): Promise<string> {
@@ -341,7 +339,7 @@ export class RawAppStateService implements AppStateApi {
     this.config.customSyncServerUrl = this.normalizeSyncServerUrl(url);
     await this.saveConfig(this.config);
 
-    return this.config.customSyncServerUrl ?? this.defaultSyncServerUrl;
+    return this.config.customSyncServerUrl ?? "";
   }
 
   private async readLocalConfig(

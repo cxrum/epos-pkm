@@ -16,6 +16,7 @@ const props = defineProps({
 
 defineExpose({
   focus: () => inputRef.value?.focus(),
+  select: () => inputRef.value?.select(),
 });
 
 defineOptions({
@@ -35,7 +36,7 @@ const handleWrapperClick = () => {
     <div class="base-input" @click="handleWrapperClick">
       <slot name="prefix"></slot>
 
-      <input ref="inputRef" v-model="model" v-bind="$attrs" />
+      <input ref="inputRef" v-model="model" class="min-w-0 flex-1" v-bind="$attrs" />
 
       <slot name="suffix"></slot>
 

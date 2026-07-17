@@ -36,16 +36,18 @@ const menuData: MenuGroup<WorkspaceRowContext>[] = [
 </script>
 
 <template>
-  <div class="flex items-center gap-2 rounded-md border border-(--border) p-2">
+  <div
+    class="surface-mid-layer flex items-center gap-2 rounded-xl border border-(--border) p-2"
+  >
     <button
       type="button"
-      class="flex min-w-0 flex-1 flex-col text-left"
+      class="flex min-w-0 flex-1 flex-col rounded-lg px-2 py-2 text-left transition-colors hover:bg-(--surface-contrast-layer)"
       @click="emit('open', id)"
     >
       <p class="truncate">
         {{ title }}
       </p>
-      <label class="truncate">
+      <label class="truncate text-sm">
         {{ relativePath }}
       </label>
     </button>
@@ -55,7 +57,8 @@ const menuData: MenuGroup<WorkspaceRowContext>[] = [
         <button
           :ref="referenceRef"
           type="button"
-          class="flex h-8 w-8 items-center justify-center rounded-md border border-transparent text-(--icon-color) transition-colors hover:border-(--border) hover:bg-(--bg-context-menu)"
+          aria-label="Workspace actions"
+          class="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-(--icon-color) transition-colors hover:border-(--border) hover:bg-(--surface-contrast-layer)"
           @click.stop="toggleMenu"
         >
           <DotsMenu />
