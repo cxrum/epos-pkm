@@ -411,6 +411,23 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
           filePath,
           newData.content.title,
         );
+
+        const parsedOldPath = await this.userStorageApi.parse(filePath);
+        const parsedNewPath = await this.userStorageApi.parse(newFilePath);
+
+        const oldDirPath = await this.userStorageApi.join(
+          parsedOldPath.dir,
+          parsedOldPath.name,
+        );
+        const newDirPath = await this.userStorageApi.join(
+          parsedNewPath.dir,
+          parsedNewPath.name,
+        );
+
+        if (await this.userStorageApi.exists(oldDirPath)) {
+          await this.userStorageApi.rename(oldDirPath, newDirPath);
+        }
+
         await this.userStorageApi.save(newFilePath, container);
       } else {
         await this.userStorageApi.save(filePath, container);
