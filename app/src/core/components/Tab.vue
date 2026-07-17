@@ -16,12 +16,8 @@ const emit = defineEmits<{
 }>();
 
 const computedClasses = computed(() => {
-  const baseClasses =
-    "flex w-[10em] h-[2em] shrink-0 px-2 gap-2 items-center rounded-md transition-colors";
-
-  const activeClasses = props.active
-    ? "bg-(--bg-active-tab)"
-    : "cursor-pointer";
+  const baseClasses = "base-button tab";
+  const activeClasses = props.active ? "active" : "cursor-pointer";
 
   return `${baseClasses} ${activeClasses}`;
 });
@@ -31,46 +27,27 @@ const computedClasses = computed(() => {
   <button
     @click="emit('tab-click', props.id)"
     :class="computedClasses"
-    class="prevent-select tab"
+    class="prevent-select"
     type="button"
   >
     <slot name="icon">
-      <component
-        :is="icon"
-        v-if="icon"
-        class="w-5 h-5 shrink-0 text-(--icon-color)"
-      />
+      <component :is="icon" v-if="icon" />
     </slot>
 
     <span
-      :class="active ? ' text-(--text-default-color)' : ''"
+      :class="active ? 'text-(--text-default-color)' : ''"
       class="truncate flex-1 text-left"
     >
       <slot></slot>
     </span>
 
-    <base-icon
+    <BaseIcon
       interactive
-      @click="emit('close', props.id)"
-      size="22px"
-      class="shrink-0"
-      :class="active ? 'text-(--icon-color)' : 'cross'"
+      @click.stop="emit('close', props.id)"
+      class="tab-cross"
+      :class="active ? 'active' : ''"
     >
       <Cross />
-    </base-icon>
+    </BaseIcon>
   </button>
 </template>
-
-<style lang="css" scoped>
-.tab {
-  color: aliceblue;
-}
-
-.tab:hover .cross {
-  color: var(--icon-color);
-}
-
-.cross {
-  color: transparent;
-}
-</style>

@@ -7,6 +7,7 @@ import type { MenuGroup } from "@/shared/components/popUpMenu/type";
 import DotsMenu from "@/assets/icons/DotsMenu.vue";
 import { flip, offset, useFloating } from "@floating-ui/vue";
 import { onClickOutside } from "@vueuse/core";
+import FloatingPopUpMenu from "./popUpMenu/FloatingPopUpMenu.vue";
 
 const props = defineProps({
   isOpen: {
@@ -75,28 +76,24 @@ defineExpose({
         <ChevronRight :class="isOpen ? '' : '-rotate-90'" />
       </base-icon>
 
-      <span
-        class="whitespace-nowrap text-(--text-secondary-color) truncate flex-1 text-left"
+      <p
+        class="whitespace-nowrap truncate flex-1 text-(--text-secondary-color) text-left"
       >
         {{ label }}
-      </span>
-      <base-icon
-        size="24px"
-        ref="menuButtonRef"
-        interactive
-        @click="toglePopUpMenu"
-        class="text-(--icon-color)"
-        v-if="menuData"
-      >
-        <dots-menu />
-      </base-icon>
+      </p>
 
-      <pop-up-menu
-        ref="menuRef"
-        :groups="menuData"
-        :style="floatingStyles"
-        v-if="isPopUpMenuOpen"
-      />
+      <FloatingPopUpMenu :menu-data="menuData" placement="bottom-start">
+        <template #trigger="{ referenceRef, toggleMenu }">
+          <BaseIcon
+            :ref="referenceRef"
+            size="24px"
+            interactive
+            @click.stop="toggleMenu"
+          >
+            <DotsMenu />
+          </BaseIcon>
+        </template>
+      </FloatingPopUpMenu>
     </div>
 
     <div v-show="isOpen" class="flex flex-col py-2 whitespace-nowrap">

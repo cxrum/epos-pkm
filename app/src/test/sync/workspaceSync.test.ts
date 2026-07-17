@@ -13,7 +13,14 @@ import {
   stableSerialize,
 } from "@/core/sync/workspaceSync";
 import { resetCatalogSyncState } from "@/core/sync/workspaceCatalogSync";
-import { SystemRoot } from "@/core/di/type";
+import { bootstrapTypeRegistry } from "@/core/di/type";
+import { TypeRegister } from "@/core/infra/typeRegister";
+
+function createDefaultTypesRoot() {
+  const typeRegister = new TypeRegister();
+  bootstrapTypeRegistry(typeRegister);
+  return typeRegister.systemRoot();
+}
 
 describe("workspace sync helpers", () => {
   const localWorkspaces = [
@@ -207,7 +214,7 @@ describe("workspace sync helpers", () => {
             },
           },
         },
-        "types/types.json": SystemRoot(),
+        "types/types.json": createDefaultTypesRoot(),
         "root/Untitled.json": {
           id: "page-1",
           typeId: "sys:container",
@@ -236,9 +243,9 @@ describe("workspace sync helpers", () => {
       state: {},
       files: {},
     };
-    const customTypes = JSON.parse(JSON.stringify(SystemRoot())) as ReturnType<
-      typeof SystemRoot
-    >;
+    const customTypes = JSON.parse(
+      JSON.stringify(createDefaultTypesRoot()),
+    ) as ReturnType<typeof createDefaultTypesRoot>;
     customTypes.children = [
       ...(customTypes.children ?? []),
       {

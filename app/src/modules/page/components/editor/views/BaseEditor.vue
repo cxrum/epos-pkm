@@ -14,7 +14,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, onMounted, toRaw, onBeforeUnmount } from "vue";
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  toRaw,
+  onBeforeUnmount,
+  inject,
+} from "vue";
 import { DragHandle } from "@tiptap/extension-drag-handle-vue-3";
 import NodeRange from "@tiptap/extension-node-range";
 import StarterKit from "@tiptap/starter-kit";
@@ -22,14 +30,20 @@ import { useEditor, EditorContent, Editor } from "@tiptap/vue-3";
 import { Placeholder } from "@tiptap/extensions";
 import { EpObjectAttributesExtension } from "../extension/customObjectExtension";
 import type { EpContainerObjectEntity } from "@/core/domain/type";
-import { domainPropertyToTiptap, entitiesToTiptapDoc, tiptapDocToEntities } from "../mappers";
+import {
+  domainPropertyToTiptap,
+  entitiesToTiptapDoc,
+  tiptapDocToEntities,
+} from "../mappers";
 import { EpBaseBlock, EpCodeBlock } from "../nodes/EpBlockExtension";
 import type { EditorControllerContract } from "../contract";
 import { UniqueBlockIdExtension } from "../extension/uniqueIdExtension";
 import type { ApplicationEvents } from "@/bus/application";
 import type { Emitter } from "mitt";
-import type { EpObjectId } from "@/core/types";
 import { NodeSelection } from "@tiptap/pm/state";
+import { CommandLineParser } from "../extension/commandLine/CommandLineParserExtension";
+import { CommandLineControllerKey } from "../extension/commandLine/commandLineControllerContract";
+import { EpTextBlock } from "../nodes/EpTextBlockExtension";
 
 const NESTED_CONFIG_LTR = {
   edgeDetection: { threshold: -16, edges: ["left" as const] },
@@ -62,6 +76,12 @@ const nestedOptions = computed(() => {
   return rtl.value ? NESTED_CONFIG_RTL : NESTED_CONFIG_LTR;
 });
 
+const commandLineController = inject(CommandLineControllerKey);
+
+if (!commandLineController) {
+  console.error("Command line controler wasnt injected.");
+}
+
 const editor = useEditor({
   editable: editable.value,
   content: entitiesToTiptapDoc(
@@ -72,10 +92,14 @@ const editor = useEditor({
     StarterKit,
     UniqueBlockIdExtension,
     EpObjectAttributesExtension,
+    EpTextBlock,
     EpCodeBlock,
     EpBaseBlock,
     Placeholder.configure({
       placeholder: "Press '/' for commands, or type to write...",
+    }),
+    CommandLineParser.configure({
+      controller: commandLineController,
     }),
     NodeRange.configure({
       key: null,
@@ -90,13 +114,31 @@ const editor = useEditor({
     props.controller.updateDraftContent(parsed.content, parsed.order);
   },
   onSelectionUpdate({ editor }) {
-    const { $anchor } = editor.state.selection;
-    const currentNode = $anchor.parent;
+    if (props.controller.isFocusLocked.value) {
+      return;
+    }
 
-    if (currentNode && currentNode.attrs.id) {
-      props.controller.setObjectId(currentNode.attrs.id);
+    const { selection } = editor.state;
+    let selectedId = null;
+
+    if (selection instanceof NodeSelection) {
+      selectedId = selection.node.attrs.id;
     } else {
-      props.controller.clearSelection();
+      for (let depth = selection.$anchor.depth; depth >= 0; depth--) {
+        const node = selection.$anchor.node(depth);
+        if (node && node.attrs.id) {
+          selectedId = node.attrs.id;
+          break;
+        }
+      }
+    }
+
+    const currentFocusedId = props.controller.focusedObjectId.value;
+
+    if (selectedId && selectedId !== currentFocusedId) {
+      props.controller.focusObject(selectedId);
+    } else if (!selectedId && currentFocusedId !== null) {
+      props.controller.unfocus();
     }
   },
 });
@@ -135,7 +177,7 @@ watch(rtl, (newValue) => {
 
 const updateTipTapNodeAttributes = (
   editor: Editor,
-  targetObjectId: EpObjectId,
+  targetObjectId: string,
   newAttributes: Record<string, any>,
 ) => {
   let targetNodePos: number | null = null;
@@ -171,15 +213,22 @@ const updateTipTapNodeAttributes = (
       }
     }
 
-    const tiptapProperties = domainPropertyToTiptap(targetNodeType, updatedProps);
-
-    editor.view.dispatch(
-      editor.state.tr.setNodeMarkup(targetNodePos, undefined, {
-        ...currentAttrs,
-        props: updatedProps,
-        ...tiptapProperties,
-      }),
+    const tiptapProperties = domainPropertyToTiptap(
+      targetNodeType,
+      updatedProps,
     );
+
+    const { tr, selection } = editor.state;
+
+    tr.setNodeMarkup(targetNodePos, undefined, {
+      ...currentAttrs,
+      props: updatedProps,
+      ...tiptapProperties,
+    });
+
+    tr.setSelection(selection.map(tr.doc, tr.mapping));
+
+    editor.view.dispatch(tr);
   } else {
     console.warn(
       `[TipTap] Вузол з ID ${targetObjectId} не знайдено в редакторі.`,
@@ -209,42 +258,21 @@ onMounted(() => {
     editor.value.view.dom.setAttribute("dir", "rtl");
   }
 });
-
-const forceSelectTipTapNode = (
-  editor: Editor,
-  targetId: string | undefined,
-) => {
-  let targetPos: number | null = null;
-
-  editor.state.doc.descendants((node, pos) => {
-    if (node.attrs.id === targetId) {
-      targetPos = pos;
-      return false;
-    }
-  });
-
-  if (targetPos !== null) {
-    const tr = editor.state.tr;
-    const selection = NodeSelection.create(editor.state.doc, targetPos);
-
-    editor.view.dispatch(tr.setSelection(selection));
-
-    editor.view.dispatch(editor.state.tr.scrollIntoView());
-  }
-};
-
-watch(
-  () => props.controller.focusedObjectId,
-  (it) => {
-    if (editor.value) {
-      forceSelectTipTapNode(editor.value, it.value);
-    }
-  },
-);
 </script>
 
 <style lang="scss">
 .ProseMirror {
+  outline: none;
+
+  &:focus,
+  &:focus-visible {
+    outline: none;
+  }
+
+  ::selection {
+    background-color: rgba(33, 150, 243, 0.3);
+  }
+
   .ProseMirror-widget * {
     margin-top: auto;
   }
@@ -258,19 +286,9 @@ watch(
 .ProseMirror-selectednode,
 .ProseMirror-selectednoderange {
   position: relative;
-
-  &::before {
-    position: absolute;
-    pointer-events: none;
-    z-index: -1;
-    content: "";
-    top: -0.25rem;
-    left: -0.25rem;
-    right: -0.25rem;
-    bottom: -0.25rem;
-    background-color: var(--hover);
-    border-radius: 0.5rem;
-  }
+  outline: 2px solid var(--accent-hover);
+  outline-offset: 4px;
+  border-radius: 8px;
 }
 
 .custom-drag-handle {

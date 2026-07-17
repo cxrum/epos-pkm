@@ -1,7 +1,8 @@
 import * as Y from "yjs";
 import { IpcFileSystem } from "@/core/infra/storage/storageRepository";
 import { refreshWorkspaceContent } from "@/core/di/global";
-import { SystemRoot } from "@/core/di/type";
+import { bootstrapTypeRegistry } from "@/core/di/type";
+import { TypeRegister } from "@/core/infra/typeRegister";
 import type { WorkspaceEntry } from "../../../appState";
 import type { AuthState } from "../../../authApi";
 import { syncWorkspaceCatalog } from "./workspaceCatalogSync";
@@ -171,6 +172,12 @@ function createDefaultWorkspaceRoot(): Record<string, unknown> {
   };
 }
 
+function createDefaultTypesRoot() {
+  const typeRegister = new TypeRegister();
+  bootstrapTypeRegistry(typeRegister);
+  return typeRegister.systemRoot();
+}
+
 function snapshotToDoc(snapshot: WorkspaceSnapshot): Y.Doc {
   const doc = new Y.Doc();
   const stateMap = doc.getMap("state");
@@ -289,7 +296,7 @@ function buildWorkspaceOps(
       baseSnapshot.files[path] === undefined &&
       path === "types/types.json" &&
       stableSerialize(currentSnapshot.files[path]) ===
-        stableSerialize(SystemRoot())
+        stableSerialize(createDefaultTypesRoot())
     ) {
       continue;
     }

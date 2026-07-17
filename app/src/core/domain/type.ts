@@ -85,19 +85,68 @@ export type TextValuedPropertyEntry<
   TisChangeable extends boolean = boolean,
 > = ValuedPropertyEntry<TProperty, "text", string, TKind, TisChangeable>;
 
+export type AutocompleteValuedPropertyEntry<
+  TProperty extends EpPropertyId = EpPropertyId,
+  TKind extends _PropertyKind = _PropertyKind,
+  TisChangeable extends boolean = boolean,
+  TOptionId extends string | number = string,
+> = ValuedPropertyEntry<
+  TProperty,
+  "autocomplete",
+  TOptionId,
+  TKind,
+  TisChangeable
+> & {
+  options: SelectPropertyValueOptionEntry<TOptionId>[];
+  filterConfig?: SelectPropertyFilterConfig;
+  isMulti?: boolean;
+  allowCustomOptions?: boolean;
+};
+
+export type _OptionId = string;
+
+export interface SelectPropertyValueOptionEntry<_TOptionId = _OptionId> {
+  id: _TOptionId;
+  title: string;
+  isSystem?: boolean;
+  isReadonly?: boolean;
+}
+export interface SelectPropertyFilterConfig {
+  allowedTypeIds?: EpTypeId[];
+  includeParents?: boolean;
+}
+
 export type SelectPropertySchemeEntry<
   TProperty extends EpPropertyId = EpPropertyId,
   TKind extends _PropertyKind = _PropertyKind,
   TisChangeable extends boolean = boolean,
+  TOptionId extends string | number = _OptionId,
 > = BasePropertySchemeEntry<TProperty, "select", TKind, TisChangeable> & {
-  options: { id: string; title: string; color?: string }[];
+  options: SelectPropertyValueOptionEntry<TOptionId>[];
+  isMulti?: boolean;
+  allowCustomOptions?: boolean;
+  allowSystemOptionsMutation?: boolean;
+  filterConfig?: SelectPropertyFilterConfig;
+};
+
+export const isSelectPropertyItem = (
+  property: any,
+): property is SelectPropertySchemeEntry => {
+  return property.type === "select";
+};
+
+export const isSelectPropertyValuedItem = (
+  property: any,
+): property is SelectPropertySchemeEntry => {
+  return property.type === "select" && property.value !== undefined;
 };
 
 export type SelectValuedPropertyEntry<
   TProperty extends EpPropertyId = EpPropertyId,
   TKind extends _PropertyKind = _PropertyKind,
   TisChangeable extends boolean = boolean,
-> = SelectPropertySchemeEntry<TProperty, TKind, TisChangeable> & {
+  TOptionId extends string | number = _OptionId,
+> = SelectPropertySchemeEntry<TProperty, TKind, TisChangeable, TOptionId> & {
   value: string | string[];
 };
 
@@ -105,6 +154,7 @@ export type AnyValidPropertyEntry =
   | BooleanValuedPropertyEntry<string>
   | NumberValuedPropertyEntry<string>
   | TextValuedPropertyEntry<string>
+  | AutocompleteValuedPropertyEntry<string>
   | SelectValuedPropertyEntry<string>;
 
 export type IsContainerValuedProperty = BooleanValuedPropertyEntry<
@@ -248,6 +298,63 @@ export function isMountedContainerEntity(
 }
 // MOUNTED CONTAINER LINK --------------------------------------------------
 
+// OBJECT LINK --------------------------------------------------
+export type ObjectLinkPropertiesMap = WithContainerFlag<false> & {
+  linkedObjectId: AutocompleteValuedPropertyEntry<
+    "linkedObjectId",
+    "system",
+    true,
+    EpObjectId
+  > & {
+    value: EpObjectId;
+    isMulti: false;
+    allowCustomOptions: false;
+    allowSystemOptionsMutation: false;
+    options: SelectPropertyValueOptionEntry<EpObjectId>[];
+    filterConfig?: SelectPropertyFilterConfig;
+  };
+};
+
+export type ObjectLinkEntity = BaseEpObjectEntity<
+  "def:back-link",
+  Record<string, any>,
+  ObjectLinkPropertiesMap
+>;
+
+export function isLinkOBjectEntity(
+  entity: EpObjectEntity,
+): entity is ObjectLinkEntity {
+  return entity.typeId === "def:back-link";
+}
+// OBJECT LINK --------------------------------------------------
+
+// ARROWED OBJECT LINK --------------------------------------------------
+export type ArrowedObjectLinkPropertiesMap = ObjectLinkPropertiesMap & {
+  arrowedQuestion: TextValuedPropertyEntry<
+    "arrowedQuestion",
+    "system",
+    true
+  > & {
+    value: string;
+  };
+  questionWord: TextValuedPropertyEntry<"questionWord", "system", true> & {
+    value: string;
+  };
+};
+
+export type ArrowedObjectLinkEntity = BaseEpObjectEntity<
+  "def:arrowed-link",
+  Record<string, any>,
+  ArrowedObjectLinkPropertiesMap
+>;
+
+export function isArrowedLinkObjectEntity(
+  entity: EpObjectEntity,
+): entity is ArrowedObjectLinkEntity {
+  return entity.typeId === "def:arrowed-link";
+}
+// ARROWED OBJECT LINK --------------------------------------------------
+
 // SYSTEM CONTAINER --------------------------------------------------------
 export type SystemContainerEntity = BaseEpObjectEntity<
   "sys:container",
@@ -335,7 +442,7 @@ export function isAnyText(
 }
 // TEXT INLINE OBJECT  -----------------------------------------------------
 
-// CODE INLINE OBJECT  -----------------------------------------------------
+// CODE OBJECT  -----------------------------------------------------
 export type CodeObjectPropertiesMap = WithContainerFlag<false> & {
   codeLanguage: TextValuedPropertyEntry<"codeLanguage", "system", true> & {
     value: "";
@@ -353,7 +460,23 @@ export function isCodeEntity(
 ): entity is CodeObjectEntity {
   return entity.typeId === "def:code";
 }
-// CODE INLINE OBJECT  -----------------------------------------------------
+// CODE OBJECT  -----------------------------------------------------
+
+// LaTeX OBJECT  -----------------------------------------------------
+export type LaTeXObjectPropertiesMap = WithContainerFlag<false>;
+
+export type LaTeXObjectEntity = BaseEpObjectEntity<
+  "def:latex",
+  Record<string, any>,
+  LaTeXObjectPropertiesMap
+>;
+
+export function isLaTeXEntity(
+  entity: EpObjectEntity,
+): entity is LaTeXObjectEntity {
+  return entity.typeId === "def:latex";
+}
+// LaTeX OBJECT  -----------------------------------------------------
 
 // USER INLINE OBJECT  -----------------------------------------------------
 export type CustomInlinePropertiesMap = WithContainerFlag<false>;
@@ -399,6 +522,8 @@ export type EpInlineObjectEntity =
   | CustomInlineEntity
   | HeadingObjectEntity
   | CodeObjectEntity
+  | ObjectLinkEntity
+  | ArrowedObjectLinkEntity
   | TextObjectEntity;
 
 export type EpObjectEntity = EpContainerObjectEntity | EpInlineObjectEntity;
@@ -429,4 +554,5 @@ export type ObjectFilterOptions = {
   types?: EpTypeId[] | EpTypeId;
   descendantTypes?: boolean;
   text?: string;
+  limit?: number;
 };

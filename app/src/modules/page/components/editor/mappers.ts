@@ -83,6 +83,7 @@ export const entitiesToTiptapDoc = (
           ...mappedAttrs,
         },
       };
+      console.log(node);
 
       if (isCustomBlock) {
         node.attrs!.domainContent = entity.content;
@@ -125,7 +126,8 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
     const isTextBlock =
       node.type === "paragraph" ||
       node.type === "heading" ||
-      node.type === "codeBlock";
+      node.type === "codeBlock" ||
+      node.type === "epTextBlock";
 
     if (isTextBlock) {
       if (node.type === "heading" && !resolvedTypeId) {
@@ -153,6 +155,6 @@ export const tiptapDocToEntities = (tiptapDoc: JSONContent): MappedArray => {
 
   return {
     order: order,
-    content: entities,
+    content: entities as EpObjectEntity[],
   };
 };
