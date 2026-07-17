@@ -71,7 +71,7 @@ router.beforeEach(async (to, from, next) => {
       console.log("INIT");
     }
   }
-
+  console.log(to);
   if (to.meta.requiresWorkspace && !hasWorkspace) {
     next({ name: "setup" });
   } else if (to.name === "setup" && hasWorkspace) {

@@ -462,6 +462,17 @@ export class ObjectStorageRepository implements ObjectStorageRepositoryContract 
 
     if (container.id === id) {
       await this.userStorageApi.remove(filePath);
+
+      const parsedPath = await this.userStorageApi.parse(filePath);
+      const associatedDirPath = await this.userStorageApi.join(
+        parsedPath.dir,
+        parsedPath.name,
+      );
+
+      if (await this.userStorageApi.exists(associatedDirPath)) {
+        await this.userStorageApi.remove(associatedDirPath);
+      }
+
       isDeleted = true;
     } else {
       if (container.content && container.content[id]) {

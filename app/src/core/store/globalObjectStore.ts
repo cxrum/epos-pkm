@@ -91,6 +91,8 @@ export const useGlobalObjectStore = defineStore("objects", () => {
   ) => {
     isOjectSaving.value = true;
     await globalObjectsService.move(movedId, newParentId, oldParentId);
+    applicationBus.emit("object:update", { id: newParentId });
+    applicationBus.emit("object:update", { id: oldParentId });
     isOjectSaving.value = false;
   };
 

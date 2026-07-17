@@ -156,7 +156,7 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <div
-      class="fixed inset-0 z-100 flex items-center justify-center bg-black/30 p-0 md:px-24 md:py-16"
+      class="fixed inset-0 z-100 flex items-center justify-center bg-black/40 p-0 md:px-24 md:py-16 backdrop-blur-sm"
       @click.self="closeModal"
     >
       <div
