@@ -16,11 +16,11 @@ const emit = defineEmits<{
     <transition name="fade">
       <div
         v-if="open"
-        class="fixed inset-0 z-[110] flex items-center justify-center bg-black/65 px-4 backdrop-blur-sm"
+        class="fixed inset-0 z-110 flex items-center justify-center bg-black/40 backdrop-blur-sm"
         @click.self="emit('close')"
       >
         <div
-          class="w-full max-w-lg rounded-2xl border border-(--border) bg-(--surface-layer) p-6 shadow-2xl"
+          class="w-full max-w-lg rounded-xl surface-dialog p-8"
           role="dialog"
           aria-modal="true"
         >

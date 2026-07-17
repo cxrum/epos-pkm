@@ -44,10 +44,7 @@ onBeforeUnmount(() => {
       >
         <div
           v-bind="$attrs"
-          :class="[
-            'w-full rounded-2xl border border-(--border) bg-(--surface-layer) p-6 shadow-2xl',
-            contentClass,
-          ]"
+          :class="['w-full rounded-2xl border p-4 shadow-2xl', contentClass]"
           role="dialog"
           aria-modal="true"
         >

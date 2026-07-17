@@ -12,6 +12,10 @@ const props = defineProps({
     type: String,
     default: null,
   },
+  description: {
+    type: String,
+    default: null,
+  },
 });
 
 defineExpose({
@@ -29,14 +33,19 @@ const handleWrapperClick = () => {
 </script>
 
 <template>
-  <div class="w-fit flex flex-col">
-    <span v-if="label">
+  <div class="flex flex-col">
+    <p class="text-(--text-secondary-color)" v-if="label">
       {{ label }}
-    </span>
+    </p>
     <div class="base-input" @click="handleWrapperClick">
       <slot name="prefix"></slot>
 
-      <input ref="inputRef" v-model="model" class="min-w-0 flex-1" v-bind="$attrs" />
+      <input
+        ref="inputRef"
+        v-model="model"
+        class="min-w-0 flex-1"
+        v-bind="$attrs"
+      />
 
       <slot name="suffix"></slot>
 
@@ -44,6 +53,9 @@ const handleWrapperClick = () => {
     </div>
     <label v-if="errMsg" class="text-(--text-error-color)">
       {{ errMsg }}
+    </label>
+    <label v-if="description">
+      {{ description }}
     </label>
   </div>
 </template>

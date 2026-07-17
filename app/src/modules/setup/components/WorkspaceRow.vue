@@ -2,6 +2,7 @@
 import FloatingPopUpMenu from "@/shared/components/popUpMenu/FloatingPopUpMenu.vue";
 import type { MenuGroup } from "@/shared/components/popUpMenu/type";
 import DotsMenu from "@/assets/icons/DotsMenu.vue";
+import BaseIcon from "@/shared/components/icon/BaseIcon.vue";
 
 type WorkspaceRowContext = {
   id: string;
@@ -37,11 +38,11 @@ const menuData: MenuGroup<WorkspaceRowContext>[] = [
 
 <template>
   <div
-    class="surface-mid-layer flex items-center gap-2 rounded-xl border border-(--border) p-2"
+    class="flex items-center rounded-xl border border-(--border) px-4 hover:bg-(--surface-contrast-layer)"
   >
     <button
       type="button"
-      class="flex min-w-0 flex-1 flex-col rounded-lg px-2 py-2 text-left transition-colors hover:bg-(--surface-contrast-layer)"
+      class="flex min-w-0 flex-1 flex-col rounded-md py-2 text-left transition-colors"
       @click="emit('open', id)"
     >
       <p class="truncate">
@@ -54,15 +55,16 @@ const menuData: MenuGroup<WorkspaceRowContext>[] = [
 
     <FloatingPopUpMenu :menu-data="menuData" :context-data="props">
       <template #trigger="{ referenceRef, toggleMenu }">
-        <button
+        <BaseIcon
           :ref="referenceRef"
+          interactive
           type="button"
           aria-label="Workspace actions"
-          class="flex h-10 w-10 items-center justify-center rounded-lg border border-transparent text-(--icon-color) transition-colors hover:border-(--border) hover:bg-(--surface-contrast-layer)"
+          size="28px"
           @click.stop="toggleMenu"
         >
           <DotsMenu />
-        </button>
+        </BaseIcon>
       </template>
     </FloatingPopUpMenu>
   </div>

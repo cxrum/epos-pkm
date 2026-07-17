@@ -46,12 +46,13 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 <template>
   <div
-    class="surface-mid-layer flex items-center gap-2 rounded-xl border border-(--border) p-2"
+    class="flex items-center gap-2 rounded-xl border border-(--border) px-2 py-2"
   >
     <BaseInput
       ref="inputRef"
       :model-value="modelValue"
-      class="flex-1"
+      class="w-full"
+      label="Workspace name"
       placeholder="Workspace name"
       @update:modelValue="emit('update:modelValue', String($event))"
       @keydown="handleKeydown"

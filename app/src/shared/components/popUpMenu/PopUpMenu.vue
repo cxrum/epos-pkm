@@ -37,11 +37,13 @@ const handleItemClick = (action?: (context: T) => void) => {
           class="base-button"
           type="button"
         >
-          <base-icon size="24px">
-            <component :is="item.icon" v-if="item.icon" />
-          </base-icon>
+          <template v-if="item.icon">
+            <base-icon size="24px">
+              <component :is="item.icon" v-if="item.icon" />
+            </base-icon>
+          </template>
 
-          <span class="truncate">{{ item.label }}</span>
+          <p class="truncate">{{ item.label }}</p>
         </button>
       </template>
     </div>

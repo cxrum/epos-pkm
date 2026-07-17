@@ -4,9 +4,7 @@ import BaseButton from "@/shared/components/BaseButton.vue";
 import BaseCheckbox from "@/shared/components/BaseCheckbox.vue";
 import BaseInput from "@/shared/components/BaseInput.vue";
 import { useAuthStore } from "@/core/store/authStore";
-import {
-  useAuthSyncServerUrl,
-} from "./useAuthSyncServerUrl";
+import { useAuthSyncServerUrl } from "./useAuthSyncServerUrl";
 
 type AuthMode = "login" | "register";
 
@@ -46,14 +44,6 @@ const title = computed(() =>
 
 const formLabel = computed(() =>
   mode.value === "login" ? "Log in" : "Register",
-);
-
-const switchLabel = computed(() =>
-  mode.value === "login" ? "Need an account?" : "Already have an account?",
-);
-
-const switchActionLabel = computed(() =>
-  mode.value === "login" ? "Register" : "Log in",
 );
 
 const isSubmitDisabled = computed(
@@ -122,57 +112,42 @@ const submit = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-5">
-    <div v-if="eyebrow || subtitle" class="flex flex-col gap-2">
-      <span
-        v-if="eyebrow"
-        class="text-xs uppercase tracking-[0.28em] text-(--text-secondary-color)"
-      >
-        {{ eyebrow }}
+  <div class="flex flex-col gap-4">
+    <div v-if="eyebrow || subtitle" class="flex flex-col gap-4">
+      <span class="flex flex-col">
+        <h2>{{ title }}</h2>
+        <label v-if="subtitle">{{ subtitle }}</label>
       </span>
-      <h2>{{ title }}</h2>
-      <label v-if="subtitle">{{ subtitle }}</label>
-    </div>
-
-    <div class="surface-bottom-layer flex flex-col gap-4 rounded-2xl border border-(--border) p-4">
-      <div class="flex flex-col gap-1">
-        <p>Sync server</p>
-        <label>
-          Leave this empty to stay in local-only mode. Set a server URL to
-          enable authorization and sync.
-        </label>
-      </div>
-
-      <BaseInput
-        :model-value="syncServerUrl"
-        autocomplete="url"
-        class="w-full"
-        label="Server URL"
-        placeholder="http://localhost:8000"
-        type="url"
-        @update:modelValue="handleSyncServerUrlChange"
-      />
-    </div>
-
-    <form class="flex flex-col gap-4" @submit.prevent="submit">
-      <div
-        class="surface-bottom-layer grid gap-2 rounded-2xl border border-(--border) p-1 sm:grid-cols-2"
-      >
+      <div class="flex flex-row gap-2">
         <BaseButton
-          :variant="mode === 'login' ? 'accent' : 'default'"
+          :variant="mode === 'login' ? 'accent' : 'secondary'"
           class="w-full"
           @click="mode = 'login'"
         >
           Login
         </BaseButton>
         <BaseButton
-          :variant="mode === 'register' ? 'accent' : 'default'"
+          :variant="mode === 'register' ? 'accent' : 'secondary'"
           class="w-full"
           @click="mode = 'register'"
         >
           Register
         </BaseButton>
       </div>
+    </div>
+
+    <form class="flex flex-col gap-4" @submit.prevent="submit">
+      <BaseInput
+        :model-value="syncServerUrl"
+        autocomplete="url"
+        class="w-full"
+        label="Server URL"
+        description="Leave this empty to stay in local-only mode. Set a server URL to
+        enable authorization and sync."
+        placeholder="http://localhost:8000"
+        type="url"
+        @update:modelValue="handleSyncServerUrlChange"
+      />
 
       <BaseInput
         v-model="email"
@@ -193,56 +168,39 @@ const submit = async () => {
       />
 
       <BaseCheckbox v-model="rememberFor30Days" label="Remember for 30 days" />
-      <p
-        v-if="authStore.secureStorageAvailable === false"
-        class="text-sm text-(--text-secondary-color)"
-      >
+
+      <label v-if="authStore.secureStorageAvailable === false">
         This device cannot securely store login tokens. If you keep this
         checked, the app will keep you signed in only for this session.
-      </p>
+      </label>
 
       <div class="flex flex-col gap-2">
-        <p v-if="localError" class="text-(--text-error-color)">
+        <label v-if="localError" class="text-(--text-error-color)">
           {{ localError }}
-        </p>
-        <p v-else-if="syncServerUrlError" class="text-(--text-error-color)">
+        </label>
+        <label v-else-if="syncServerUrlError" class="text-(--text-error-color)">
           {{ syncServerUrlError }}
-        </p>
-        <p v-else-if="authStore.errorMsg" class="text-(--text-error-color)">
+        </label>
+        <label v-else-if="authStore.errorMsg" class="text-(--text-error-color)">
           {{ authStore.errorMsg }}
-        </p>
-        <p
-          v-else-if="authStore.noticeMsg"
-          class="text-(--text-secondary-color)"
-        >
+        </label>
+        <label v-else-if="authStore.noticeMsg">
           {{ authStore.noticeMsg }}
-        </p>
-        <p v-else class="text-(--text-secondary-color)">
+        </label>
+        <label v-else class="text-(--text-secondary-color)">
           {{ statusMessage }}
-        </p>
+        </label>
       </div>
 
-      <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-        <BaseButton
-          :variant="'accent'"
-          class="w-full sm:w-auto"
-          :disabled="isSubmitDisabled"
-          type="submit"
-        >
-          <span class="w-20 text-center">{{ formLabel }}</span>
-        </BaseButton>
-
-        <span class="sm:ml-auto text-sm text-(--text-secondary-color)">
-          {{ switchLabel }}
-          <button
-            class="ml-1 text-(--text-default-color) underline underline-offset-4"
-            type="button"
-            @click="mode = mode === 'login' ? 'register' : 'login'"
-          >
-            {{ switchActionLabel }}
-          </button>
-        </span>
-      </div>
+      <BaseButton
+        :variant="'accent'"
+        class="w-32 self-end"
+        :disabled="isSubmitDisabled"
+        type="submit"
+        align="center"
+      >
+        {{ formLabel }}
+      </BaseButton>
     </form>
   </div>
 </template>

@@ -106,142 +106,118 @@ const deleteWorkspace = async (id: string) => {
   }
 };
 </script>
-
 <template>
   <div
-    class="surface-settings flex min-h-screen w-full items-center justify-center px-4 py-6"
+    class="flex h-screen w-full items-center justify-center px-4 surface-settings"
   >
     <section
-      class="surface-mid-layer surface-shadow flex w-full max-w-5xl flex-col overflow-hidden rounded-3xl border border-(--border)"
+      class="flex w-full max-w-2xl h-2/3 flex-col gap-4 rounded-xl border border-solid border-(--border) p-4 shadow-2xl surface-context-menu overflow-hidden px-8"
     >
-      <div
-        class="surface-bottom-layer flex flex-col items-center justify-center gap-4 border-b border-(--border) px-6 py-6 text-center"
-      >
-        <span class="flex flex-col items-center gap-1">
+      <div class="flex flex-col gap-4 justify-center items-center">
+        <span class="flex flex-col items-center">
           <h1>Epos</h1>
           <label>Version: 0.1.0 beta</label>
         </span>
-        <div class="surface-dialog rounded-2xl">
-          <BaseRadioGroup :options="pages" v-model="currentPage" />
-        </div>
+        <BaseRadioGroup :options="pages" v-model="currentPage"></BaseRadioGroup>
       </div>
 
+      <div class="hl"></div>
+
       <template v-if="currentPage === 'general'">
-        <div class="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
+        <div class="flex flex-col gap-6 flex-1 min-w-0">
+          <span class="flex flex-col">
+            <h2>Workspace configuration</h2>
+            <label>
+              Set up a local workspace folder. This stays on the device. Also
+              you can configure self-hosted sync sever.
+            </label>
+          </span>
+
           <div class="flex flex-col gap-4">
-            <div
-              class="surface-bottom-layer flex flex-col gap-3 rounded-2xl border border-(--border) p-4"
-            >
-              <div class="flex items-center gap-3">
-                <div class="flex flex-col gap-1">
-                  <p>Workspaces root</p>
-                  <label>
-                    Set up the local directory that contains your workspaces.
-                    The app uses relative paths inside this root.
-                  </label>
-                </div>
-              </div>
-
-              <div
-                class="surface-dialog flex flex-col gap-3 rounded-2xl border border-(--border) p-4"
-              >
-                <div class="flex flex-col gap-1">
-                  <label>Current root</label>
-                  <p class="break-all text-sm text-(--text-secondary-color)">
-                    {{ stateStore.workspacesRootPath || "Not selected" }}
-                  </p>
-                </div>
-
-                <div class="flex flex-wrap gap-2">
-                  <BaseButton @click="handleSelectRoot" variant="secondary">
-                    Select root
-                  </BaseButton>
-                </div>
-              </div>
+            <div class="flex flex-row gap-2 items-center">
+              <span class="max-w-2/3 flex flex-col">
+                <p>Workspace root directory</p>
+                <label class="break-all"
+                  >Current:
+                  {{ stateStore.workspacesRootPath || "Not selected" }}</label
+                >
+              </span>
+              <span class="flex-1"></span>
+              <BaseButton @click="handleSelectRoot" variant="secondary">
+                <p class="w-24 text-center">Select</p>
+              </BaseButton>
             </div>
 
+            <div class="flex flex-row gap-2 items-center">
+              <span class="max-w-2/3 flex flex-col">
+                <p>Create new workspace</p>
+                <label
+                  >Create a new workspace under the selected root folder</label
+                >
+              </span>
+              <span class="flex-1"></span>
+              <BaseButton @click="addWorkspaceDraft" variant="accent">
+                <p class="w-24 text-center">Create</p>
+              </BaseButton>
+            </div>
+          </div>
+
+          <div class="hl"></div>
+
+          <div class="flex flex-col gap-2 flex-1 min-w-0">
+            <h3>Select a workspace</h3>
+
             <div
-              class="surface-bottom-layer flex min-h-[24rem] flex-col gap-4 rounded-2xl border border-(--border) p-4"
+              v-if="
+                stateStore.workspaces.length > 0 ||
+                stateStore.draftWorkspaces.length > 0
+              "
+              class="flex flex-col flex-1 min-w-0 overflow-y-auto scroll max-h-80 gap-2"
             >
-              <div class="flex items-center gap-3">
-                <div class="flex flex-col gap-1">
-                  <p>Workspaces</p>
-                  <label>
-                    Create, rename, and open workspaces inside the selected
-                    root.
-                  </label>
-                </div>
-
-                <BaseButton
-                  class="ml-auto"
-                  @click="addWorkspaceDraft"
-                  variant="accent"
-                >
-                  Add workspace
-                </BaseButton>
-              </div>
-
-              <div
-                v-if="
-                  stateStore.workspaces.length > 0 ||
-                  stateStore.draftWorkspaces.length > 0
-                "
-                class="surface-dialog scroll flex min-h-0 flex-1 flex-col gap-2 overflow-y-auto rounded-2xl border border-(--border) p-3"
-              >
-                <template
-                  v-for="value of stateStore.workspaces"
-                  :key="value.id"
-                >
-                  <WorkspaceDraftRow
-                    v-if="editingWorkspaceId === value.id"
-                    v-model="editingWorkspaceTitle"
-                    @commit="saveWorkspaceRename(value.id)"
-                    @cancel="cancelWorkspaceRename"
-                  />
-                  <WorkspaceRow
-                    v-else
-                    :id="value.id"
-                    :title="value.title"
-                    :relative-path="value.relativePath"
-                    @open="openWorkspace"
-                    @rename="beginWorkspaceRename(value.id, value.title)"
-                    @delete="deleteWorkspace"
-                  />
-                </template>
-
+              <template v-for="value of stateStore.workspaces" :key="value.id">
                 <WorkspaceDraftRow
-                  v-for="value of stateStore.draftWorkspaces"
-                  :key="value.id"
-                  v-model="value.title"
-                  @commit="saveWorkspaceDraft(value.id)"
-                  @cancel="cancelWorkspaceDraft(value.id)"
+                  v-if="editingWorkspaceId === value.id"
+                  v-model="editingWorkspaceTitle"
+                  @commit="saveWorkspaceRename(value.id)"
+                  @cancel="cancelWorkspaceRename"
                 />
-              </div>
-              <div
-                v-else
-                class="surface-dialog flex flex-1 items-center justify-center rounded-2xl border border-(--border) px-6 py-16 text-center"
-              >
-                <label>
-                  Nothing here. Select a root directory, then add a workspace.
-                </label>
-              </div>
+                <WorkspaceRow
+                  v-else
+                  :id="value.id"
+                  :title="value.title"
+                  :relative-path="value.relativePath"
+                  @open="openWorkspace"
+                  @rename="beginWorkspaceRename(value.id, value.title)"
+                  @delete="deleteWorkspace"
+                />
+              </template>
 
-              <p class="text-(--text-error-color)">
-                {{ stateStore.errorMsg }}
-              </p>
-              <p
-                v-if="stateStore.warningMsg"
-                class="text-(--text-secondary-color)"
-              >
-                {{ stateStore.warningMsg }}
-              </p>
+              <WorkspaceDraftRow
+                v-for="value of stateStore.draftWorkspaces"
+                :key="value.id"
+                v-model="value.title"
+                @commit="saveWorkspaceDraft(value.id)"
+                @cancel="cancelWorkspaceDraft(value.id)"
+              />
             </div>
+            <div v-else class="flex flex-1 justify-center py-16 text-center">
+              <label>
+                Nothing here. Select a root directory, then create a workspace.
+              </label>
+            </div>
+
+            <label v-if="stateStore.errorMsg">
+              {{ stateStore.errorMsg }}
+            </label>
+            <label v-if="stateStore.warningMsg">
+              {{ stateStore.warningMsg }}
+            </label>
           </div>
         </div>
       </template>
 
       <template v-else-if="currentPage === 'configuration'">
-        <div class="flex min-h-0 flex-1 flex-col overflow-y-auto p-6">
+        <div class="flex min-h-0 flex-1 flex-col overflow-y-auto">
           <FirstRunAuthCard />
         </div>
       </template>
